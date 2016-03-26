@@ -7,6 +7,12 @@ APP_ROOT = os.environ.get('APP_ROOT', os.path.join(os.environ['HOME'],'.piku'))
 
 # http://off-the-stack.moorman.nu/2013-11-23-how-dokku-works.html
 
+def app_name_and_path(app):
+    """Sanitize the app name and build matching path"""
+    app = "".join(c for c in app if c.isalnum() or c in ('.','_')).rstrip()
+    return app, os.path.abspath(os.path.join(APP_ROOT, app))
+
+
 def get_free_port(address=""):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind((address,0))
@@ -37,8 +43,7 @@ def cleanup(ctx):
 @argument('app')
 def receive(app):
     """Handle git pushes for an app, initializing the local repo if necessary"""
-    app = "".join(c for c in app if c.isalnum() or c in ('.','_')).rstrip()
-    app_path = os.path.abspath(os.path.join(APP_ROOT, app))
+    app, app_path = app_name_and_path(app)
     hook_path = os.path.join(app_path, 'hooks', 'pre-receive')
     if not os.path.exists(app_path):
         os.makedirs(os.path.dirname(hook_path))
@@ -60,12 +65,22 @@ cat | PYKU_ROOT="$PYKU_ROOT" $HOME/piku.py git-hook """ + app)
 @cli.command("git-hook")
 @argument('app')
 def git_hook(app):
+    app, app_path = app_name_and_path(app)
+    for line in sys.stdin:
+        print line
+        oldrev, newrev, refname = line.split(" ")
+        if refname == "refs/heads/master":
+            print "receive", app, newrev
+        else:
+            print "receive-branch", app, newrev, refname
     print "hook", app
     
 
 @cli.command("git-upload-pack", help="handle Git receive")
 @argument('app')
 def pass_through(app):
+    app, app_path = app_name_and_path(app)
+    os.chdir(os.path.dirname(app_path))
     subprocess.call('git-shell -c "%s"' % " ".join(sys.argv[1:]) , shell=True)
     print "upload", app
 
