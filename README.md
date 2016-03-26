@@ -1,6 +1,6 @@
 # piku
 
-The tiniest Heroku-like PaaS you've ever seen, inspired on [dokku][dokku].
+The tiniest Heroku-like PaaS you've ever seen, inspired by [dokku][dokku].
 
 ## Motivation
 
@@ -15,13 +15,13 @@ From the bottom up:
 - [ ] `chroot` isolation
 - [ ] Support barebones binary deployments
 - [ ] Installation instructions
-- [ ] Basic CLI commands to manage apps
+- [x] Basic CLI commands to manage apps
 - [ ] `virtualenv` isolation
 - [ ] Support Python deployments
 - [x] Repo creation upon first push
 - [x] Basic understanding of [how `dokku` works](http://off-the-stack.moorman.nu/2013-11-23-how-dokku-works.html)
 
-## Target Workflow:
+## Workflow
 
 * Set up an SSH `git` remote pointing to `piku` with the app name as repo name (`git remote add paas piku@server:app1`) 
 * `git push paas master` your code
@@ -32,7 +32,7 @@ Later on, I intend to do fancier `dokku`-like stuff like reconfiguring `nginx`, 
 
 Might take a while, though.
 
-## Target Platforms:
+## Target Platforms
 
 As a baseline, I intend to make sure this runs on the original Rasbperry Pi Model B (which is where I'm testing it).
 
@@ -40,7 +40,7 @@ But since I have an ODROID-U2, [a bunch of Pi 2s][raspi-cluster] and a few more 
 
 In general, it will likely work in any POSIX-like environment where you have Python and SSH (I'm very likely to test it under [Cygwin][cygwin] at some point).
 
-## Target Runtimes:
+## Target Runtimes
 
 I intend to support Python, Go and Java, but will be focusing on Python first, moving from shared runtime to `virtualenv` (and later, if feasible, `pyenv` support).
 
