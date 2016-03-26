@@ -53,9 +53,8 @@ def receive(app):
     hook_path = os.path.join(GIT_ROOT, app, 'hooks', 'post-receive')
     if not os.path.exists(hook_path):
         os.makedirs(os.path.dirname(hook_path))
-        os.chdir(GIT_ROOT)
         # Initialize the repository with a hook to this script
-        subprocess.call("git init --quiet --bare " + app, shell=True)
+        subprocess.call("git init --quiet --bare " + app, cwd=GIT_ROOT, shell=True)
         h = open(hook_path,'w')
         h.write("""#!/usr/bin/env bash
 set -e; set -o pipefail;
@@ -64,9 +63,20 @@ cat | PIKU_ROOT="%s" $HOME/piku.py git-hook %s""" % (PIKU_ROOT, app))
         # Make the hook executable by our user
         os.chmod(hook_path, os.stat(hook_path).st_mode | stat.S_IXUSR)
     # Handle the actual receive. We'll be called with 'git-hook' while it happens
-    os.chdir(GIT_ROOT)
-    subprocess.call('git-shell -c "%s"' % " ".join(sys.argv[1:]), shell=True)
+    subprocess.call('git-shell -c "%s"' % " ".join(sys.argv[1:]), cwd=GIT_ROOT, shell=True)
 
+
+@piku.command("deploy")
+@argument('app')
+def deploy_app(app):
+    app = sanitize_app_name(app)
+    app_path = os.path.join(APP_ROOT, app)
+    if os.path.exists(app_path):
+        print "-----> Deploying", app
+        subprocess.call('git checkout -f', cwd=app_path, shell=True)
+    else:
+        print "Error: app %s not found." % app
+   
 
 @piku.command("git-hook")
 @argument('app')
@@ -77,25 +87,22 @@ def git_hook(app):
     app_path = os.path.join(APP_ROOT, app)
     for line in sys.stdin:
         oldrev, newrev, refname = line.strip().split(" ")
+        #print "refs:", oldrev, newrev, refname
         if refname == "refs/heads/master":
             # Handle pushes to master branch
-            print "receive", app, newrev
             if not os.path.exists(app_path):
-                print "deploying first time"
+                print "-----> Creating", app
                 os.makedirs(app_path)
-                os.chdir(os.path.dirname(app_path))
-                subprocess.call('git clone %s %s' % (repo_path, app), shell=True)
+                subprocess.call('git clone %s %s' % (repo_path, app), cwd=APP_ROOT, shell=True)
             else:
-                print "updating deploy"
+                print "-----> Updating", app
                 os.chdir(app_path)
                 subprocess.call('git pull %s' % repo_path, shell=True)
-            os.chdir(app_path)
-            subprocess.call('git checkout -f', shell = True)
+            deploy_app(app)
         else:
             # Handle pushes to another branch
             print "receive-branch", app, newrev, refname
     print "hook", app, sys.argv[1:]
  
-
 if __name__ == '__main__':
     piku()
