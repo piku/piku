@@ -70,10 +70,13 @@ cat | PIKU_ROOT="%s" $HOME/piku.py git-hook %s""" % (PIKU_ROOT, app))
 @argument('app')
 def deploy_app(app):
     app = sanitize_app_name(app)
+    do_deploy(app)
+    
+def do_deploy(app):
     app_path = os.path.join(APP_ROOT, app)
     if os.path.exists(app_path):
         print "-----> Deploying", app
-        subprocess.call('git checkout -f', cwd=app_path, shell=True)
+        subprocess.call('git checkout -f',cwd=app_path, env={'GIT_DIR':app_path,'GIT_WORK_TREE':app_path}, shell=True)
     else:
         print "Error: app %s not found." % app
    
@@ -96,9 +99,8 @@ def git_hook(app):
                 subprocess.call('git clone %s %s' % (repo_path, app), cwd=APP_ROOT, shell=True)
             else:
                 print "-----> Updating", app
-                os.chdir(app_path)
-                subprocess.call('git pull %s' % repo_path, shell=True)
-            deploy_app(app)
+                subprocess.call('git pull %s' % repo_path, env={'GIT_DIR':repo_path,'GIT_WORK_TREE':app_path}, cwd=app_path, shell=True)
+            do_deploy(app)
         else:
             # Handle pushes to another branch
             print "receive-branch", app, newrev, refname
