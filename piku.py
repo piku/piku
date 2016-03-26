@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import os, sys, stat, re, shutil, socket, subprocess
-from click import argument, command, group, option
+from click import argument, command, group, option, secho as echo
 
 PIKU_ROOT = os.environ.get('PIKU_ROOT', os.path.join(os.environ['HOME'],'.piku'))
 APP_ROOT = os.path.abspath(os.path.join(PIKU_ROOT, "apps"))
@@ -34,7 +34,7 @@ def setup_authorized_keys(ssh_fingerprint, script_path, pubkey):
     h.close()
     
     
-@group(invoke_without_command=True)
+@group()#invoke_without_command=True)
 def piku():
     pass
 
@@ -71,25 +71,28 @@ cat | PIKU_ROOT="%s" $HOME/piku.py git-hook %s""" % (PIKU_ROOT, app))
 @piku.command("deploy")
 @argument('app')
 def deploy_app(app):
-    """Command stub for deployment"""
+    """Deploy an application"""
     app = sanitize_app_name(app)
     do_deploy(app)
 
 
 @piku.command("ls")
 def list_apps():
+    """List applications"""
     for a in os.listdir(APP_ROOT):
-        print a
+        echo(a, fg='green')
 
 
 @piku.command("destroy")
 @argument('app')
 def destroy_app(app):
+    """Destroy an application"""
     app = sanitize_app_name(app)
     paths = [os.path.join(x, app) for x in [APP_ROOT, GIT_ROOT]]
     for p in paths:
-        print "Removing", p
-        shutil.rmtree(p)
+        if os.path.exists(p):
+            echo("Removing " + p, fg='yellow')
+            shutil.rmtree(p)
 
 
 def do_deploy(app):
@@ -97,11 +100,11 @@ def do_deploy(app):
     app_path = os.path.join(APP_ROOT, app)
     env = {'GIT_WORK_DIR':app_path}
     if os.path.exists(app_path):
-        print "-----> Deploying", app
+        echo("-----> Deploying " + app, fg='green')
         subprocess.call('git pull --quiet', cwd=app_path, env=env, shell=True)
         subprocess.call('git checkout -f', cwd=app_path, env=env, shell=True)
     else:
-        print "Error: app %s not found." % app
+        echo("Error: app %s not found." % app, fg='red')
    
 
 @piku.command("git-hook")
