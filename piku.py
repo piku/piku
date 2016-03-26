@@ -22,9 +22,11 @@ def get_free_port(address=""):
 
 
 def setup_authorized_keys(ssh_fingerprint, script_path, pubkey):
+    """Sets up an authorized_keys file to redirect SSH commands"""
     authorized_keys = os.path.join(os.environ['HOME'],'.ssh','authorized_keys')
     if not os.path.exists(os.dirname(authorized_keys)):
         os.makedirs(os.dirname(authorized_keys))
+    # Restrict features and force all SSH commands to go through our script 
     h = open(authorized_keys, 'a')
     h.write("""command="FINGERPRINT=%(ssh_fingerprint)s NAME=default %(script_path)s $SSH_ORIGINAL_COMMAND",no-agent-forwarding,no-user-rc,no-X11-forwarding,no-port-forwarding %(pubkey)s\n""" % locals())
     h.close()
