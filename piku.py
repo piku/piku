@@ -68,7 +68,7 @@ def git_hook(app):
     app, app_path = app_name_and_path(app)
     for line in sys.stdin:
         print line
-        oldrev, newrev, refname = line.split(" ")
+        oldrev, newrev, refname = line.strip().split(" ")
         if refname == "refs/heads/master":
             print "receive", app, newrev
         else:
