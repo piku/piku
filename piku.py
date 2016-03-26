@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, sys, stat, re, socket, subprocess
+import os, sys, stat, re, shutil, socket, subprocess
 from click import argument, command, group, option
 
 PIKU_ROOT = os.environ.get('PIKU_ROOT', os.path.join(os.environ['HOME'],'.piku'))
@@ -37,12 +37,14 @@ def setup_authorized_keys(ssh_fingerprint, script_path, pubkey):
 @group(invoke_without_command=True)
 def piku():
     pass
+
     
 @piku.resultcallback()
 def cleanup(ctx):
     """Callback from command execution -- currently used for debugging"""
     print sys.argv[1:]
     #print os.environ
+
 
 # https://github.com/dokku/dokku/blob/master/plugins/git/commands#L103
 @piku.command("git-receive-pack")
@@ -69,10 +71,29 @@ cat | PIKU_ROOT="%s" $HOME/piku.py git-hook %s""" % (PIKU_ROOT, app))
 @piku.command("deploy")
 @argument('app')
 def deploy_app(app):
+    """Command stub for deployment"""
     app = sanitize_app_name(app)
     do_deploy(app)
-    
+
+
+@piku.command("ls")
+def list_apps():
+    for a in os.listdir(APP_ROOT):
+        print a
+
+
+@piku.command("destroy")
+@argument('app')
+def destroy_app(app):
+    app = sanitize_app_name(app)
+    paths = [os.path.join(x, app) for x in [APP_ROOT, GIT_ROOT]]
+    for p in paths:
+        print "Removing", p
+        shutil.rmtree(p)
+
+
 def do_deploy(app):
+    """Deploy an app by resetting the work directory"""
     app_path = os.path.join(APP_ROOT, app)
     env = {'GIT_WORK_DIR':app_path}
     if os.path.exists(app_path):
@@ -99,9 +120,6 @@ def git_hook(app):
                 print "-----> Creating", app
                 os.makedirs(app_path)
                 subprocess.call('git clone --quiet %s %s' % (repo_path, app), cwd=APP_ROOT, shell=True)
-            else:
-                print "-----> Updating", app
-                subprocess.call('git pull --quiet %s' % repo_path, cwd=app_path, shell=True)
             do_deploy(app)
         else:
             # Handle pushes to another branch
