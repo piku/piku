@@ -4,7 +4,7 @@ The tiniest Heroku-like PaaS you've ever seen, inspired on [dokku][dokku].
 
 ## Motivation
 
-I kept finding myself wanting an Heroku-like way to deploy stuff on [my Raspberry Pi cluster][raspi-cluster], but since [dokku][dokku] still doesn't work on ARM and even `docker` can be overkill sometimes, I decided to roll my own.
+I kept finding myself wanting an Heroku-like way to deploy stuff on a few remote ARM boards and [my Raspberry Pi cluster][raspi-cluster], but since [dokku][dokku] still doesn't work on ARM and even `docker` can be overkill sometimes, I decided to roll my own.
 
 ## Project Status/ToDo:
 
@@ -30,6 +30,14 @@ Later on, I intend to do fancier `dokku`-like stuff like reconfiguring `nginx`, 
 
 Might take a while, though.
 
+## Target Platforms:
+
+As a baseline, I intend to make sure this runs on the original Rasbperry Pi Model B (which is where I'm testing it).
+
+But since I have an ODROID-U2, [a bunch of Pi 2s][raspi-cluster] and a few more boards on the way, it will be tested on a number of places where running `x64` binaries is unfeasible.
+
+In general, it will likely work in any POSIX-like environment where you have Python and SSH (I'm very likely to test it under [Cygwin][cygwin] at some point).
+
 ## Target Runtimes:
 
 I intend to support Python, Go and Java, but will be focusing on Python first, moving from shared runtime to `virtualenv` (and later, if feasible, `pyenv` support).
@@ -38,12 +46,13 @@ I intend to support Python, Go and Java, but will be focusing on Python first, m
 
 **Q:** Why `piku`?
 
-**A:** Partly because it's supposed to run on a [Pi][pi], and because it's Japanese onomatopeia for 'twitch' or 'jolt'.
+**A:** Partly because it's supposed to run on a [Pi][pi], because it's Japanese onomatopeia for 'twitch' or 'jolt', and because I know the name will annoy some of my friends.
 
 **Q:** Why not just use `dokku`?
 
-**A:** Oh, I do that daily. The thing is, the entire `dokku` stack relies on a number of x64 containers that need to be completely rebuilt for ARM, and when I decided I needed something like this (March 2016) that was barely possible -- `docker` itself is not fully baked for ARM yet, and people are still trying to get `herokuish` and `buildstep` to build on ARM...)
+**A:** I use `dokku` daily, and for most of my personal stuff. But the `dokku` stack relies on a number of `x64` containers that need to be completely rebuilt for ARM, and when I decided I needed something like this (March 2016) that was barely possible - `docker` itself is not fully baked for ARM yet, and people are still trying to get `herokuish` and `buildstep` to build on ARM...)
 
 [pi]: http://www.raspberrypi.org
 [dokku]: https://github.com/dokku/dokku
 [raspi-cluster]: https://github.com/rcarmo/raspi-cluster
+[cygwin]: http://www.cygwin.com
