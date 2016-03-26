@@ -50,7 +50,7 @@ def cleanup(ctx):
 @piku.command("git-receive-pack")
 @argument('app')
 def receive(app):
-    """Handle git pushes for an app, initializing the local repo if necessary"""
+    """Handle git pushes for an app"""
     app = sanitize_app_name(app)
     hook_path = os.path.join(GIT_ROOT, app, 'hooks', 'post-receive')
     if not os.path.exists(hook_path):
