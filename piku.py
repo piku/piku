@@ -19,27 +19,28 @@ def get_free_port(address=""):
     port = s.getsockname()[1]
     s.close()
     return port
-    
+
+
 def setup_authorized_keys(ssh_fingerprint, script_path, pubkey):
     authorized_keys = os.path.join(os.environ['HOME'],'.ssh','authorized_keys')
     if not os.path.exists(os.dirname(authorized_keys)):
         os.makedirs(os.dirname(authorized_keys))
     h = open(authorized_keys, 'a')
-    h.write("""command="FINGERPRINT=%(ssh_fingerprint)s NAME=default %(script_path)s $SSH_ORIGINAL_COMMAND",no-agent-forwarding,no-user-rc,no-X11-forwarding,no-port-forwarding %(pubkey)s""")
+    h.write("""command="FINGERPRINT=%(ssh_fingerprint)s NAME=default %(script_path)s $SSH_ORIGINAL_COMMAND",no-agent-forwarding,no-user-rc,no-X11-forwarding,no-port-forwarding %(pubkey)s\n""" % locals())
     h.close()
     
     
 @group(invoke_without_command=True)
-def cli():
+def piku():
     pass
     
-@cli.resultcallback()
+@piku.resultcallback()
 def cleanup(ctx):
     print sys.argv[1:]
     print os.environ
 
 # https://github.com/dokku/dokku/blob/master/plugins/git/commands#L103
-@cli.command("git-receive-pack")
+@piku.command("git-receive-pack")
 @argument('app')
 def receive(app):
     """Handle git pushes for an app, initializing the local repo if necessary"""
@@ -62,7 +63,7 @@ cat | PYKU_ROOT="$PYKU_ROOT" $HOME/piku.py git-hook """ + app)
     print "receive", app
 
 
-@cli.command("git-hook")
+@piku.command("git-hook")
 @argument('app')
 def git_hook(app):
     """Pre-receive git hook"""
@@ -74,11 +75,11 @@ def git_hook(app):
             print "receive", app, newrev
         else:
             # Handle pushes to another branch
-            print "\e[1G\e[Kreceive-branch", app, newrev, refname
+            print "receive-branch", app, newrev, refname
     print "hook", app
     
 
-@cli.command("git-upload-pack", help="handle Git receive")
+@piku.command("git-upload-pack", help="handle Git receive")
 @argument('app')
 def pass_through(app):
     app, app_path = app_name_and_path(app)
@@ -88,4 +89,4 @@ def pass_through(app):
 
 
 if __name__ == '__main__':
-    cli()
+    piku()

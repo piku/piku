@@ -15,6 +15,7 @@ From the bottom up:
 - [ ] `chroot` isolation
 - [ ] Support barebones binary deployments
 - [ ] Installation instructions
+- [ ] Basic CLI commands to manage apps
 - [ ] `virtualenv` isolation
 - [ ] Support Python deployments
 - [x] Repo creation upon first push
