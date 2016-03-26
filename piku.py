@@ -50,11 +50,10 @@ def cleanup(ctx):
 def receive(app):
     """Handle git pushes for an app, initializing the local repo if necessary"""
     app = sanitize_app_name(app)
-    repo_path = os.path.join(GIT_ROOT, app)
-    hook_path = os.path.join(repo_path, 'hooks', 'post-receive')
-    if not os.path.exists(repo_path):
+    hook_path = os.path.join(GIT_ROOT, app, 'hooks', 'post-receive')
+    if not os.path.exists(hook_path):
         os.makedirs(os.path.dirname(hook_path))
-        os.chdir(os.path.dirname(repo_path))
+        os.chdir(GIT_ROOT)
         # Initialize the repository with a hook to this script
         subprocess.call("git init --quiet --bare " + app, shell=True)
         h = open(hook_path,'w')
@@ -65,7 +64,7 @@ cat | PIKU_ROOT="%s" $HOME/piku.py git-hook %s""" % (PIKU_ROOT, app))
         # Make the hook executable by our user
         os.chmod(hook_path, os.stat(hook_path).st_mode | stat.S_IXUSR)
     # Handle the actual receive. We'll be called with 'git-hook' while it happens
-    os.chdir(os.path.dirname(repo_path))
+    os.chdir(GIT_ROOT)
     subprocess.call('git-shell -c "%s"' % " ".join(sys.argv[1:]), shell=True)
 
 
