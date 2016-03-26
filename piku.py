@@ -65,14 +65,16 @@ cat | PYKU_ROOT="$PYKU_ROOT" $HOME/piku.py git-hook """ + app)
 @cli.command("git-hook")
 @argument('app')
 def git_hook(app):
+    """Pre-receive git hook"""
     app, app_path = app_name_and_path(app)
     for line in sys.stdin:
-        print line
         oldrev, newrev, refname = line.strip().split(" ")
         if refname == "refs/heads/master":
+            # Handle pushes to master branch
             print "receive", app, newrev
         else:
-            print "receive-branch", app, newrev, refname
+            # Handle pushes to another branch
+            print "\e[1G\e[Kreceive-branch", app, newrev, refname
     print "hook", app
     
 
