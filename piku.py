@@ -3,14 +3,16 @@
 import os, sys, stat, re, socket, subprocess
 from click import argument, command, group, option
 
-APP_ROOT = os.environ.get('APP_ROOT', os.path.join(os.environ['HOME'],'.piku'))
+PIKU_ROOT = os.environ.get('PIKU_ROOT', os.path.join(os.environ['HOME'],'.piku'))
+APP_ROOT = os.path.abspath(os.path.join(PIKU_ROOT, "apps"))
+GIT_ROOT = os.path.abspath(os.path.join(PIKU_ROOT, "repos")) 
 
 # http://off-the-stack.moorman.nu/2013-11-23-how-dokku-works.html
 
-def app_name_and_path(app):
+def sanitize_app_name(app):
     """Sanitize the app name and build matching path"""
     app = "".join(c for c in app if c.isalnum() or c in ('.','_')).rstrip()
-    return app, os.path.abspath(os.path.join(APP_ROOT, app))
+    return app
 
 
 def get_free_port(address=""):
@@ -40,57 +42,61 @@ def piku():
 def cleanup(ctx):
     """Callback from command execution -- currently used for debugging"""
     print sys.argv[1:]
-    print os.environ
+    #print os.environ
 
 # https://github.com/dokku/dokku/blob/master/plugins/git/commands#L103
 @piku.command("git-receive-pack")
 @argument('app')
 def receive(app):
     """Handle git pushes for an app, initializing the local repo if necessary"""
-    app, app_path = app_name_and_path(app)
-    hook_path = os.path.join(app_path, 'hooks', 'pre-receive')
-    if not os.path.exists(app_path):
+    app = sanitize_app_name(app)
+    repo_path = os.path.join(GIT_ROOT, app)
+    hook_path = os.path.join(repo_path, 'hooks', 'post-receive')
+    if not os.path.exists(repo_path):
         os.makedirs(os.path.dirname(hook_path))
-        os.chdir(os.path.dirname(app_path))
+        os.chdir(os.path.dirname(repo_path))
         # Initialize the repository with a hook to this script
-        subprocess.call("git init --bare " + app + " > /dev/null", shell=True)
+        subprocess.call("git init --quiet --bare " + app, shell=True)
         h = open(hook_path,'w')
         h.write("""#!/usr/bin/env bash
 set -e; set -o pipefail;
-cat | PIKU_ROOT="$PIKU_ROOT" $HOME/piku.py git-hook """ + app)
+cat | PIKU_ROOT="%s" $HOME/piku.py git-hook %s""" % (PIKU_ROOT, app))
         h.close()
         # Make the hook executable by our user
         os.chmod(hook_path, os.stat(hook_path).st_mode | stat.S_IXUSR)
     # Handle the actual receive. We'll be called with 'git-hook' while it happens
-    os.chdir(os.path.dirname(app_path))
-    subprocess.call('git-shell -c "%s"' % " ".join(sys.argv[1:]) , shell=True)
-    print "receive", app
+    os.chdir(os.path.dirname(repo_path))
+    subprocess.call('git-shell -c "%s"' % " ".join(sys.argv[1:]), shell=True)
 
 
 @piku.command("git-hook")
 @argument('app')
 def git_hook(app):
-    """Pre-receive git hook"""
-    app, app_path = app_name_and_path(app)
+    """Post-receive git hook"""
+    app = sanitize_app_name(app)
+    repo_path = os.path.join(GIT_ROOT, app)
+    app_path = os.path.join(APP_ROOT, app)
     for line in sys.stdin:
         oldrev, newrev, refname = line.strip().split(" ")
         if refname == "refs/heads/master":
             # Handle pushes to master branch
             print "receive", app, newrev
+            if not os.path.exists(app_path):
+                print "deploying first time"
+                os.makedirs(app_path)
+                os.chdir(os.path.dirname(app_path))
+                subprocess.call('git clone %s %s' % (repo_path, app), shell=True)
+            else:
+                print "updating deploy"
+                os.chdir(app_path)
+                subprocess.call('git pull %s' % repo_path, shell=True)
+            os.chdir(app_path)
+            subprocess.call('git checkout -f', shell = True)
         else:
             # Handle pushes to another branch
             print "receive-branch", app, newrev, refname
-    print "hook", app
-    
-
-@piku.command("git-upload-pack", help="handle Git receive")
-@argument('app')
-def pass_through(app):
-    app, app_path = app_name_and_path(app)
-    os.chdir(os.path.dirname(app_path))
-    subprocess.call('git-shell -c "%s"' % " ".join(sys.argv[1:]) , shell=True)
-    print "upload", app
-
+    print "hook", app, sys.argv[1:]
+ 
 
 if __name__ == '__main__':
     piku()
