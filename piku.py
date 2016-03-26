@@ -36,6 +36,7 @@ def piku():
     
 @piku.resultcallback()
 def cleanup(ctx):
+    """Callback from command execution -- currently used for debugging"""
     print sys.argv[1:]
     print os.environ
 
@@ -54,7 +55,7 @@ def receive(app):
         h = open(hook_path,'w')
         h.write("""#!/usr/bin/env bash
 set -e; set -o pipefail;
-cat | PYKU_ROOT="$PYKU_ROOT" $HOME/piku.py git-hook """ + app)
+cat | PIKU_ROOT="$PIKU_ROOT" $HOME/piku.py git-hook """ + app)
         h.close()
         os.chmod(hook_path, os.stat(hook_path).st_mode | stat.S_IEXEC)
     # Handle the actual receive. We'll be called with 'git-hook' while it happens
