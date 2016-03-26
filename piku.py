@@ -76,7 +76,7 @@ def do_deploy(app):
     app_path = os.path.join(APP_ROOT, app)
     if os.path.exists(app_path):
         print "-----> Deploying", app
-        subprocess.call('git checkout -f',cwd=app_path, env={'GIT_DIR':app_path,'GIT_WORK_TREE':app_path}, shell=True)
+        subprocess.call('git checkout -q -f',cwd=app_path, env={'GIT_DIR':app_path,'GIT_WORK_TREE':app_path}, shell=True)
     else:
         print "Error: app %s not found." % app
    
