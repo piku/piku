@@ -23,7 +23,8 @@ From the bottom up:
 
 ## Target Workflow:
 
-* `git push` your code over SSH
+* Set up an SSH `git` remote pointing to `piku` with the app name as repo name (`git remote add paas piku@server:app1`) 
+* `git push paas master` your code
 * `piku` determines the runtime and installs dependencies
 *  It then looks at a `Procfile` and starts the relevant workers
 
