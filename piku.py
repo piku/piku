@@ -74,9 +74,11 @@ def deploy_app(app):
     
 def do_deploy(app):
     app_path = os.path.join(APP_ROOT, app)
+    env = {'GIT_WORK_DIR':app_path}
     if os.path.exists(app_path):
         print "-----> Deploying", app
-        subprocess.call('git checkout -q -f',cwd=app_path, env={'GIT_DIR':app_path,'GIT_WORK_TREE':app_path}, shell=True)
+        subprocess.call('git pull --quiet', cwd=app_path, env=env, shell=True)
+        subprocess.call('git checkout -f', cwd=app_path, env=env, shell=True)
     else:
         print "Error: app %s not found." % app
    
@@ -96,10 +98,10 @@ def git_hook(app):
             if not os.path.exists(app_path):
                 print "-----> Creating", app
                 os.makedirs(app_path)
-                subprocess.call('git clone %s %s' % (repo_path, app), cwd=APP_ROOT, shell=True)
+                subprocess.call('git clone --quiet %s %s' % (repo_path, app), cwd=APP_ROOT, shell=True)
             else:
                 print "-----> Updating", app
-                subprocess.call('git pull %s' % repo_path, env={'GIT_DIR':repo_path,'GIT_WORK_TREE':app_path}, cwd=app_path, shell=True)
+                subprocess.call('git pull --quiet %s' % repo_path, cwd=app_path, shell=True)
             do_deploy(app)
         else:
             # Handle pushes to another branch
