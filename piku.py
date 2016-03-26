@@ -57,7 +57,8 @@ def receive(app):
 set -e; set -o pipefail;
 cat | PIKU_ROOT="$PIKU_ROOT" $HOME/piku.py git-hook """ + app)
         h.close()
-        os.chmod(hook_path, os.stat(hook_path).st_mode | stat.S_IEXEC)
+        # Make the hook executable by our user
+        os.chmod(hook_path, os.stat(hook_path).st_mode | stat.S_IXUSR)
     # Handle the actual receive. We'll be called with 'git-hook' while it happens
     os.chdir(os.path.dirname(app_path))
     subprocess.call('git-shell -c "%s"' % " ".join(sys.argv[1:]) , shell=True)
