@@ -130,7 +130,7 @@ def enable_app(app):
                 shutil.copyfile(config, live_config)
             else:
                 echo("Error: app '%s' is not configured.", fg='red')
-       else:
+        else:
            echo("Warning: app '%s' is already enabled, skipping.", fg='yellow')       
     else:
         echo("Error: app '%s' does not exist.", fg='red')
