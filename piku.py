@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
-import os, sys, stat, re, shutil, socket, subprocess
+import os, sys, stat, re, shutil, socket
 from click import argument, command, group, option, secho as echo
 from os.path import abspath, exists, join, dirname
+from subprocess import call
 
 # --- Globals - all tweakable settings are here ---
 
@@ -47,8 +48,8 @@ def do_deploy(app):
     env = {'GIT_WORK_DIR': app_path}
     if exists(app_path):
         echo("-----> Deploying app '%s'" % app, fg='green')
-        subprocess.call('git pull --quiet', cwd=app_path, env=env, shell=True)
-        subprocess.call('git checkout -f', cwd=app_path, env=env, shell=True)
+        call('git pull --quiet', cwd=app_path, env=env, shell=True)
+        call('git checkout -f', cwd=app_path, env=env, shell=True)
         # TODO: detect runtime and create uWSGI config
     else:
         echo("Error: app '%s' not found." % app, fg='red')
@@ -82,7 +83,7 @@ def receive(app):
     if not exists(hook_path):
         os.makedirs(dirname(hook_path))
         # Initialize the repository with a hook to this script
-        subprocess.call("git init --quiet --bare " + app, cwd=GIT_ROOT, shell=True)
+        call("git init --quiet --bare " + app, cwd=GIT_ROOT, shell=True)
         h = open(hook_path,'w')
         h.write("""#!/usr/bin/env bash
 set -e; set -o pipefail;
@@ -91,7 +92,7 @@ cat | PIKU_ROOT="%s" $HOME/piku.py git-hook %s""" % (PIKU_ROOT, app))
         # Make the hook executable by our user
         os.chmod(hook_path, os.stat(hook_path).st_mode | stat.S_IXUSR)
     # Handle the actual receive. We'll be called with 'git-hook' after it happens
-    subprocess.call('git-shell -c "%s"' % " ".join(sys.argv[1:]), cwd=GIT_ROOT, shell=True)
+    call('git-shell -c "%s"' % " ".join(sys.argv[1:]), cwd=GIT_ROOT, shell=True)
 
 
 @piku.command("deploy")
@@ -169,7 +170,7 @@ def git_hook(app):
             if not exists(app_path):
                 echo("-----> Creating app '%s'" % app, fg='green')
                 os.makedirs(app_path)
-                subprocess.call('git clone --quiet %s %s' % (repo_path, app), cwd=APP_ROOT, shell=True)
+                call('git clone --quiet %s %s' % (repo_path, app), cwd=APP_ROOT, shell=True)
             do_deploy(app)
         else:
             # Handle pushes to another branch
