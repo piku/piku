@@ -1,0 +1,193 @@
+#!/usr/bin/env bash
+
+### BEGIN INIT INFO
+# Provides:          uwsgi-piku
+# Required-Start:    $all
+# Required-Stop:     $all
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: starts the uwsgi app server
+# Description:       starts uwsgi app server using start-stop-daemon
+### END INIT INFO
+
+# Based on https://github.com/pharaujo/uwsgi-init-script
+
+set -e
+
+VERSION=$(basename $0)
+PIKU_USER=piku
+
+PATH=/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=/usr/local/bin/$VERSION
+RUN=/var/run/$VERSION
+ENABLED_CONFIGS_DIR=/home/$PIKU_USER/.piku/uwsgi-enabled
+AVAILABLE_CONFIGS_DIR=/home/$PIKU_USER/.piku/uwsgi-available
+OWNER=www-data
+NAME=$VERSION
+DESC=$VERSION
+OP=$1
+
+[[ -x $DAEMON ]] || exit 0
+[[ -d $RUN ]] || mkdir $RUN && chown www-data $RUN
+
+DAEMON_OPTS=""
+
+# Include uwsgi-piku defaults if available
+if [[ -f /etc/default/$VERSION ]]; then
+    . /etc/default/$VERSION
+fi
+
+do_pid_check()
+{
+    local PIDFILE=$1
+    [[ -f $PIDFILE ]] || return 0
+    local PID=$(cat $PIDFILE)
+    for p in $(pgrep $VERSION); do
+        [[ $p == $PID ]] && return 1
+    done
+    return 0
+}
+
+
+do_start()
+{
+    local PIDFILE=$RUN/$VERSION.pid
+    local START_OPTS=" \
+        --emperor $ENABLED_CONFIGS_DIR \
+        --pidfile $PIDFILE \
+        --daemon /var/log/uwsgi/$VERSION-emperor.log \
+        "
+    if do_pid_check $PIDFILE; then
+        sudo -u $OWNER -i $VERSION $DAEMON_OPTS $START_OPTS
+    else
+        echo "Already running!"
+    fi
+}
+
+send_sig()
+{
+    local PIDFILE=$RUN/$VERSION.pid
+    set +e
+    [[ -f $PIDFILE ]] && kill $1 $(cat $PIDFILE) > /dev/null 2>&1
+    set -e
+}
+
+wait_and_clean_pidfile()
+{
+    local PIDFILE=$RUN/$VERSION.pid
+    until do_pid_check $PIDFILE; do
+        echo -n "";
+    done
+    rm -f $PIDFILE
+}
+
+do_stop()
+{
+    send_sig -3
+    wait_and_clean_pidfile
+}
+
+do_reload()
+{
+    send_sig -1
+}
+
+do_force_reload()
+{
+    send_sig -15
+}
+
+get_status()
+{
+    send_sig -10
+}
+
+enable_configs()
+{
+    local configs
+
+    if [[ $# -eq 0 || ${1,,} = 'all' ]]; then
+        configs=$(diff $AVAILABLE_CONFIGS_DIR $ENABLED_CONFIGS_DIR \
+            | grep $AVAILABLE_CONFIGS_DIR \
+            | sed -re 's#.+: (.+)$#\1#')
+    else
+        configs=$@
+    fi
+
+    for c in $configs; do
+        echo -n "Enabling $c..."
+        [[ -f $ENABLED_CONFIGS_DIR/$c ]] && echo "Skipped" && continue
+        [[ -f $AVAILABLE_CONFIGS_DIR/$c ]] && \
+            ln -s $AVAILABLE_CONFIGS_DIR/$c $ENABLED_CONFIGS_DIR && \
+            echo "Done" && \
+            continue
+        echo "Error"
+    done
+}
+
+disable_configs()
+{
+    local configs
+    if [[ $# -eq 0 || ${1,,} = 'all' ]]; then
+        configs=$(find $ENABLED_CONFIGS_DIR -type l -exec basename {} \;)
+    else
+        configs=$@
+    fi
+
+    for c in $configs; do
+        local config_path="$ENABLED_CONFIGS_DIR/$c"
+        echo -n "Disabling $c..."
+        [[ ! -L $config_path ]] && echo "Skipped" && continue
+        [[ -f $config_path ]] && rm $config_path && echo "Done" && continue
+        echo "Error"
+    done
+}
+
+case "$OP" in
+    start)
+        echo "Starting $DESC: "
+        do_start
+        echo "$NAME."
+        ;;
+    stop)
+        echo -n "Stopping $DESC: "
+        do_stop
+        echo "$NAME."
+        ;;
+    reload)
+        echo -n "Reloading $DESC: "
+        do_reload
+        echo "$NAME."
+        ;;
+    force-reload)
+        echo -n "Force-reloading $DESC: "
+        do_force_reload
+        echo "$NAME."
+       ;;
+    restart)
+        echo  "Restarting $DESC: "
+        do_stop
+        sleep 1
+        do_start
+        echo "$NAME."
+        ;;
+    status)
+        get_status
+        ;;
+    enable)
+        shift
+        enable_configs $@
+        ;;
+    disable)
+        shift
+        disable_configs $@
+        ;;
+    *)
+        N=/etc/init.d/$NAME
+        echo "Usage: $N {start|stop|restart|reload|force-reload|status"
+            "|enable|disable}">&2
+        exit 1
+        ;;
+esac
+exit 0
+

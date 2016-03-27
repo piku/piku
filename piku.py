@@ -5,7 +5,10 @@ from click import argument, command, group, option, secho as echo
 
 PIKU_ROOT = os.environ.get('PIKU_ROOT', os.path.join(os.environ['HOME'],'.piku'))
 APP_ROOT = os.path.abspath(os.path.join(PIKU_ROOT, "apps"))
-GIT_ROOT = os.path.abspath(os.path.join(PIKU_ROOT, "repos")) 
+GIT_ROOT = os.path.abspath(os.path.join(PIKU_ROOT, "repos"))
+UWSGI_ENABLED = os.path.abspath(os.path.join(PIKU_ROOT, "uwsgi-enabled"))
+UWSGI_AVAILABLE = os.path.abspath(os.path.join(PIKU_ROOT, "uwsgi-available"))
+LOG_ROOT = os.path.abspath(os.path.join(PIKU_ROOT, "logs"))
 
 # http://off-the-stack.moorman.nu/2013-11-23-how-dokku-works.html
 
