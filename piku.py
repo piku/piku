@@ -58,6 +58,10 @@ def do_deploy(app):
     
 @group()
 def piku():
+    """Initialize paths"""
+    for p in [APP_ROOT, GIT_ROOT, UWSGI_AVAILABLE, UWSGI_ENABLED, LOG_ROOT]:
+        if not exists(p):
+            os.makedirs(p)
     pass
 
     
@@ -140,12 +144,11 @@ def enable_app(app):
 def destroy_app(app):
     """Destroy an application"""
     app = sanitize_app_name(app)
-    paths = [join(x, app) for x in [APP_ROOT, GIT_ROOT, LOG_ROOT]]
-    for p in paths:
+    for p in [join(x, app) for x in [APP_ROOT, GIT_ROOT, LOG_ROOT]]:
         if exists(p):
             echo("Removing folder '%s'" % p, fg='yellow')
             shutil.rmtree(p)
-    for p in [join(x, app + '.ini') for x in [UWSGI_AVAILABLE, UWSGI_ENABLED]]
+    for p in [join(x, app + '.ini') for x in [UWSGI_AVAILABLE, UWSGI_ENABLED]]:
         if exists(p):
             echo("Removing file '%s'" % p, fg='yellow')
             os.remove(p)
