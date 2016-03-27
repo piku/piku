@@ -91,11 +91,16 @@ def list_apps():
 def destroy_app(app):
     """Destroy an application"""
     app = sanitize_app_name(app)
-    paths = [os.path.join(x, app) for x in [APP_ROOT, GIT_ROOT]]
+    paths = [os.path.join(x, app) for x in [APP_ROOT, GIT_ROOT, LOG_ROOT]]
     for p in paths:
         if os.path.exists(p):
             echo("Removing " + p, fg='yellow')
             shutil.rmtree(p)
+    for p in [os.path.join(x, app + '.ini') for x in [UWSGI_AVAILABLE, UWSGI_ENABLED]]
+        if os.path.exists(p):
+            echo("Removing " + p, fg='yellow')
+            os.remove(p)
+             
 
 
 def do_deploy(app):

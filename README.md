@@ -26,7 +26,7 @@ From the bottom up:
 * Set up an SSH `git` remote pointing to `piku` with the app name as repo name (`git remote add paas piku@server:app1`) 
 * `git push paas master` your code
 * `piku` determines the runtime and installs dependencies
-*  It then looks at a `Procfile` and starts the relevant workers
+*  It then looks at a `Procfile` and starts the relevant workers using [uWSGI][uwsgi] as a generic process manager
 
 Later on, I intend to do fancier `dokku`-like stuff like reconfiguring `nginx`, but a twist I'm planning on doing is having one `piku` machine act as a build box and deploy the finished product to another.
 
@@ -58,3 +58,4 @@ I intend to support Python, Go and Java, but will be focusing on Python first, m
 [dokku]: https://github.com/dokku/dokku
 [raspi-cluster]: https://github.com/rcarmo/raspi-cluster
 [cygwin]: http://www.cygwin.com
+[uwsgi]: https://github.com/unbit/uwsgi
