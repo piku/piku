@@ -4,6 +4,8 @@ import os, sys, stat, re, shutil, socket, subprocess
 from click import argument, command, group, option, secho as echo
 from os.path import abspath, exists, join, dirname
 
+# --- Globals - all tweakable settings are here ---
+
 PIKU_ROOT = os.environ.get('PIKU_ROOT', join(os.environ['HOME'],'.piku'))
 APP_ROOT = abspath(join(PIKU_ROOT, "apps"))
 GIT_ROOT = abspath(join(PIKU_ROOT, "repos"))
@@ -11,7 +13,8 @@ UWSGI_ENABLED = abspath(join(PIKU_ROOT, "uwsgi-enabled"))
 UWSGI_AVAILABLE = abspath(join(PIKU_ROOT, "uwsgi-available"))
 LOG_ROOT = abspath(join(PIKU_ROOT, "logs"))
 
-# http://off-the-stack.moorman.nu/2013-11-23-how-dokku-works.html
+
+# --- Utility functions ---
 
 def sanitize_app_name(app):
     """Sanitize the app name and build matching path"""
@@ -36,7 +39,22 @@ def setup_authorized_keys(ssh_fingerprint, script_path, pubkey):
     h = open(authorized_keys, 'a')
     h.write("""command="FINGERPRINT=%(ssh_fingerprint)s NAME=default %(script_path)s $SSH_ORIGINAL_COMMAND",no-agent-forwarding,no-user-rc,no-X11-forwarding,no-port-forwarding %(pubkey)s\n""" % locals())
     h.close()
-    
+
+
+def do_deploy(app):
+    """Deploy an app by resetting the work directory"""
+    app_path = join(APP_ROOT, app)
+    env = {'GIT_WORK_DIR': app_path}
+    if exists(app_path):
+        echo("-----> Deploying app '%s'" % app, fg='green')
+        subprocess.call('git pull --quiet', cwd=app_path, env=env, shell=True)
+        subprocess.call('git checkout -f', cwd=app_path, env=env, shell=True)
+        # TODO: detect runtime and create uWSGI config
+    else:
+        echo("Error: app '%s' not found." % app, fg='red')
+   
+
+# --- CLI commands ---    
     
 @group()
 def piku():
@@ -50,7 +68,7 @@ def cleanup(ctx):
     #print os.environ
 
 
-# https://github.com/dokku/dokku/blob/master/plugins/git/commands#L103
+# Based on https://github.com/dokku/dokku/blob/master/plugins/git/commands#L103
 @piku.command("git-receive-pack")
 @argument('app')
 def receive(app):
@@ -68,7 +86,7 @@ cat | PIKU_ROOT="%s" $HOME/piku.py git-hook %s""" % (PIKU_ROOT, app))
         h.close()
         # Make the hook executable by our user
         os.chmod(hook_path, os.stat(hook_path).st_mode | stat.S_IXUSR)
-    # Handle the actual receive. We'll be called with 'git-hook' while it happens
+    # Handle the actual receive. We'll be called with 'git-hook' after it happens
     subprocess.call('git-shell -c "%s"' % " ".join(sys.argv[1:]), cwd=GIT_ROOT, shell=True)
 
 
@@ -132,19 +150,6 @@ def destroy_app(app):
             echo("Removing file '%s'" % p, fg='yellow')
             os.remove(p)
              
-
-
-def do_deploy(app):
-    """Deploy an app by resetting the work directory"""
-    app_path = join(APP_ROOT, app)
-    env = {'GIT_WORK_DIR': app_path}
-    if exists(app_path):
-        echo("-----> Deploying app '%s'" % app, fg='green')
-        subprocess.call('git pull --quiet', cwd=app_path, env=env, shell=True)
-        subprocess.call('git checkout -f', cwd=app_path, env=env, shell=True)
-    else:
-        echo("Error: app '%s' not found." % app, fg='red')
-   
 
 @piku.command("git-hook")
 @argument('app')
