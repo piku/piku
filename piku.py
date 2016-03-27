@@ -2,13 +2,14 @@
 
 import os, sys, stat, re, shutil, socket, subprocess
 from click import argument, command, group, option, secho as echo
+from os.path import abspath, exists, join, dirname
 
-PIKU_ROOT = os.environ.get('PIKU_ROOT', os.path.join(os.environ['HOME'],'.piku'))
-APP_ROOT = os.path.abspath(os.path.join(PIKU_ROOT, "apps"))
-GIT_ROOT = os.path.abspath(os.path.join(PIKU_ROOT, "repos"))
-UWSGI_ENABLED = os.path.abspath(os.path.join(PIKU_ROOT, "uwsgi-enabled"))
-UWSGI_AVAILABLE = os.path.abspath(os.path.join(PIKU_ROOT, "uwsgi-available"))
-LOG_ROOT = os.path.abspath(os.path.join(PIKU_ROOT, "logs"))
+PIKU_ROOT = os.environ.get('PIKU_ROOT', join(os.environ['HOME'],'.piku'))
+APP_ROOT = abspath(join(PIKU_ROOT, "apps"))
+GIT_ROOT = abspath(join(PIKU_ROOT, "repos"))
+UWSGI_ENABLED = abspath(join(PIKU_ROOT, "uwsgi-enabled"))
+UWSGI_AVAILABLE = abspath(join(PIKU_ROOT, "uwsgi-available"))
+LOG_ROOT = abspath(join(PIKU_ROOT, "logs"))
 
 # http://off-the-stack.moorman.nu/2013-11-23-how-dokku-works.html
 
@@ -28,8 +29,8 @@ def get_free_port(address=""):
 
 def setup_authorized_keys(ssh_fingerprint, script_path, pubkey):
     """Sets up an authorized_keys file to redirect SSH commands"""
-    authorized_keys = os.path.join(os.environ['HOME'],'.ssh','authorized_keys')
-    if not os.path.exists(os.dirname(authorized_keys)):
+    authorized_keys = join(os.environ['HOME'],'.ssh','authorized_keys')
+    if not exists(os.dirname(authorized_keys)):
         os.makedirs(os.dirname(authorized_keys))
     # Restrict features and force all SSH commands to go through our script 
     h = open(authorized_keys, 'a')
@@ -37,7 +38,7 @@ def setup_authorized_keys(ssh_fingerprint, script_path, pubkey):
     h.close()
     
     
-@group()#invoke_without_command=True)
+@group()
 def piku():
     pass
 
@@ -55,9 +56,9 @@ def cleanup(ctx):
 def receive(app):
     """Handle git pushes for an app"""
     app = sanitize_app_name(app)
-    hook_path = os.path.join(GIT_ROOT, app, 'hooks', 'post-receive')
-    if not os.path.exists(hook_path):
-        os.makedirs(os.path.dirname(hook_path))
+    hook_path = join(GIT_ROOT, app, 'hooks', 'post-receive')
+    if not exists(hook_path):
+        os.makedirs(dirname(hook_path))
         # Initialize the repository with a hook to this script
         subprocess.call("git init --quiet --bare " + app, cwd=GIT_ROOT, shell=True)
         h = open(hook_path,'w')
@@ -86,33 +87,63 @@ def list_apps():
         echo(a, fg='green')
 
 
+@piku.command("disable")
+@argument('app')
+def disable_app(app):
+    """Disable an application"""
+    app = sanitize_app_name(app)
+    config = join(UWSGI_ENABLED, app + '.ini')
+    if exists(config):
+        echo("Disabling app '%s'..." % app, fg='yellow')
+        os.remove(config)
+
+
+@piku.command("enable")
+@argument('app')
+def enable_app(app):
+    """Enable an application"""
+    app = sanitize_app_name(app)
+    live_config = join(UWSGI_ENABLED, app + '.ini')
+    config = join(UWSGI_AVAILABLE, app + '.ini')
+    if exists(join(APP_ROOT, app)):
+        if not exists(live_config):
+            if exists(config):
+                echo("Enabling app '%s'..." % app, fg='yellow')
+                shutil.copyfile(config, live_config)
+            else:
+                echo("Error: app '%s' is not configured.", fg='red')
+       else:
+           echo("Warning: app '%s' is already enabled, skipping.", fg='yellow')       
+    else:
+        echo("Error: app '%s' does not exist.", fg='red')
+
 @piku.command("destroy")
 @argument('app')
 def destroy_app(app):
     """Destroy an application"""
     app = sanitize_app_name(app)
-    paths = [os.path.join(x, app) for x in [APP_ROOT, GIT_ROOT, LOG_ROOT]]
+    paths = [join(x, app) for x in [APP_ROOT, GIT_ROOT, LOG_ROOT]]
     for p in paths:
-        if os.path.exists(p):
-            echo("Removing " + p, fg='yellow')
+        if exists(p):
+            echo("Removing folder '%s'" % p, fg='yellow')
             shutil.rmtree(p)
-    for p in [os.path.join(x, app + '.ini') for x in [UWSGI_AVAILABLE, UWSGI_ENABLED]]
-        if os.path.exists(p):
-            echo("Removing " + p, fg='yellow')
+    for p in [join(x, app + '.ini') for x in [UWSGI_AVAILABLE, UWSGI_ENABLED]]
+        if exists(p):
+            echo("Removing file '%s'" % p, fg='yellow')
             os.remove(p)
              
 
 
 def do_deploy(app):
     """Deploy an app by resetting the work directory"""
-    app_path = os.path.join(APP_ROOT, app)
-    env = {'GIT_WORK_DIR':app_path}
-    if os.path.exists(app_path):
-        echo("-----> Deploying " + app, fg='green')
+    app_path = join(APP_ROOT, app)
+    env = {'GIT_WORK_DIR': app_path}
+    if exists(app_path):
+        echo("-----> Deploying app '%s'" % app, fg='green')
         subprocess.call('git pull --quiet', cwd=app_path, env=env, shell=True)
         subprocess.call('git checkout -f', cwd=app_path, env=env, shell=True)
     else:
-        echo("Error: app %s not found." % app, fg='red')
+        echo("Error: app '%s' not found." % app, fg='red')
    
 
 @piku.command("git-hook")
@@ -120,15 +151,15 @@ def do_deploy(app):
 def git_hook(app):
     """Post-receive git hook"""
     app = sanitize_app_name(app)
-    repo_path = os.path.join(GIT_ROOT, app)
-    app_path = os.path.join(APP_ROOT, app)
+    repo_path = join(GIT_ROOT, app)
+    app_path = join(APP_ROOT, app)
     for line in sys.stdin:
         oldrev, newrev, refname = line.strip().split(" ")
         #print "refs:", oldrev, newrev, refname
         if refname == "refs/heads/master":
             # Handle pushes to master branch
-            if not os.path.exists(app_path):
-                print "-----> Creating", app
+            if not exists(app_path):
+                echo("-----> Creating app '%s'" % app, fg='green')
                 os.makedirs(app_path)
                 subprocess.call('git clone --quiet %s %s' % (repo_path, app), cwd=APP_ROOT, shell=True)
             do_deploy(app)
