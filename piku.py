@@ -27,6 +27,7 @@ def sanitize_app_name(app):
 
 
 def get_free_port(address=""):
+    """Find a free TCP port (entirely at random)"""
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind((address,0))
     port = s.getsockname()[1]
@@ -53,23 +54,36 @@ def do_deploy(app):
         call('git pull --quiet', cwd=app_path, env=env, shell=True)
         call('git checkout -f', cwd=app_path, env=env, shell=True)
         if exists(join(app_path, 'requirements.txt')):
+            echo("-----> Python app detected.", fg='green')
             deploy_python(app)
+        else:
+            echo("-----> Could not detect runtime!", fg='red')
         # TODO: detect other runtimes
     else:
         echo("Error: app '%s' not found." % app, fg='red')
         
         
 def deploy_python(app):
+    """Deploy a Python application"""
     env_path = join(ENV_ROOT, app)
+    available = join(UWSGI_AVAILABLE, '%s.ini' % app)
+    enabled = join(UWSGI_ENABLED, '%s.ini' % app)
+
     if not exists(env_path):
         echo("-----> Creating virtualenv for '%s'" % app, fg='green')
         os.makedirs(env_path)
         call('virtualenv %s' % app, cwd=ENV_ROOT, shell=True)
-    echo("-----> Running pip for '%s'" % app, fg='green')    
+
+    # TODO: run pip only if requirements have changed
+    echo("-----> Running pip for '%s'" % app, fg='green')
     activation_script = join(env_path,'bin','activate_this.py')
     execfile(activation_script, dict(__file__=activation_script))
     call('pip install -r %s' % join(APP_ROOT, app, 'requirements.txt'), cwd=ENV_ROOT, shell=True)
+
+    # Generate a uWSGI vassal config
+    # TODO: check for worker processes and scaling
     config = ConfigParser()
+    # TODO: allow user to define the port
     port = get_free_port()
     settings = {
         'http': ':%d' % port,
@@ -86,11 +100,10 @@ def deploy_python(app):
     config.add_section('uwsgi')
     for k, v in settings.iteritems():
         config.set('uwsgi', k, v)
-    available = join(UWSGI_AVAILABLE, '%s.ini' % app)
-    enabled = join(UWSGI_ENABLED, '%s.ini' % app)
     with open(available, 'w') as h:
        config.write(h)
     echo("-----> Enabling '%s' at port %d" % (app, port), fg='green')
+    # Copying the file across makes uWSGI (re)start the vassal
     shutil.copyfile(available, enabled)
 
 
@@ -102,13 +115,13 @@ def piku():
     for p in [APP_ROOT, GIT_ROOT, ENV_ROOT, UWSGI_ROOT, UWSGI_AVAILABLE, UWSGI_ENABLED, LOG_ROOT]:
         if not exists(p):
             os.makedirs(p)
-    pass
 
     
 @piku.resultcallback()
 def cleanup(ctx):
     """Callback from command execution -- currently used for debugging"""
-    print sys.argv[1:]
+    pass
+    #print sys.argv[1:]
     #print os.environ
 
 
@@ -178,6 +191,7 @@ def enable_app(app):
     else:
         echo("Error: app '%s' does not exist.", fg='red')
 
+
 @piku.command("destroy")
 @argument('app')
 def destroy_app(app):
@@ -213,7 +227,8 @@ def git_hook(app):
         else:
             # Handle pushes to another branch
             print "receive-branch", app, newrev, refname
-    print "hook", app, sys.argv[1:]
+    #print "hook", app, sys.argv[1:]
+ 
  
 if __name__ == '__main__':
     piku()
