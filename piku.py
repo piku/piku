@@ -9,13 +9,14 @@ from ConfigParser import ConfigParser
 # --- Globals - all tweakable settings are here ---
 
 PIKU_ROOT = os.environ.get('PIKU_ROOT', join(os.environ['HOME'],'.piku'))
+
 APP_ROOT = abspath(join(PIKU_ROOT, "apps"))
 ENV_ROOT = abspath(join(PIKU_ROOT, "envs"))
 GIT_ROOT = abspath(join(PIKU_ROOT, "repos"))
-UWSGI_ROOT = abspath(join(PIKU_ROOT, "uwsgi"))
-UWSGI_ENABLED = abspath(join(PIKU_ROOT, "uwsgi-enabled"))
-UWSGI_AVAILABLE = abspath(join(PIKU_ROOT, "uwsgi-available"))
 LOG_ROOT = abspath(join(PIKU_ROOT, "logs"))
+UWSGI_AVAILABLE = abspath(join(PIKU_ROOT, "uwsgi-available"))
+UWSGI_ENABLED = abspath(join(PIKU_ROOT, "uwsgi-enabled"))
+UWSGI_ROOT = abspath(join(PIKU_ROOT, "uwsgi"))
 
 
 # --- Utility functions ---
