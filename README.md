@@ -1,24 +1,30 @@
 # piku
 
-The tiniest Heroku-like PaaS you've ever seen, inspired by [dokku][dokku].
+The tiniest Heroku/CloudFoundry-like PaaS you've ever seen, inspired by [dokku][dokku].
 
 ## Motivation
 
-I kept finding myself wanting an Heroku-like way to deploy stuff on a few remote ARM boards and [my Raspberry Pi cluster][raspi-cluster], but since [dokku][dokku] still doesn't work on ARM and even `docker` can be overkill sometimes, I decided to roll my own.
+I kept finding myself wanting an Heroku/CloudFoundry-like way to deploy stuff on a few remote ARM boards and [my Raspberry Pi cluster][raspi-cluster], but since [dokku][dokku] still doesn't work on ARM and even `docker` can be overkill sometimes, I decided to roll my own.
 
 ## Project Status/ToDo:
 
 From the bottom up:
 
 - [ ] Support Node deployments (if at all possible in a sane fashion)
+- [ ] `chroot`/namespace isolation
+- [ ] Proxy deployments to other nodes (build on one box, deploy to many) 
 - [ ] Support Java deployments
 - [ ] Support Go deployments
-- [ ] `chroot` isolation
 - [ ] Support barebones binary deployments
+- [ ] CLI command documentation
 - [ ] Installation instructions
+- [ ] Sample apps
+- [ ] Worker scaling
+- [ ] Port selection (and per-app environment variables)
+- [ ] `Procfile` support
 - [x] Basic CLI commands to manage apps
-- [ ] `virtualenv` isolation
-- [ ] Support Python deployments
+- [x] `virtualenv` isolation
+- [x] Support Python deployments (currently hardcoded)
 - [x] Repo creation upon first push
 - [x] Basic understanding of [how `dokku` works](http://off-the-stack.moorman.nu/2013-11-23-how-dokku-works.html)
 
@@ -26,7 +32,7 @@ From the bottom up:
 
 * Set up an SSH `git` remote pointing to `piku` with the app name as repo name (`git remote add paas piku@server:app1`) 
 * `git push paas master` your code
-* `piku` determines the runtime and installs dependencies
+* `piku` determines the runtime and installs the dependencies for your app (building whatever's required)
 *  It then looks at a `Procfile` and starts the relevant workers using [uWSGI][uwsgi] as a generic process manager
 
 Later on, I intend to do fancier `dokku`-like stuff like reconfiguring `nginx`, but a twist I'm planning on doing is having one `piku` machine act as a build box and deploy the finished product to another.
@@ -43,7 +49,7 @@ In general, it will likely work in any POSIX-like environment where you have Pyt
 
 ## Target Runtimes
 
-I intend to support Python, Go and Java, but will be focusing on Python first, moving from shared runtime to `virtualenv` (and later, if feasible, `pyenv` support).
+I intend to support Python, Go, Node and Java, but will be focusing on Python first, moving from shared runtime to `virtualenv` (and later, if feasible, `pyenv`) support.
 
 ## FAQ
 
