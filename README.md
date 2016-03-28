@@ -13,14 +13,14 @@ From the bottom up:
 - [ ] Support Node deployments (if at all possible in a sane fashion)
 - [ ] `chroot`/namespace isolation
 - [ ] Proxy deployments to other nodes (build on one box, deploy to many) 
-- [ ] Support Java deployments
+- [ ] Support Clojure/Java deployments
 - [ ] Support Go deployments
 - [ ] Support barebones binary deployments
 - [ ] CLI command documentation
 - [ ] Complete installation instructions (see `INSTALL.md` for a working draft)
 - [ ] Sample apps
 - [ ] Worker scaling
-- [ ] Port selection (and per-app environment variables)
+- [ ] HTTP port selection (and per-app environment variables)
 - [ ] `Procfile` support
 - [x] Basic CLI commands to manage apps
 - [x] `virtualenv` isolation
@@ -49,13 +49,17 @@ In general, it will likely work in any POSIX-like environment where you have Pyt
 
 ## Target Runtimes
 
-I intend to support Python, Go, Node and Java, but will be focusing on Python first, moving from shared runtime to `virtualenv` (and later, if feasible, `pyenv`) support.
+I intend to support Python, Go, Node and Clojure (Java), but will be focusing on Python first, moving from shared runtime to `virtualenv` (and later, if feasible, `pyenv`) support.
 
 ## FAQ
 
 **Q:** Why `piku`?
 
 **A:** Partly because it's supposed to run on a [Pi][pi], because it's Japanese onomatopeia for 'twitch' or 'jolt', and because I know the name will annoy some of my friends.
+
+**Q:** Does it run under Python 3?
+
+**A:** It should. `click` goes a long way towards abstracting the simpler stuff, and I tried to avoid most obvious incompatibilities (other than a few differences in `subprocess.call` and the like). However, this targets Python 2.7 first, since that's the default on Raspbian. Pull requests are welcome.
 
 **Q:** Why not just use `dokku`?
 
