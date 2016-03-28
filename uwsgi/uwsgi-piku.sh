@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 ### BEGIN INIT INFO
-# Provides:          uwsgi-piku
+# Provides:          uwsgi
 # Required-Start:    $all
 # Required-Stop:     $all
 # Default-Start:     2 3 4 5
@@ -15,24 +15,25 @@
 set -e
 
 VERSION=$(basename $0)
-PIKU_USER=piku
+PIKU_USER=paas
 
 PATH=/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON=/usr/local/bin/$VERSION
-RUN=/var/run/$VERSION
-ENABLED_CONFIGS_DIR=/home/$PIKU_USER/.piku/uwsgi-enabled
-AVAILABLE_CONFIGS_DIR=/home/$PIKU_USER/.piku/uwsgi-available
-OWNER=www-data
+PIKU_ROOT=/home/$PIKU_USER/.piku
+RUN=$PIKU_ROOT/uwsgi
+ENABLED_CONFIGS_DIR=$PIKU_ROOT/uwsgi-enabled
+AVAILABLE_CONFIGS_DIR=$PIKU_ROOT/uwsgi-available
+OWNER=$PIKU_USER
 NAME=$VERSION
 DESC=$VERSION
 OP=$1
 
 [[ -x $DAEMON ]] || exit 0
-[[ -d $RUN ]] || mkdir $RUN && chown www-data $RUN
+[[ -d $RUN ]] || mkdir $RUN && chown $OWNER $RUN
 
 DAEMON_OPTS=""
 
-# Include uwsgi-piku defaults if available
+# Include uwsgi defaults if available
 if [[ -f /etc/default/$VERSION ]]; then
     . /etc/default/$VERSION
 fi
@@ -53,9 +54,11 @@ do_start()
 {
     local PIDFILE=$RUN/$VERSION.pid
     local START_OPTS=" \
+        --chdir $PIKU_ROOT \
         --emperor $ENABLED_CONFIGS_DIR \
         --pidfile $PIDFILE \
-        --daemon /var/log/uwsgi/$VERSION-emperor.log \
+        --daemonize $RUN/$VERSION-emperor.log \
+        --ini $PIKU_ROOT/uwsgi.ini
         "
     if do_pid_check $PIDFILE; then
         sudo -u $OWNER -i $VERSION $DAEMON_OPTS $START_OPTS
@@ -99,7 +102,12 @@ do_force_reload()
 
 get_status()
 {
-    send_sig -10
+    local PIDFILE=$RUN/$VERSION.pid
+    if kill -0 $(cat $PIDFILE) > /dev/null 2>&1; then
+        echo "$VERSION is running"
+    else
+        echo "$VERSION is not started"
+    fi
 }
 
 enable_configs()
@@ -190,4 +198,5 @@ case "$OP" in
         ;;
 esac
 exit 0
+
 
