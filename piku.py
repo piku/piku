@@ -4,6 +4,7 @@ import os, sys, stat, re, shutil, socket
 from click import argument, command, group, option, secho as echo
 from os.path import abspath, exists, join, dirname
 from subprocess import call
+from ConfigParser import ConfigParser
 
 # --- Globals - all tweakable settings are here ---
 
@@ -39,9 +40,8 @@ def setup_authorized_keys(ssh_fingerprint, script_path, pubkey):
     if not exists(dirname(authorized_keys)):
         os.makedirs(dirname(authorized_keys))
     # Restrict features and force all SSH commands to go through our script 
-    h = open(authorized_keys, 'a')
-    h.write("""command="FINGERPRINT=%(ssh_fingerprint)s NAME=default %(script_path)s $SSH_ORIGINAL_COMMAND",no-agent-forwarding,no-user-rc,no-X11-forwarding,no-port-forwarding %(pubkey)s\n""" % locals())
-    h.close()
+    with open(authorized_keys, 'a') as h:
+        h.write("""command="FINGERPRINT=%(ssh_fingerprint)s NAME=default %(script_path)s $SSH_ORIGINAL_COMMAND",no-agent-forwarding,no-user-rc,no-X11-forwarding,no-port-forwarding %(pubkey)s\n""" % locals())
 
 
 def do_deploy(app):
@@ -52,10 +52,42 @@ def do_deploy(app):
         echo("-----> Deploying app '%s'" % app, fg='green')
         call('git pull --quiet', cwd=app_path, env=env, shell=True)
         call('git checkout -f', cwd=app_path, env=env, shell=True)
-        # TODO: detect runtime and create uWSGI config
+        if exists(join(app_path, 'requirements.txt')):
+            deploy_python(app)
+        # TODO: detect other runtimes
     else:
         echo("Error: app '%s' not found." % app, fg='red')
-   
+        
+        
+def deploy_python(app):
+    env_path = join(ENV_ROOT, app)
+    if not exists(env_path):
+        echo("-----> Creating virtualenv for '%s'" % app, fg='green')
+        os.makedirs(env_path)
+        call('virtualenv %s' % app, cwd=ENV_ROOT, shell=True)
+    echo("-----> Running pip for '%s'" % app, fg='green')    
+    activation_script = join(env_path,'bin','activate_this.py')
+    execfile(activation_script, dict(__file__=activation_script))
+    call('pip install -r %s' % join(APP_ROOT, app, 'requirements.txt'), cwd=ENV_ROOT, shell=True)
+    uwsgi_config = ConfigParser()
+    port = get_free_port()
+    config = {
+        'http': ':%d' % port,
+        'virtualenv': join(ENV_ROOT, app),
+        'chdir': join(APP_ROOT, app),
+        'module': 'main.app', # let's assume for the moment that this is our entry point
+        'master': 'true',
+        'processes': '2'
+    }
+    for k, v in config:
+        uwsgi_config.set('uwsgi', k, v)
+    available = join(UWSGI_AVAILABLE, '%s.ini' % app)
+    enabled = join(UWSGI_ENABLED, '%s.ini' % app)
+    with open(available, 'w') as configfile:
+        config.write(configfile)
+    echo("-----> Enabling '%s' at port %d" % (app, port), fg='green')
+    shutil.copyfile(available, enabled)
+
 
 # --- CLI commands ---    
     
@@ -86,11 +118,10 @@ def receive(app):
         os.makedirs(dirname(hook_path))
         # Initialize the repository with a hook to this script
         call("git init --quiet --bare " + app, cwd=GIT_ROOT, shell=True)
-        h = open(hook_path,'w')
-        h.write("""#!/usr/bin/env bash
+        with open(hook_path,'w') as h:
+            h.write("""#!/usr/bin/env bash
 set -e; set -o pipefail;
 cat | PIKU_ROOT="%s" $HOME/piku.py git-hook %s""" % (PIKU_ROOT, app))
-        h.close()
         # Make the hook executable by our user
         os.chmod(hook_path, os.stat(hook_path).st_mode | stat.S_IXUSR)
     # Handle the actual receive. We'll be called with 'git-hook' after it happens
