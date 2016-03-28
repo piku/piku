@@ -140,7 +140,7 @@ def receive(app):
         with open(hook_path,'w') as h:
             h.write("""#!/usr/bin/env bash
 set -e; set -o pipefail;
-cat | PIKU_ROOT="%s" $HOME/piku.py git-hook %s""" % (PIKU_ROOT, app))
+cat | PIKU_ROOT="%s" $HOME/piku.py git-hook %s""" % (PIKU_ROOT, app)) # TODO: remove hardcoded script name
         # Make the hook executable by our user
         os.chmod(hook_path, os.stat(hook_path).st_mode | stat.S_IXUSR)
     # Handle the actual receive. We'll be called with 'git-hook' after it happens
@@ -244,8 +244,8 @@ def git_hook(app):
                 call('git clone --quiet %s %s' % (repo_path, app), cwd=APP_ROOT, shell=True)
             do_deploy(app)
         else:
-            # Handle pushes to another branch
-            print "receive-branch", app, newrev, refname
+            # TODO: Handle pushes to another branch
+            echo("receive-branch '%s': %s, %s" % (app, newrev, refname))
     #print "hook", app, sys.argv[1:]
  
  

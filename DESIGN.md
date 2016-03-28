@@ -44,5 +44,11 @@ As to runtime isolation, `piku` only provides `virtualenv` support until 1.0, an
 
 Supporting multiple Python versions can be done by deploying `piku` again under a different Python or using `pyenv` when building app environments, which makes it a little harder to manage using the same [uWSGI][uwsgi] setup (but not impossible).
 
+## Internals
+
+`piku` uses two `git` repositories for each app: a bare repository for client push, and a clone for deployent (which is efficient in terms of storage since `git` tries to use hardlinks on local clones whenever possible).
+
+This separation makes it easier to cope with long/large deployments and restore apps to a pristine condition, since the app will only go live after the deployment clone is reset (via `git checkout -f`).
+
 [uwsgi]: https://github.com/unbit/uwsgi
 [emperor]: http://uwsgi-docs.readthedocs.org/en/latest/Emperor.html
