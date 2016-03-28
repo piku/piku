@@ -129,7 +129,7 @@ def cleanup(ctx):
 @piku.command("git-receive-pack")
 @argument('app')
 def receive(app):
-    """Handle git pushes for an app"""
+    """INTERNAL: Handle git pushes for an app"""
     app = sanitize_app_name(app)
     hook_path = join(GIT_ROOT, app, 'hooks', 'post-receive')
     if not exists(hook_path):
@@ -170,6 +170,24 @@ def disable_app(app):
     if exists(config):
         echo("Disabling app '%s'..." % app, fg='yellow')
         os.remove(config)
+    else:
+        echo("Error: app '%s' not found!" % app, fg='red')
+
+
+@piku.command("restart")
+@argument('app')
+def restart_app(app):
+    """Restart an application"""
+    app = sanitize_app_name(app)
+    enabled = join(UWSGI_ENABLED, app + '.ini')
+    available = join(UWSGI_AVAILABLE, app + '.ini')
+    if exists(enabled):
+        echo("Restarting app '%s'..." % app, fg='yellow')
+        # Destroying the original file signals uWSGI to kill the vassal
+        # TODO: check behavior on newer versions
+        shutil.copyfile(available, enabled)
+    else:
+        echo("Error: app '%s' not enabled!" % app, fg='red')
 
 
 @piku.command("enable")
@@ -177,13 +195,13 @@ def disable_app(app):
 def enable_app(app):
     """Enable an application"""
     app = sanitize_app_name(app)
-    live_config = join(UWSGI_ENABLED, app + '.ini')
-    config = join(UWSGI_AVAILABLE, app + '.ini')
+    enabled = join(UWSGI_ENABLED, app + '.ini')
+    available = join(UWSGI_AVAILABLE, app + '.ini')
     if exists(join(APP_ROOT, app)):
-        if not exists(live_config):
-            if exists(config):
+        if not exists(enabled):
+            if exists(available):
                 echo("Enabling app '%s'..." % app, fg='yellow')
-                shutil.copyfile(config, live_config)
+                shutil.copyfile(available, enabled)
             else:
                 echo("Error: app '%s' is not configured.", fg='red')
         else:
@@ -210,7 +228,7 @@ def destroy_app(app):
 @piku.command("git-hook")
 @argument('app')
 def git_hook(app):
-    """Post-receive git hook"""
+    """INTERNAL: Post-receive git hook"""
     app = sanitize_app_name(app)
     repo_path = join(GIT_ROOT, app)
     app_path = join(APP_ROOT, app)
