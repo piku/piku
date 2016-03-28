@@ -17,14 +17,14 @@ From the bottom up:
 - [ ] Support Go deployments
 - [ ] Support barebones binary deployments
 - [ ] CLI command documentation
-- [ ] Complete installation instructions
+- [ ] Complete installation instructions (see `INSTALL.md` for a working draft)
 - [ ] Sample apps
 - [ ] Worker scaling
 - [ ] Port selection (and per-app environment variables)
 - [ ] `Procfile` support
 - [x] Basic CLI commands to manage apps
 - [x] `virtualenv` isolation
-- [x] Support Python deployments (currently hardcoded)
+- [x] Support Python deployments (currently hardcoded until `Procfile` is implemented)
 - [x] Repo creation upon first push
 - [x] Basic understanding of [how `dokku` works](http://off-the-stack.moorman.nu/2013-11-23-how-dokku-works.html)
 
