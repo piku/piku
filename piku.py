@@ -69,22 +69,27 @@ def deploy_python(app):
     activation_script = join(env_path,'bin','activate_this.py')
     execfile(activation_script, dict(__file__=activation_script))
     call('pip install -r %s' % join(APP_ROOT, app, 'requirements.txt'), cwd=ENV_ROOT, shell=True)
-    uwsgi_config = ConfigParser()
+    config = ConfigParser()
     port = get_free_port()
-    config = {
+    settings = {
         'http': ':%d' % port,
         'virtualenv': join(ENV_ROOT, app),
         'chdir': join(APP_ROOT, app),
-        'module': 'main.app', # let's assume for the moment that this is our entry point
-        'master': 'true',
-        'processes': '2'
+        'master': 'false',
+        'project': app,
+        'max-requests': '1000',
+        'module': '%%(project).app:app', # let's assume for the moment that this is our entry point
+        'processes': '2',
+        'env': 'WSGI_PORT=http', # TODO: multiple environment settings
+        'logto': "%s.web.1.log" % join(LOG_ROOT, app)
     }
-    for k, v in config:
-        uwsgi_config.set('uwsgi', k, v)
+    config.add_section('uwsgi')
+    for k, v in settings.iteritems():
+        config.set('uwsgi', k, v)
     available = join(UWSGI_AVAILABLE, '%s.ini' % app)
     enabled = join(UWSGI_ENABLED, '%s.ini' % app)
-    with open(available, 'w') as configfile:
-        config.write(configfile)
+    with open(available, 'w') as h:
+       config.write(h)
     echo("-----> Enabling '%s' at port %d" % (app, port), fg='green')
     shutil.copyfile(available, enabled)
 

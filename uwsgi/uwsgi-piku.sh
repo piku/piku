@@ -55,7 +55,7 @@ do_start()
     local PIDFILE=$RUN/$VERSION.pid
     local START_OPTS=" \
         --chdir $PIKU_ROOT \
-        --emperor $ENABLED_CONFIGS_DIR \
+        --emperor $ENABLED_CONFIGS_DIR/*.ini \
         --pidfile $PIDFILE \
         --daemonize $RUN/$VERSION-emperor.log \
         --ini $PIKU_ROOT/uwsgi.ini
