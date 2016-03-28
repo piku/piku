@@ -10,6 +10,7 @@ I kept finding myself wanting an Heroku-like way to deploy stuff on a few remote
 
 From the bottom up:
 
+- [ ] Support Node deployments (if at all possible in a sane fashion)
 - [ ] Support Java deployments
 - [ ] Support Go deployments
 - [ ] `chroot` isolation
