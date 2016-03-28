@@ -79,7 +79,7 @@ def deploy_python(app):
     echo("-----> Running pip for '%s'" % app, fg='green')
     activation_script = join(env_path,'bin','activate_this.py')
     execfile(activation_script, dict(__file__=activation_script))
-    call('pip install -r %s' % join(APP_ROOT, app, 'requirements.txt'), cwd=ENV_ROOT, shell=True)
+    call('pip install -r %s' % join(APP_ROOT, app, 'requirements.txt'), cwd=env_path, shell=True)
 
     # Generate a uWSGI vassal config
     # TODO: check for worker processes and scaling
@@ -93,7 +93,7 @@ def deploy_python(app):
         'master': 'false',
         'project': app,
         'max-requests': '1000',
-        'module': '%%(project).app:app', # let's assume for the moment that this is our entry point
+        'module': '%%(project).app:app', # TODO: override this via Procfile
         'processes': '2',
         'env': 'WSGI_PORT=http', # TODO: multiple environment settings
         'logto': "%s.web.1.log" % join(LOG_ROOT, app)

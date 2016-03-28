@@ -17,7 +17,7 @@ From the bottom up:
 - [ ] Support Go deployments
 - [ ] Support barebones binary deployments
 - [ ] CLI command documentation
-- [ ] Installation instructions
+- [ ] Complete installation instructions
 - [ ] Sample apps
 - [ ] Worker scaling
 - [ ] Port selection (and per-app environment variables)
@@ -59,7 +59,7 @@ I intend to support Python, Go, Node and Java, but will be focusing on Python fi
 
 **Q:** Why not just use `dokku`?
 
-**A:** I use `dokku` daily, and for most of my personal stuff. But the `dokku` stack relies on a number of `x64` containers that need to be completely rebuilt for ARM, and when I decided I needed something like this (March 2016) that was barely possible - `docker` itself is not fully baked for ARM yet, and people are still trying to get `herokuish` and `buildstep` to build on ARM...)
+**A:** I use `dokku` daily, and for most of my personal stuff. But the `dokku` stack relies on a number of `x64` containers that need to be completely rebuilt for ARM, and when I decided I needed something like this (March 2016) that was barely possible - `docker` itself is not fully baked for ARM yet, and people are still trying to get `herokuish` and `buildstep` to build on ARM.
 
 [pi]: http://www.raspberrypi.org
 [dokku]: https://github.com/dokku/dokku
