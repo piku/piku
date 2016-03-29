@@ -44,32 +44,54 @@ def setup_authorized_keys(ssh_fingerprint, script_path, pubkey):
     # Restrict features and force all SSH commands to go through our script 
     with open(authorized_keys, 'a') as h:
         h.write("""command="FINGERPRINT=%(ssh_fingerprint)s NAME=default %(script_path)s $SSH_ORIGINAL_COMMAND",no-agent-forwarding,no-user-rc,no-X11-forwarding,no-port-forwarding %(pubkey)s\n""" % locals())
+        
 
+def parse_procfile(filename):
+    """Parses a Procfile and returns the worker types. Only one worker of each type is allowed."""
+    workers = {}
+    if not exists(filename):
+        return None
+    with open(filename, 'r') as procfile:
+        for line in procfile:
+            kind, command = map(lambda x: x.strip(), line.split(":", 1))
+            if kind in ['web', 'worker', 'wsgi']:
+                workers[kind] = command
+    # WSGI trumps regular web workers
+    if 'wsgi' in workers:
+        if 'web' in workers:
+            del(workers['web'])
+    return workers 
+    
 
 def do_deploy(app):
     """Deploy an app by resetting the work directory"""
     app_path = join(APP_ROOT, app)
+    procfile = join(app_path, 'Procfile')
     env = {'GIT_WORK_DIR': app_path}
     if exists(app_path):
         echo("-----> Deploying app '%s'" % app, fg='green')
         call('git pull --quiet', cwd=app_path, env=env, shell=True)
         call('git checkout -f', cwd=app_path, env=env, shell=True)
-        if exists(join(app_path, 'requirements.txt')):
-            echo("-----> Python app detected.", fg='green')
-            deploy_python(app)
+        workers = parse_procfile(procfile)
+        if workers:
+            if exists(join(app_path, 'requirements.txt')):
+                echo("-----> Python app detected.", fg='green')
+                deploy_python(app, workers)
+            else:
+                echo("-----> Could not detect runtime!", fg='red')
+            # TODO: detect other runtimes
         else:
-            echo("-----> Could not detect runtime!", fg='red')
-        # TODO: detect other runtimes
+            echo("Error: Procfile not found for app '%s'." % app, fg='red')
     else:
         echo("Error: app '%s' not found." % app, fg='red')
         
         
-def deploy_python(app):
+def deploy_python(app, workers):
     """Deploy a Python application"""
     env_path = join(ENV_ROOT, app)
     available = join(UWSGI_AVAILABLE, '%s.ini' % app)
     enabled = join(UWSGI_ENABLED, '%s.ini' % app)
-
+    
     if not exists(env_path):
         echo("-----> Creating virtualenv for '%s'" % app, fg='green')
         os.makedirs(env_path)
@@ -83,26 +105,31 @@ def deploy_python(app):
 
     # Generate a uWSGI vassal config
     # TODO: check for worker processes and scaling
-    config = ConfigParser()
     # TODO: allow user to define the port
     port = get_free_port()
-    settings = {
-        'http': ':%d' % port,
-        'virtualenv': join(ENV_ROOT, app),
-        'chdir': join(APP_ROOT, app),
-        'master': 'false',
-        'project': app,
-        'max-requests': '1000',
-        'module': '%%(project).app:app', # TODO: override this via Procfile
-        'processes': '2',
-        'env': 'WSGI_PORT=http', # TODO: multiple environment settings
-        'logto': "%s.web.1.log" % join(LOG_ROOT, app)
-    }
-    config.add_section('uwsgi')
-    for k, v in settings.iteritems():
-        config.set('uwsgi', k, v)
+    settings = [
+        ('http', ':%d' % port),
+        ('virtualenv', join(ENV_ROOT, app)),
+        ('chdir', join(APP_ROOT, app)),
+        ('master', 'false'),
+        ('project', app),
+        ('max-requests', '1000'),
+        ('processes', '2'),
+        ('logto', "%s.log" % join(LOG_ROOT, app)),
+        ('env', 'WSGI_PORT=http'),        
+        ('env', 'PORT=%d' % port)
+    ]
+    for v in ['PATH', 'VIRTUAL_ENV']:
+        settings.append(('env', '%s=%s' % (v, os.environ[v])))
+    
+    if 'wsgi' in workers:
+        settings.append(('module', workers['wsgi']))
+    else:
+        settings.append(('attach-daemon', workers['web']))
     with open(available, 'w') as h:
-       config.write(h)
+        h.write('[uwsgi]\n')
+        for k, v in settings:
+            h.write("%s = %s\n" % (k, v))
     echo("-----> Enabling '%s' at port %d" % (app, port), fg='green')
     # Copying the file across makes uWSGI (re)start the vassal
     shutil.copyfile(available, enabled)
