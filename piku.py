@@ -141,7 +141,7 @@ def deploy_python(app, workers):
             h.write("%s = %s\n" % (k, v))
     echo("-----> Enabling '%s' at port %d" % (app, port), fg='green')
     os.unlink(enabled)
-    sleep(5)
+    sleep(5) # TODO: replace this with zmq signalling
     shutil.copyfile(available, enabled)
 
 
@@ -251,7 +251,7 @@ def restart_app(app):
         echo("Restarting app '%s'..." % app, fg='yellow')
         # Destroying the original file signals uWSGI to kill the vassal instead of reloading it
         os.unlink(enabled)
-        sleep(5)
+        sleep(5) # TODO: replace this with zmq signalling
         shutil.copyfile(available, enabled)
     else:
         echo("Error: app '%s' not enabled!" % app, fg='red')
