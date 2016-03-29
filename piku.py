@@ -230,7 +230,7 @@ def list_apps():
 def tail_logs(app):
     """Tail an application log"""
     app = sanitize_app_name(app)
-    logfile = join(LOG_ROOT, app)
+    logfile = join(LOG_ROOT, "%s.log" % app)
     if exists(logfile):
         call('tail -F %s' % logfile, cwd=LOG_ROOT, shell=True)
     else:
