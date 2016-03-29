@@ -53,9 +53,14 @@ def parse_procfile(filename):
         return None
     with open(filename, 'r') as procfile:
         for line in procfile:
-            kind, command = map(lambda x: x.strip(), line.split(":", 1))
-            if kind in ['web', 'worker', 'wsgi']:
-                workers[kind] = command
+            try:
+                kind, command = map(lambda x: x.strip(), line.split(":", 1))
+                if kind in ['web', 'worker', 'wsgi']:
+                    workers[kind] = command
+            except:
+                echo("Warning: unrecognized Procfile declaration '%s'" % line, fg='yellow')
+    if not len(workers):
+        return None
     # WSGI trumps regular web workers
     if 'wsgi' in workers:
         if 'web' in workers:
