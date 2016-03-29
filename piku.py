@@ -109,7 +109,7 @@ def deploy_python(app, workers):
     call('pip install -r %s' % join(APP_ROOT, app, 'requirements.txt'), cwd=env_path, shell=True)
 
     # Generate a uWSGI vassal config
-    # TODO: check for worker processes and scaling
+    # TODO: split off individual vassals into individual config files
     # TODO: allow user to define the port
     port = get_free_port()
     settings = [
@@ -122,7 +122,9 @@ def deploy_python(app, workers):
         ('processes', '2'),
         ('enable-threads', 'true'),
         ('threads', '4'),
-        ('logto', "%s.log" % join(LOG_ROOT, app)),
+        ('log-maxsize','1048576'),
+        ('logto', '%s.log' % join(LOG_ROOT, app)),
+        ('log-backupname', '%s.log.old' % join(LOG_ROOT, app)),
         ('env', 'WSGI_PORT=http'),        
         ('env', 'PORT=%d' % port)
     ]
@@ -135,6 +137,7 @@ def deploy_python(app, workers):
         settings.append(('module', workers['wsgi']))
     else:
         settings.append(('attach-daemon', workers['web']))
+    # TODO: split background workers into separate vassals for scaling and add .%d suffix to logs
     if 'worker' in workers:
         settings.append(('attach-daemon', workers['worker']))
     with open(available, 'w') as h:
