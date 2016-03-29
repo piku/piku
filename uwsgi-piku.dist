@@ -55,6 +55,7 @@ do_pid_check()
 do_start()
 {
     local PIDFILE=$RUN/$VERSION.pid
+    set -o noglob
     local START_OPTS=" \
         --chdir $PIKU_ROOT \
         --emperor $ENABLED_CONFIGS_DIR/*.ini \
