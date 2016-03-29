@@ -120,6 +120,8 @@ def deploy_python(app, workers):
         ('project', app),
         ('max-requests', '1000'),
         ('processes', '2'),
+        ('enable-threads', 'true'),
+        ('threads', '4'),
         ('logto', "%s.log" % join(LOG_ROOT, app)),
         ('env', 'WSGI_PORT=http'),        
         ('env', 'PORT=%d' % port)
