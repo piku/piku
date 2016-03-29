@@ -61,6 +61,7 @@ do_start()
         --emperor $ENABLED_CONFIGS_DIR/*.ini \
         --pidfile $PIDFILE \
         --daemonize $RUN/$VERSION-emperor.log \
+        --enable-threads
         --threads $THREADS"
     if do_pid_check $PIDFILE; then
         sudo -u $OWNER -i $VERSION $DAEMON_OPTS $START_OPTS
