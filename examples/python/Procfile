@@ -1,1 +1,1 @@
-wsgi: main.app
+wsgi: main:app

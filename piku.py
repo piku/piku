@@ -124,8 +124,10 @@ def deploy_python(app, workers):
         ('env', 'WSGI_PORT=http'),        
         ('env', 'PORT=%d' % port)
     ]
+    os.environ['VIRTUAL_ENV'] = env_path
     for v in ['PATH', 'VIRTUAL_ENV']:
-        settings.append(('env', '%s=%s' % (v, os.environ[v])))
+        if v in os.environ:
+            settings.append(('env', '%s=%s' % (v, os.environ[v])))
     
     if 'wsgi' in workers:
         settings.append(('module', workers['wsgi']))
