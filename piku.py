@@ -116,7 +116,7 @@ def deploy_python(app, workers):
         ('http', ':%d' % port),
         ('virtualenv', join(ENV_ROOT, app)),
         ('chdir', join(APP_ROOT, app)),
-        ('master', 'false'),
+        ('master', 'true'),
         ('project', app),
         ('max-requests', '1000'),
         ('processes', '2'),
@@ -135,6 +135,8 @@ def deploy_python(app, workers):
         settings.append(('module', workers['wsgi']))
     else:
         settings.append(('attach-daemon', workers['web']))
+    if 'worker' in workers:
+        settings.append(('attach-daemon', workers['worker']))
     with open(available, 'w') as h:
         h.write('[uwsgi]\n')
         for k, v in settings:

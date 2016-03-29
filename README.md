@@ -21,7 +21,7 @@ From the bottom up:
 - [ ] Worker scaling
 - [ ] HTTP port selection (and per-app environment variables)
 - [x] Sample Python app
-- [X] `Procfile` support (`wsgi` workers for now, `web` and `worker` types being tested)
+- [X] `Procfile` support (`wsgi` and 'worker` processes for now, `web` processes being tested)
 - [x] Basic CLI commands to manage apps
 - [x] `virtualenv` isolation
 - [x] Support Python deployments (currently hardcoded until `Procfile` is implemented)
