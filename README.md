@@ -18,10 +18,10 @@ From the bottom up:
 - [ ] Support barebones binary deployments
 - [ ] CLI command documentation
 - [ ] Complete installation instructions (see `INSTALL.md` for a working draft)
-- [ ] Sample apps
 - [ ] Worker scaling
 - [ ] HTTP port selection (and per-app environment variables)
-- [ ] `Procfile` support
+- [x] Sample Python app
+- [X] `Procfile` support (`wsgi` workers for now, `web` and `worker` types being tested)
 - [x] Basic CLI commands to manage apps
 - [x] `virtualenv` isolation
 - [x] Support Python deployments (currently hardcoded until `Procfile` is implemented)

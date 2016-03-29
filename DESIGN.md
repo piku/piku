@@ -16,7 +16,27 @@ An app is simply a `git` repository with some additional files on the top level,
 
 ### `Procfile` format
 
-_TODO: Describe how to detect a single binary or a WSGI entry point, standalone workers, etc._
+`piku` recognizes three kinds of process declarations in the `Procfile`:
+
+* `wsgi` workers, in the format `dotted.module:entry_point` (Python-only)
+* `web` workers, which can be anything that honors the `PORT` environment variable
+* `worker` prcesses, which are standalone workers
+
+So a Python application could have a `Procfile` like such:
+
+```bash
+wsgi: module.submodule:app
+worker: python long_running_script.py 
+```
+
+...whereas a generic app would be:
+
+```bash
+web: embedded_server --port $PORT
+worker: background_worker
+````
+
+Any worker will be automatically respawned upon failure ([uWSGI][uwsgi] will automatically shun/throttle crashy workers).
 
 ## Runtime detection
 
