@@ -4,7 +4,7 @@ import os, sys, stat, re, shutil, socket
 from click import argument, command, group, option, secho as echo
 from os.path import abspath, exists, join, dirname
 from subprocess import call
-from ConfigParser import ConfigParser
+from time import sleep
 
 # === Globals - all tweakable settings are here ===
 
@@ -138,7 +138,8 @@ def deploy_python(app, workers):
         for k, v in settings:
             h.write("%s = %s\n" % (k, v))
     echo("-----> Enabling '%s' at port %d" % (app, port), fg='green')
-    # Copying the file across makes uWSGI (re)start the vassal
+    os.unlink(enabled)
+    sleep(5)
     shutil.copyfile(available, enabled)
 
 
@@ -246,8 +247,9 @@ def restart_app(app):
     available = join(UWSGI_AVAILABLE, app + '.ini')
     if exists(enabled):
         echo("Restarting app '%s'..." % app, fg='yellow')
-        # Destroying the original file signals uWSGI to kill the vassal
-        # TODO: check behavior on newer versions
+        # Destroying the original file signals uWSGI to kill the vassal instead of reloading it
+        os.unlink(enabled)
+        sleep(5)
         shutil.copyfile(available, enabled)
     else:
         echo("Error: app '%s' not enabled!" % app, fg='red')

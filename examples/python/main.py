@@ -1,6 +1,8 @@
 import os
 from bottle import app, get
 
+app = app()
+
 @get("/")
 def default():
     table = ['<table border="0">']
@@ -8,7 +10,6 @@ def default():
         table.append('<tr><th>%s</th><td>%s</td></tr>' % (k, v))
     table.append('</table>')
     return '\n'.join(table)
-
 
 if __name__ == '__main__':
     run(port=int(os.environ.get("PORT",8080)))
