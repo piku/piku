@@ -27,6 +27,8 @@ OWNER=$PIKU_USER
 NAME=$VERSION
 DESC=$VERSION
 OP=$1
+CORES=`grep -c ^processor /proc/cpuinfo`
+THREADS=`echo "$CORES * 4" | bc`
 
 [[ -x $DAEMON ]] || exit 0
 [[ -d $RUN ]] || mkdir $RUN && chown $OWNER $RUN
@@ -58,8 +60,7 @@ do_start()
         --emperor $ENABLED_CONFIGS_DIR/*.ini \
         --pidfile $PIDFILE \
         --daemonize $RUN/$VERSION-emperor.log \
-        --ini $PIKU_ROOT/uwsgi.ini
-        "
+        --threads $THREADS"
     if do_pid_check $PIDFILE; then
         sudo -u $OWNER -i $VERSION $DAEMON_OPTS $START_OPTS
     else
