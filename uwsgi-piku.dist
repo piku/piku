@@ -58,7 +58,7 @@ do_start()
     set -o noglob
     local START_OPTS=" \
         --chdir $PIKU_ROOT \
-        --emperor $ENABLED_CONFIGS_DIR/*.ini \
+        --emperor $ENABLED_CONFIGS_DIR \
         --pidfile $PIDFILE \
         --daemonize $RUN/$VERSION-emperor.log \
         --enable-threads
