@@ -6,7 +6,7 @@ from os.path import abspath, exists, join, dirname
 from subprocess import call
 from ConfigParser import ConfigParser
 
-# --- Globals - all tweakable settings are here ---
+# === Globals - all tweakable settings are here ===
 
 PIKU_ROOT = os.environ.get('PIKU_ROOT', join(os.environ['HOME'],'.piku'))
 
@@ -19,7 +19,7 @@ UWSGI_ENABLED = abspath(join(PIKU_ROOT, "uwsgi-enabled"))
 UWSGI_ROOT = abspath(join(PIKU_ROOT, "uwsgi"))
 
 
-# --- Utility functions ---
+# === Utility functions ===
 
 def sanitize_app_name(app):
     """Sanitize the app name and build matching path"""
@@ -142,7 +142,7 @@ def deploy_python(app, workers):
     shutil.copyfile(available, enabled)
 
 
-# --- CLI commands ---    
+# === CLI commands ===    
     
 @group()
 def piku():
@@ -160,26 +160,7 @@ def cleanup(ctx):
     #print os.environ
 
 
-# Based on https://github.com/dokku/dokku/blob/master/plugins/git/commands#L103
-@piku.command("git-receive-pack")
-@argument('app')
-def receive(app):
-    """INTERNAL: Handle git pushes for an app"""
-    app = sanitize_app_name(app)
-    hook_path = join(GIT_ROOT, app, 'hooks', 'post-receive')
-    if not exists(hook_path):
-        os.makedirs(dirname(hook_path))
-        # Initialize the repository with a hook to this script
-        call("git init --quiet --bare " + app, cwd=GIT_ROOT, shell=True)
-        with open(hook_path,'w') as h:
-            h.write("""#!/usr/bin/env bash
-set -e; set -o pipefail;
-cat | PIKU_ROOT="%s" $HOME/piku.py git-hook %s""" % (PIKU_ROOT, app)) # TODO: remove hardcoded script name
-        # Make the hook executable by our user
-        os.chmod(hook_path, os.stat(hook_path).st_mode | stat.S_IXUSR)
-    # Handle the actual receive. We'll be called with 'git-hook' after it happens
-    call('git-shell -c "%s"' % " ".join(sys.argv[1:]), cwd=GIT_ROOT, shell=True)
-
+# --- User commands ---
 
 @piku.command("deploy")
 @argument('app')
@@ -189,11 +170,19 @@ def deploy_app(app):
     do_deploy(app)
 
 
-@piku.command("ls")
-def list_apps():
-    """List applications"""
-    for a in os.listdir(APP_ROOT):
-        echo(a, fg='green')
+@piku.command("destroy")
+@argument('app')
+def destroy_app(app):
+    """Destroy an application"""
+    app = sanitize_app_name(app)
+    for p in [join(x, app) for x in [APP_ROOT, GIT_ROOT, ENV_ROOT, LOG_ROOT]]:
+        if exists(p):
+            echo("Removing folder '%s'" % p, fg='yellow')
+            shutil.rmtree(p)
+    for p in [join(x, app + '.ini') for x in [UWSGI_AVAILABLE, UWSGI_ENABLED]]:
+        if exists(p):
+            echo("Removing file '%s'" % p, fg='yellow')
+            os.remove(p)
 
 
 @piku.command("disable")
@@ -207,22 +196,6 @@ def disable_app(app):
         os.remove(config)
     else:
         echo("Error: app '%s' not found!" % app, fg='red')
-
-
-@piku.command("restart")
-@argument('app')
-def restart_app(app):
-    """Restart an application"""
-    app = sanitize_app_name(app)
-    enabled = join(UWSGI_ENABLED, app + '.ini')
-    available = join(UWSGI_AVAILABLE, app + '.ini')
-    if exists(enabled):
-        echo("Restarting app '%s'..." % app, fg='yellow')
-        # Destroying the original file signals uWSGI to kill the vassal
-        # TODO: check behavior on newer versions
-        shutil.copyfile(available, enabled)
-    else:
-        echo("Error: app '%s' not enabled!" % app, fg='red')
 
 
 @piku.command("enable")
@@ -245,20 +218,42 @@ def enable_app(app):
         echo("Error: app '%s' does not exist.", fg='red')
 
 
-@piku.command("destroy")
+@piku.command("ls")
+def list_apps():
+    """List applications"""
+    for a in os.listdir(APP_ROOT):
+        echo(a, fg='green')
+
+
+@piku.command("log")
 @argument('app')
-def destroy_app(app):
-    """Destroy an application"""
+def tail_logs(app):
+    """Tail an application log"""
     app = sanitize_app_name(app)
-    for p in [join(x, app) for x in [APP_ROOT, GIT_ROOT, ENV_ROOT, LOG_ROOT]]:
-        if exists(p):
-            echo("Removing folder '%s'" % p, fg='yellow')
-            shutil.rmtree(p)
-    for p in [join(x, app + '.ini') for x in [UWSGI_AVAILABLE, UWSGI_ENABLED]]:
-        if exists(p):
-            echo("Removing file '%s'" % p, fg='yellow')
-            os.remove(p)
-             
+    logfile = join(LOG_ROOT, app)
+    if exists(logfile):
+        call('tail -F %s' % logfile, cwd=LOG_ROOT, shell=True)
+    else:
+        echo("No logs found for app '%s'." % app, fg='yellow')
+
+
+@piku.command("restart")
+@argument('app')
+def restart_app(app):
+    """Restart an application"""
+    app = sanitize_app_name(app)
+    enabled = join(UWSGI_ENABLED, app + '.ini')
+    available = join(UWSGI_AVAILABLE, app + '.ini')
+    if exists(enabled):
+        echo("Restarting app '%s'..." % app, fg='yellow')
+        # Destroying the original file signals uWSGI to kill the vassal
+        # TODO: check behavior on newer versions
+        shutil.copyfile(available, enabled)
+    else:
+        echo("Error: app '%s' not enabled!" % app, fg='red')
+
+
+# --- Internal commands ---
 
 @piku.command("git-hook")
 @argument('app')
@@ -281,6 +276,26 @@ def git_hook(app):
             # TODO: Handle pushes to another branch
             echo("receive-branch '%s': %s, %s" % (app, newrev, refname))
     #print "hook", app, sys.argv[1:]
+
+
+@piku.command("git-receive-pack")
+@argument('app')
+def receive(app):
+    """INTERNAL: Handle git pushes for an app"""
+    app = sanitize_app_name(app)
+    hook_path = join(GIT_ROOT, app, 'hooks', 'post-receive')
+    if not exists(hook_path):
+        os.makedirs(dirname(hook_path))
+        # Initialize the repository with a hook to this script
+        call("git init --quiet --bare " + app, cwd=GIT_ROOT, shell=True)
+        with open(hook_path,'w') as h:
+            h.write("""#!/usr/bin/env bash
+set -e; set -o pipefail;
+cat | PIKU_ROOT="%s" $HOME/piku.py git-hook %s""" % (PIKU_ROOT, app)) # TODO: remove hardcoded script name
+        # Make the hook executable by our user
+        os.chmod(hook_path, os.stat(hook_path).st_mode | stat.S_IXUSR)
+    # Handle the actual receive. We'll be called with 'git-hook' after it happens
+    call('git-shell -c "%s"' % " ".join(sys.argv[1:]), cwd=GIT_ROOT, shell=True)
  
  
 if __name__ == '__main__':
