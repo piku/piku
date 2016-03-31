@@ -5,6 +5,7 @@ from click import argument, command, group, option, secho as echo
 from os.path import abspath, exists, join, dirname
 from subprocess import call
 from time import sleep
+from glob import glob
 
 # === Globals - all tweakable settings are here ===
 
@@ -93,9 +94,6 @@ def do_deploy(app):
         
 def deploy_python(app, workers):
     """Deploy a Python application"""
-    env_path = join(ENV_ROOT, app)
-    available = join(UWSGI_AVAILABLE, '%s.ini' % app)
-    enabled = join(UWSGI_ENABLED, '%s.ini' % app)
     
     if not exists(env_path):
         echo("-----> Creating virtualenv for '%s'" % app, fg='green')
@@ -107,48 +105,57 @@ def deploy_python(app, workers):
     activation_script = join(env_path,'bin','activate_this.py')
     execfile(activation_script, dict(__file__=activation_script))
     call('pip install -r %s' % join(APP_ROOT, app, 'requirements.txt'), cwd=env_path, shell=True)
+    create_workers(app, workers)
 
-    # Generate a uWSGI vassal config
-    # TODO: split off individual vassals into individual config files
-    # TODO: allow user to define the port
-    port = get_free_port()
+ 
+ def create_workers(app, workers):
+    ordinal = 1
+    for k, v in workers.iteritems():
+        create_worker(app, k, v, {
+            'PATH': os.environ['PATH'],
+            'VIRTUAL_ENV': env_path,
+            'PORT': str(get_free_port())
+        }, ordinal)
+
+
+def single_worker(app, kind, command, env, ordinal=1):
+    env_path = join(ENV_ROOT, app)
+    available = join(UWSGI_AVAILABLE, '%s_%s_%d.ini' % (app, kind, ordinal))
+    enabled = join(UWSGI_ENABLED, '%s_%s_%d.ini' % (app, kind, ordinal))
+
     settings = [
-        ('http', ':%d' % port),
-        ('virtualenv', join(ENV_ROOT, app)),
-        ('chdir', join(APP_ROOT, app)),
-        ('master', 'true'),
-        ('project', app),
-        ('max-requests', '1000'),
-        ('processes', '2'),
-        ('enable-threads', 'true'),
-        ('threads', '4'),
-        ('log-maxsize','1048576'),
-        ('logto', '%s.log' % join(LOG_ROOT, app)),
-        ('log-backupname', '%s.log.old' % join(LOG_ROOT, app)),
-        ('env', 'WSGI_PORT=http'),        
-        ('env', 'PORT=%d' % port)
+        ('virtualenv',      join(ENV_ROOT, app)),
+        ('chdir',           join(APP_ROOT, app)),
+        ('master',          'true'),
+        ('project',         app),
+        ('max-requests',    '1000'),
+        ('processes',       '1'),
+        ('procname-prefix', '%s_%s_%d' % (app, kind, ordinal))
+        ('enable-threads',  'true'),
+        ('threads',         '4'),
+        ('log-maxsize',     '1048576'),
+        ('logto',           '%s_%d.log' % (join(LOG_ROOT, app, kind), ordinal)),
+        ('log-backupname',  '%s_%d.log.old' % (join(LOG_ROOT, app, kind), ordinal)),
+        ('env',             'PORT=%d' % port)
     ]
-    os.environ['VIRTUAL_ENV'] = env_path
-    for v in ['PATH', 'VIRTUAL_ENV']:
-        if v in os.environ:
-            settings.append(('env', '%s=%s' % (v, os.environ[v])))
-    
-    if 'wsgi' in workers:
-        settings.append(('module', workers['wsgi']))
+    for k, v in env.iteritems():
+        settings.append(('env', '%s=%v' % (k,v)))
+    if kind == 'wsgi':
+        settings.extend([
+            ('module', command),
+            ('http', ':%s' % env['PORT'])
+        ]
     else:
-        settings.append(('attach-daemon', workers['web']))
-    # TODO: split background workers into separate vassals for scaling and add .%d suffix to logs
-    if 'worker' in workers:
-        settings.append(('attach-daemon', workers['worker']))
+        settings.append(('attach-daemon', command))
     with open(available, 'w') as h:
         h.write('[uwsgi]\n')
         for k, v in settings:
             h.write("%s = %s\n" % (k, v))
-    echo("-----> Enabling '%s' at port %d" % (app, port), fg='green')
+    echo("-----> Enabling '%s:%s_%d'" % (app, kind, ordinal), fg='green')
     os.unlink(enabled)
     sleep(5) # TODO: replace this with zmq signalling
     shutil.copyfile(available, enabled)
-
+   
 
 # === CLI commands ===    
     
@@ -198,12 +205,13 @@ def destroy_app(app):
 def disable_app(app):
     """Disable an application"""
     app = sanitize_app_name(app)
-    config = join(UWSGI_ENABLED, app + '.ini')
-    if exists(config):
+    config = glob(join(UWSGI_ENABLED, '%s*.ini' % app))
+    if len(config):
         echo("Disabling app '%s'..." % app, fg='yellow')
-        os.remove(config)
+        for c in config:
+            os.remove(c)
     else:
-        echo("Error: app '%s' not found!" % app, fg='red')
+        echo("Error: app '%s' not deployed!" % app, fg='red')
 
 
 @piku.command("enable")
@@ -211,13 +219,14 @@ def disable_app(app):
 def enable_app(app):
     """Enable an application"""
     app = sanitize_app_name(app)
-    enabled = join(UWSGI_ENABLED, app + '.ini')
-    available = join(UWSGI_AVAILABLE, app + '.ini')
+    enabled = glob(join(UWSGI_ENABLED, '%s*.ini' % app))
+    available = glob(join(UWSGI_AVAILABLE, '%s*.ini' % app))
     if exists(join(APP_ROOT, app)):
-        if not exists(enabled):
-            if exists(available):
+        if len(enabled):
+            if len(available):
                 echo("Enabling app '%s'..." % app, fg='yellow')
-                shutil.copyfile(available, enabled)
+                for a in available:
+                    shutil.copy(a, join(UWSGI_ENABLED, app))
             else:
                 echo("Error: app '%s' is not configured.", fg='red')
         else:
