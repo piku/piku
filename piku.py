@@ -67,6 +67,21 @@ def parse_procfile(filename):
         if 'web' in workers:
             del(workers['web'])
     return workers 
+
+
+def parse_settings(filename):
+    """Parses a settings file and returns a dict with environment variables"""
+    env = {}
+    if not exists(filename):
+        return None
+    with open(filename, 'r') as settings:
+        for line in settings:
+            try:
+                k, v = map(lambda x: x.strip(), line.split("=", 1))
+                env[k] = v
+            except:
+                echo("Warning: malformed setting '%s'" % line, fg='yellow')
+    return env
     
 
 def do_deploy(app):
@@ -110,12 +125,23 @@ def deploy_python(app, workers):
  
  def create_workers(app, workers):
     ordinal = 1
+    env_file = join(APP_ROOT, 'ENV')
+    settings = join(ENV_ROOT, app)
+    env = {
+        'PATH': os.environ['PATH'],
+        'VIRTUAL_ENV': env_path,
+        'PORT': str(get_free_port())
+    }
+    # Load environment variables shipped with repo (if any)
+    if exists(env_file):
+        env.update(parse_settings(env_file))
+    # Override with custom settings (if any)
+    if exists(settings):
+        env.update(parse_settings(settings))
+    # Create workers
     for k, v in workers.iteritems():
-        create_worker(app, k, v, {
-            'PATH': os.environ['PATH'],
-            'VIRTUAL_ENV': env_path,
-            'PORT': str(get_free_port())
-        }, ordinal)
+        create_worker(app, k, v, env, ordinal)
+        ordinal += 1
 
 
 def single_worker(app, kind, command, env, ordinal=1):
