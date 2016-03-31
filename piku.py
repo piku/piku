@@ -47,6 +47,7 @@ def setup_authorized_keys(ssh_fingerprint, script_path, pubkey):
         h.write("""command="FINGERPRINT=%(ssh_fingerprint)s NAME=default %(script_path)s $SSH_ORIGINAL_COMMAND",no-agent-forwarding,no-user-rc,no-X11-forwarding,no-port-forwarding %(pubkey)s\n""" % locals())
         
 
+# TODO: allow for multiple workers
 def parse_procfile(filename):
     """Parses a Procfile and returns the worker types. Only one worker of each type is allowed."""
     workers = {}
@@ -124,6 +125,7 @@ def deploy_python(app, workers):
 
  
  def create_workers(app, workers):
+    """Create all workers for an app"""
     ordinal = 1
     env_file = join(APP_ROOT, 'ENV')
     settings = join(ENV_ROOT, app)
@@ -145,6 +147,7 @@ def deploy_python(app, workers):
 
 
 def single_worker(app, kind, command, env, ordinal=1):
+    """Set up and deploy a single worker of a given kind"""
     env_path = join(ENV_ROOT, app)
     available = join(UWSGI_AVAILABLE, '%s_%s_%d.ini' % (app, kind, ordinal))
     enabled = join(UWSGI_ENABLED, '%s_%s_%d.ini' % (app, kind, ordinal))
@@ -162,7 +165,6 @@ def single_worker(app, kind, command, env, ordinal=1):
         ('log-maxsize',     '1048576'),
         ('logto',           '%s_%d.log' % (join(LOG_ROOT, app, kind), ordinal)),
         ('log-backupname',  '%s_%d.log.old' % (join(LOG_ROOT, app, kind), ordinal)),
-        ('env',             'PORT=%d' % port)
     ]
     for k, v in env.iteritems():
         settings.append(('env', '%s=%v' % (k,v)))
