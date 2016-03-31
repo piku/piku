@@ -222,10 +222,12 @@ def destroy_app(app):
         if exists(p):
             echo("Removing folder '%s'" % p, fg='yellow')
             shutil.rmtree(p)
-    for p in [join(x, app + '.ini') for x in [UWSGI_AVAILABLE, UWSGI_ENABLED]]:
-        if exists(p):
-            echo("Removing file '%s'" % p, fg='yellow')
-            os.remove(p)
+    for p in [join(x, '%s*.ini' % app) for x in [UWSGI_AVAILABLE, UWSGI_ENABLED]]:
+        g = glob(p)
+        if len(g):
+            for f in g:
+                echo("Removing file '%s'" % f, fg='yellow')
+                os.remove(f)
 
 
 @piku.command("disable")
@@ -270,13 +272,14 @@ def list_apps():
         echo(a, fg='green')
 
 
-@piku.command("log")
+# TODO: multitail
+@piku.command("tail")
 @argument('app')
 def tail_logs(app):
     """Tail an application log"""
     app = sanitize_app_name(app)
-    logfile = join(LOG_ROOT, "%s.log" % app)
-    if exists(logfile):
+    logfile = join(LOG_ROOT, "%s*.log" % app)
+    if len(glob(logfile)):
         call('tail -F %s' % logfile, cwd=LOG_ROOT, shell=True)
     else:
         echo("No logs found for app '%s'." % app, fg='yellow')
@@ -286,15 +289,18 @@ def tail_logs(app):
 @argument('app')
 def restart_app(app):
     """Restart an application"""
-    app = sanitize_app_name(app)
-    enabled = join(UWSGI_ENABLED, app + '.ini')
-    available = join(UWSGI_AVAILABLE, app + '.ini')
-    if exists(enabled):
+    app = sanitize_app_name(app)    
+    enabled = glob(join(UWSGI_ENABLED, '%s*.ini' % app))
+    available = glob(join(UWSGI_AVAILABLE, '%s*.ini' % app))
+    if len(enabled):
         echo("Restarting app '%s'..." % app, fg='yellow')
         # Destroying the original file signals uWSGI to kill the vassal instead of reloading it
-        os.unlink(enabled)
-        sleep(5) # TODO: replace this with zmq signalling
-        shutil.copyfile(available, enabled)
+        for e in enabled:
+            os.unlink(e)    
+        sleep(5) # TODO: replace this with zmq signalling    
+        if len(available):
+            for a in available:
+                shutil.copy(a, join(UWSGI_ENABLED, app))
     else:
         echo("Error: app '%s' not enabled!" % app, fg='red')
 
