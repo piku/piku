@@ -153,7 +153,8 @@ def create_workers(app, workers):
     env = {
         'PATH': os.environ['PATH'],
         'VIRTUAL_ENV': virtualenv_path,
-        'PORT': str(get_free_port())
+        'PORT': str(get_free_port()),
+        'PWD': dirname(env_file),
     }
     
     # Load environment variables shipped with repo (if any)
@@ -182,7 +183,7 @@ def single_worker(app, kind, command, env, ordinal=1):
         ('project',         app),
         ('max-requests',    '1000'),
         ('processes',       '1'),
-        ('procname-prefix', '%s_%s_%d' % (app, kind, ordinal)),
+        ('procname-prefix', '%s_%s_%d: ' % (app, kind, ordinal)),
         ('enable-threads',  'true'),
         ('threads',         '4'),
         ('log-maxsize',     '1048576'),
