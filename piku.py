@@ -2,7 +2,9 @@
 
 import os, sys, stat, re, shutil, socket
 from click import argument, command, group, option, secho as echo
-from os.path import abspath, exists, join, dirname
+from collections import defaultdict, deque
+from glob import glob
+from os.path import abspath, basename, dirname, exists, getmtime, join, splitext
 from subprocess import call
 from time import sleep
 
@@ -23,12 +25,14 @@ UWSGI_ROOT = abspath(join(PIKU_ROOT, "uwsgi"))
 
 def sanitize_app_name(app):
     """Sanitize the app name and build matching path"""
+    
     app = "".join(c for c in app if c.isalnum() or c in ('.','_')).rstrip()
     return app
 
 
 def get_free_port(address=""):
     """Find a free TCP port (entirely at random)"""
+    
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind((address,0))
     port = s.getsockname()[1]
@@ -38,6 +42,7 @@ def get_free_port(address=""):
 
 def setup_authorized_keys(ssh_fingerprint, script_path, pubkey):
     """Sets up an authorized_keys file to redirect SSH commands"""
+    
     authorized_keys = join(os.environ['HOME'],'.ssh','authorized_keys')
     if not exists(dirname(authorized_keys)):
         os.makedirs(dirname(authorized_keys))
@@ -46,8 +51,10 @@ def setup_authorized_keys(ssh_fingerprint, script_path, pubkey):
         h.write("""command="FINGERPRINT=%(ssh_fingerprint)s NAME=default %(script_path)s $SSH_ORIGINAL_COMMAND",no-agent-forwarding,no-user-rc,no-X11-forwarding,no-port-forwarding %(pubkey)s\n""" % locals())
         
 
+# TODO: allow for multiple workers
 def parse_procfile(filename):
     """Parses a Procfile and returns the worker types. Only one worker of each type is allowed."""
+    
     workers = {}
     if not exists(filename):
         return None
@@ -66,17 +73,43 @@ def parse_procfile(filename):
         if 'web' in workers:
             del(workers['web'])
     return workers 
+
+
+def parse_settings(filename, env={}):
+    """Parses a settings file and returns a dict with environment variables"""
+
+    def expandvars(buffer, env, default=None, skip_escaped=False):
+        def replace_var(match):
+            return env.get(match.group(2) or match.group(1), match.group(0) if default is None else default)
+        pattern = (r'(?<!\\)' if skip_escaped else '') + r'\$(\w+|\{([^}]*)\})'
+        return re.sub(pattern, replace_var, buffer)
+    
+    if not exists(filename):
+        return None
+    with open(filename, 'r') as settings:
+        for line in settings:
+            try:
+                k, v = map(lambda x: x.strip(), line.split("=", 1))
+                env[k] = expandvars(v, env)
+            except:
+                echo("Warning: malformed setting '%s'" % line, fg='yellow')
+    return env
     
 
 def do_deploy(app):
     """Deploy an app by resetting the work directory"""
+    
     app_path = join(APP_ROOT, app)
     procfile = join(app_path, 'Procfile')
+    log_path = join(LOG_ROOT, app)
+
     env = {'GIT_WORK_DIR': app_path}
     if exists(app_path):
         echo("-----> Deploying app '%s'" % app, fg='green')
         call('git pull --quiet', cwd=app_path, env=env, shell=True)
         call('git checkout -f', cwd=app_path, env=env, shell=True)
+        if not exists(log_path):
+            os.makedirs(log_path)
         workers = parse_procfile(procfile)
         if workers:
             if exists(join(app_path, 'requirements.txt')):
@@ -93,61 +126,143 @@ def do_deploy(app):
         
 def deploy_python(app, workers):
     """Deploy a Python application"""
-    env_path = join(ENV_ROOT, app)
-    available = join(UWSGI_AVAILABLE, '%s.ini' % app)
-    enabled = join(UWSGI_ENABLED, '%s.ini' % app)
     
-    if not exists(env_path):
+    virtualenv_path = join(ENV_ROOT, app)
+    requirements = join(APP_ROOT, app, 'requirements.txt')
+
+    first_time = False
+    if not exists(virtualenv_path):
         echo("-----> Creating virtualenv for '%s'" % app, fg='green')
-        os.makedirs(env_path)
+        os.makedirs(virtualenv_path)
         call('virtualenv %s' % app, cwd=ENV_ROOT, shell=True)
+        first_time = True
 
-    # TODO: run pip only if requirements have changed
-    echo("-----> Running pip for '%s'" % app, fg='green')
-    activation_script = join(env_path,'bin','activate_this.py')
-    execfile(activation_script, dict(__file__=activation_script))
-    call('pip install -r %s' % join(APP_ROOT, app, 'requirements.txt'), cwd=env_path, shell=True)
+    if first_time or getmtime(requirements) > getmtime(virtualenv_path):
+        echo("-----> Running pip for '%s'" % app, fg='green')
+        activation_script = join(virtualenv_path,'bin','activate_this.py')
+        execfile(activation_script, dict(__file__=activation_script))
+        call('pip install -r %s' % requirements, cwd=virtualenv_path, shell=True)
+    create_workers(app, workers)
 
-    # Generate a uWSGI vassal config
-    # TODO: split off individual vassals into individual config files
-    # TODO: allow user to define the port
-    port = get_free_port()
-    settings = [
-        ('http', ':%d' % port),
-        ('virtualenv', join(ENV_ROOT, app)),
-        ('chdir', join(APP_ROOT, app)),
-        ('master', 'true'),
-        ('project', app),
-        ('max-requests', '1000'),
-        ('processes', '2'),
-        ('enable-threads', 'true'),
-        ('threads', '4'),
-        ('log-maxsize','1048576'),
-        ('logto', '%s.log' % join(LOG_ROOT, app)),
-        ('log-backupname', '%s.log.old' % join(LOG_ROOT, app)),
-        ('env', 'WSGI_PORT=http'),        
-        ('env', 'PORT=%d' % port)
-    ]
-    os.environ['VIRTUAL_ENV'] = env_path
-    for v in ['PATH', 'VIRTUAL_ENV']:
-        if v in os.environ:
-            settings.append(('env', '%s=%s' % (v, os.environ[v])))
+ 
+def create_workers(app, workers):
+    """Create all workers for an app"""
     
-    if 'wsgi' in workers:
-        settings.append(('module', workers['wsgi']))
+    ordinals = defaultdict(int)
+    # the Python virtualenv
+    virtualenv_path = join(ENV_ROOT, app)
+    # Settings shipped with the app
+    env_file = join(APP_ROOT, app, 'ENV')
+    # Custom overrides
+    settings = join(ENV_ROOT, app, 'ENV')
+    env = {
+        'PATH': os.environ['PATH'],
+        'VIRTUAL_ENV': virtualenv_path,
+        'PORT': str(get_free_port()),
+        'PWD': dirname(env_file),
+    }
+    # TODO: perform $ENV_VAR expansion using os.path.expandvars and a safe context
+    
+    # Load environment variables shipped with repo (if any)
+    if exists(env_file):
+        env.update(parse_settings(env_file, env))
+    # Override with custom settings (if any)
+    if exists(settings):
+        env.update(parse_settings(settings, env))
+    # Create workers
+    for k, v in workers.iteritems():
+        single_worker(app, k, v, env, ordinals[k]+1)
+        ordinals[k] += 1
+
+
+def single_worker(app, kind, command, env, ordinal=1):
+    """Set up and deploy a single worker of a given kind"""
+    
+    env_path = join(ENV_ROOT, app)
+    available = join(UWSGI_AVAILABLE, '%s_%s_%d.ini' % (app, kind, ordinal))
+    enabled = join(UWSGI_ENABLED, '%s_%s_%d.ini' % (app, kind, ordinal))
+
+    settings = [
+        ('virtualenv',      join(ENV_ROOT, app)),
+        ('chdir',           join(APP_ROOT, app)),
+        ('master',          'true'),
+        ('project',         app),
+        ('max-requests',    '1000'),
+        ('processes',       '1'),
+        ('procname-prefix', '%s_%s_%d:' % (app, kind, ordinal)),
+        ('enable-threads',  'true'),
+        ('threads',         '4'),
+        ('log-maxsize',     '1048576'),
+        ('logto',           '%s_%d.log' % (join(LOG_ROOT, app, kind), ordinal)),
+        ('log-backupname',  '%s_%d.log.old' % (join(LOG_ROOT, app, kind), ordinal)),
+    ]
+    for k, v in env.iteritems():
+        settings.append(('env', '%s=%s' % (k,v)))
+        
+    if kind == 'wsgi':
+        settings.extend([
+            ('module', command),
+            ('http', ':%s' % env['PORT'])
+        ])
     else:
-        settings.append(('attach-daemon', workers['web']))
-    # TODO: split background workers into separate vassals for scaling and add .%d suffix to logs
-    if 'worker' in workers:
-        settings.append(('attach-daemon', workers['worker']))
+        settings.append(('attach-daemon', command))
+        
     with open(available, 'w') as h:
         h.write('[uwsgi]\n')
         for k, v in settings:
             h.write("%s = %s\n" % (k, v))
-    echo("-----> Enabling '%s' at port %d" % (app, port), fg='green')
-    os.unlink(enabled)
+    
+    echo("-----> Enabling '%s:%s_%d'" % (app, kind, ordinal), fg='green')
+    if exists(enabled):
+        os.unlink(enabled)
     sleep(5) # TODO: replace this with zmq signalling
     shutil.copyfile(available, enabled)
+
+
+def multi_tail(app, filenames):
+    """Tails multiple log files"""
+    
+    def peek(handle):
+        where = handle.tell()
+        line = handle.readline()
+        if not line:
+            handle.seek(where)
+            return None
+        return line
+
+    inodes = {}
+    files = {}
+    prefixes = {}
+    
+    for f in filenames:
+        prefixes[f] = splitext(basename(f))[0]
+        files[f] = open(f)
+        inodes[f] = os.stat(f).st_ino
+        files[f].seek(0, 2)
+        
+    longest = max(map(len, prefixes.values()))
+    for f in filenames:
+        for line in deque(open(f), 20):
+            yield "%s | %s" % (prefixes[f].ljust(longest), line)
+
+    while True:
+        updated = False
+        for f in filenames:
+            line = peek(files[f])
+            if not line:
+                continue
+            else:
+                updated = True
+                yield "%s | %s" % (prefixes[f].ljust(longest), line)
+        if not updated:
+            sleep(1)
+            for f in filenames:
+                if exists(f):
+                    if os.stat(f).st_ino != inodes[f]:
+                        files[f] = open(f)
+                        inodes[f] = os.stat(f).st_ino
+                else:
+                    filenames.remove(f)
 
 
 # === CLI commands ===    
@@ -174,6 +289,7 @@ def cleanup(ctx):
 @argument('app')
 def deploy_app(app):
     """Deploy an application"""
+    
     app = sanitize_app_name(app)
     do_deploy(app)
 
@@ -182,28 +298,36 @@ def deploy_app(app):
 @argument('app')
 def destroy_app(app):
     """Destroy an application"""
+    
     app = sanitize_app_name(app)
+    
     for p in [join(x, app) for x in [APP_ROOT, GIT_ROOT, ENV_ROOT, LOG_ROOT]]:
         if exists(p):
             echo("Removing folder '%s'" % p, fg='yellow')
             shutil.rmtree(p)
-    for p in [join(x, app + '.ini') for x in [UWSGI_AVAILABLE, UWSGI_ENABLED]]:
-        if exists(p):
-            echo("Removing file '%s'" % p, fg='yellow')
-            os.remove(p)
+
+    for p in [join(x, '%s*.ini' % app) for x in [UWSGI_AVAILABLE, UWSGI_ENABLED]]:
+        g = glob(p)
+        if len(g):
+            for f in g:
+                echo("Removing file '%s'" % f, fg='yellow')
+                os.remove(f)
 
 
 @piku.command("disable")
 @argument('app')
 def disable_app(app):
     """Disable an application"""
+    
     app = sanitize_app_name(app)
-    config = join(UWSGI_ENABLED, app + '.ini')
-    if exists(config):
+    config = glob(join(UWSGI_ENABLED, '%s*.ini' % app))
+    
+    if len(config):
         echo("Disabling app '%s'..." % app, fg='yellow')
-        os.remove(config)
+        for c in config:
+            os.remove(c)
     else:
-        echo("Error: app '%s' not found!" % app, fg='red')
+        echo("Error: app '%s' not deployed!" % app, fg='red')
 
 
 @piku.command("enable")
@@ -211,13 +335,15 @@ def disable_app(app):
 def enable_app(app):
     """Enable an application"""
     app = sanitize_app_name(app)
-    enabled = join(UWSGI_ENABLED, app + '.ini')
-    available = join(UWSGI_AVAILABLE, app + '.ini')
+    enabled = glob(join(UWSGI_ENABLED, '%s*.ini' % app))
+    available = glob(join(UWSGI_AVAILABLE, '%s*.ini' % app))
+    
     if exists(join(APP_ROOT, app)):
-        if not exists(enabled):
-            if exists(available):
+        if len(enabled):
+            if len(available):
                 echo("Enabling app '%s'..." % app, fg='yellow')
-                shutil.copyfile(available, enabled)
+                for a in available:
+                    shutil.copy(a, join(UWSGI_ENABLED, app))
             else:
                 echo("Error: app '%s' is not configured.", fg='red')
         else:
@@ -229,18 +355,22 @@ def enable_app(app):
 @piku.command("ls")
 def list_apps():
     """List applications"""
+    
     for a in os.listdir(APP_ROOT):
         echo(a, fg='green')
 
 
-@piku.command("log")
+# TODO: multitail
+@piku.command("tail")
 @argument('app')
 def tail_logs(app):
     """Tail an application log"""
+    
     app = sanitize_app_name(app)
-    logfile = join(LOG_ROOT, "%s.log" % app)
-    if exists(logfile):
-        call('tail -F %s' % logfile, cwd=LOG_ROOT, shell=True)
+    logfiles = glob(join(LOG_ROOT, app, '*.log'))
+    if len(logfiles):
+        for line in multi_tail(app, logfiles):
+            echo(line.strip(), fg='white')
     else:
         echo("No logs found for app '%s'." % app, fg='yellow')
 
@@ -249,15 +379,20 @@ def tail_logs(app):
 @argument('app')
 def restart_app(app):
     """Restart an application"""
-    app = sanitize_app_name(app)
-    enabled = join(UWSGI_ENABLED, app + '.ini')
-    available = join(UWSGI_AVAILABLE, app + '.ini')
-    if exists(enabled):
+    
+    app = sanitize_app_name(app)    
+    enabled = glob(join(UWSGI_ENABLED, '%s*.ini' % app))
+    available = glob(join(UWSGI_AVAILABLE, '%s*.ini' % app))
+    
+    if len(enabled):
         echo("Restarting app '%s'..." % app, fg='yellow')
         # Destroying the original file signals uWSGI to kill the vassal instead of reloading it
-        os.unlink(enabled)
-        sleep(5) # TODO: replace this with zmq signalling
-        shutil.copyfile(available, enabled)
+        for e in enabled:
+            os.unlink(e)    
+        sleep(5) # TODO: replace this with zmq signalling    
+        if len(available):
+            for a in available:
+                shutil.copy(a, join(UWSGI_ENABLED, app))
     else:
         echo("Error: app '%s' not enabled!" % app, fg='red')
 
@@ -268,9 +403,11 @@ def restart_app(app):
 @argument('app')
 def git_hook(app):
     """INTERNAL: Post-receive git hook"""
+    
     app = sanitize_app_name(app)
     repo_path = join(GIT_ROOT, app)
     app_path = join(APP_ROOT, app)
+    
     for line in sys.stdin:
         oldrev, newrev, refname = line.strip().split(" ")
         #print "refs:", oldrev, newrev, refname
@@ -284,15 +421,16 @@ def git_hook(app):
         else:
             # TODO: Handle pushes to another branch
             echo("receive-branch '%s': %s, %s" % (app, newrev, refname))
-    #print "hook", app, sys.argv[1:]
 
 
 @piku.command("git-receive-pack")
 @argument('app')
 def receive(app):
     """INTERNAL: Handle git pushes for an app"""
+    
     app = sanitize_app_name(app)
     hook_path = join(GIT_ROOT, app, 'hooks', 'post-receive')
+    
     if not exists(hook_path):
         os.makedirs(dirname(hook_path))
         # Initialize the repository with a hook to this script
