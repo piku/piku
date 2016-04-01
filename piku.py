@@ -2,7 +2,7 @@
 
 import os, sys, stat, re, shutil, socket
 from click import argument, command, group, option, secho as echo
-from os.path import abspath, dirname, exists, getmtime, join
+from os.path import abspath, dirname, exists, getmtime, join, splitext
 from subprocess import call
 from time import sleep
 from glob import glob
@@ -134,7 +134,7 @@ def deploy_python(app, workers):
     create_workers(app, workers)
 
  
- def create_workers(app, workers):
+def create_workers(app, workers):
     """Create all workers for an app"""
     
     ordinal = 1
@@ -190,7 +190,7 @@ def single_worker(app, kind, command, env, ordinal=1):
         settings.extend([
             ('module', command),
             ('http', ':%s' % env['PORT'])
-        ]
+        ])
     else:
         settings.append(('attach-daemon', command))
         
@@ -203,7 +203,47 @@ def single_worker(app, kind, command, env, ordinal=1):
     os.unlink(enabled)
     sleep(5) # TODO: replace this with zmq signalling
     shutil.copyfile(available, enabled)
-   
+
+
+def multi_tail(app, filenames):
+    """Tails multiple log files"""
+    
+    def peek(handle):
+        where = handle.tell()
+        line = handle.readline()
+        if not line:
+            handle.seek(where)
+            return None
+        return line
+
+    inodes = {}
+    files = {}
+    prefixes = {}
+    
+    for f in filenames:
+        prefixes[f] = splitext(basename(f))[0].replace("%s_" % app, '')
+        files[f] = open(f)
+        inodes[f] = os.stat(f).st_ino
+        h.seek(0, 2)
+        
+    longest = max(map(len, prefixes.values()))
+
+    while True:
+        updated = False
+        for f in filenames:
+            line = peek(files[f])
+            if not line:
+                continue
+            else:
+                updated = True
+                yield "%s | %s" % (prefixes[f].ljust(longest), line)
+        if not updated:
+            time.sleep(1)
+            for f in filenames:
+                if os.stat(f).st_ino != inodes[f]:
+                    files[f] = open(f)
+                    inodes[f] = os.stat(f).st_ino
+
 
 # === CLI commands ===    
     
@@ -307,10 +347,11 @@ def tail_logs(app):
     """Tail an application log"""
     
     app = sanitize_app_name(app)
-    logfile = join(LOG_ROOT, "%s*.log" % app)
+    logfiles = glob(LOG_ROOT, "%s*.log" % app)
     
-    if len(glob(logfile)):
-        call('tail -F %s' % logfile, cwd=LOG_ROOT, shell=True)
+    if len(logfiles):
+        while True:
+            echo(multi_tail(app, logfiles), fg='white')
     else:
         echo("No logs found for app '%s'." % app, fg='yellow')
 
