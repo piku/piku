@@ -1,4 +1,9 @@
-# Python example
+# Python Sample Application
+
+This is a simple Python app that demonstrates:
+
+- HTTP port selection via the `PORT` variable (set in `ENV`)
+- An independent worker process (that is auto-restarted upon exit) 
 
 To publish this app to `piku`, make a copy of this folder and run the following commands:
 
