@@ -2,7 +2,7 @@
 
 import os, sys, stat, re, shutil, socket
 from click import argument, command, group, option, secho as echo
-from os.path import abspath, exists, join, dirname
+from os.path import abspath, dirname, exists, getmtime, join
 from subprocess import call
 from time import sleep
 from glob import glob
@@ -110,28 +110,34 @@ def do_deploy(app):
         
 def deploy_python(app, workers):
     """Deploy a Python application"""
-    
-    if not exists(env_path):
+    virtualenv_path = join(ENV_PATH, app)
+
+    if not exists(virtualenv_path):
         echo("-----> Creating virtualenv for '%s'" % app, fg='green')
-        os.makedirs(env_path)
+        os.makedirs(virtualenv_path)
         call('virtualenv %s' % app, cwd=ENV_ROOT, shell=True)
 
-    # TODO: run pip only if requirements have changed
-    echo("-----> Running pip for '%s'" % app, fg='green')
-    activation_script = join(env_path,'bin','activate_this.py')
-    execfile(activation_script, dict(__file__=activation_script))
-    call('pip install -r %s' % join(APP_ROOT, app, 'requirements.txt'), cwd=env_path, shell=True)
+    requirements = join(APP_ROOT, app, 'requirements.txt')
+    if getmtime(requirements) > getmtime(virtualenv_path):
+        echo("-----> Running pip for '%s'" % app, fg='green')
+        activation_script = join(virtualenv_path,'bin','activate_this.py')
+        execfile(activation_script, dict(__file__=activation_script))
+        call('pip install -r %s' % requirements, cwd=virtualenv_path, shell=True)
     create_workers(app, workers)
 
  
  def create_workers(app, workers):
     """Create all workers for an app"""
     ordinal = 1
-    env_file = join(APP_ROOT, 'ENV')
+    # the Python virtualenv
+    virtualenv_path = join(ENV_PATH, app)
+    # Settings shipped with the app
+    env_file = join(APP_ROOT, app, 'ENV')
+    # Custom overrides
     settings = join(ENV_ROOT, app)
     env = {
         'PATH': os.environ['PATH'],
-        'VIRTUAL_ENV': env_path,
+        'VIRTUAL_ENV': virtualenv_path,
         'PORT': str(get_free_port())
     }
     # Load environment variables shipped with repo (if any)
@@ -142,12 +148,13 @@ def deploy_python(app, workers):
         env.update(parse_settings(settings))
     # Create workers
     for k, v in workers.iteritems():
-        create_worker(app, k, v, env, ordinal)
+        single_worker(app, k, v, env, ordinal)
         ordinal += 1
 
 
 def single_worker(app, kind, command, env, ordinal=1):
     """Set up and deploy a single worker of a given kind"""
+    
     env_path = join(ENV_ROOT, app)
     available = join(UWSGI_AVAILABLE, '%s_%s_%d.ini' % (app, kind, ordinal))
     enabled = join(UWSGI_ENABLED, '%s_%s_%d.ini' % (app, kind, ordinal))
@@ -168,6 +175,7 @@ def single_worker(app, kind, command, env, ordinal=1):
     ]
     for k, v in env.iteritems():
         settings.append(('env', '%s=%v' % (k,v)))
+        
     if kind == 'wsgi':
         settings.extend([
             ('module', command),
@@ -175,10 +183,12 @@ def single_worker(app, kind, command, env, ordinal=1):
         ]
     else:
         settings.append(('attach-daemon', command))
+        
     with open(available, 'w') as h:
         h.write('[uwsgi]\n')
         for k, v in settings:
             h.write("%s = %s\n" % (k, v))
+            
     echo("-----> Enabling '%s:%s_%d'" % (app, kind, ordinal), fg='green')
     os.unlink(enabled)
     sleep(5) # TODO: replace this with zmq signalling
