@@ -125,12 +125,14 @@ def deploy_python(app, workers):
     virtualenv_path = join(ENV_ROOT, app)
     requirements = join(APP_ROOT, app, 'requirements.txt')
 
+    first_time = False
     if not exists(virtualenv_path):
         echo("-----> Creating virtualenv for '%s'" % app, fg='green')
         os.makedirs(virtualenv_path)
         call('virtualenv %s' % app, cwd=ENV_ROOT, shell=True)
+        first_time = True
 
-    if getmtime(requirements) > getmtime(virtualenv_path):
+    if first_time or getmtime(requirements) > getmtime(virtualenv_path):
         echo("-----> Running pip for '%s'" % app, fg='green')
         activation_script = join(virtualenv_path,'bin','activate_this.py')
         execfile(activation_script, dict(__file__=activation_script))
@@ -141,7 +143,7 @@ def deploy_python(app, workers):
 def create_workers(app, workers):
     """Create all workers for an app"""
     
-    ordinals = defaultdict(1)
+    ordinals = defaultdict(int)
     # the Python virtualenv
     virtualenv_path = join(ENV_ROOT, app)
     # Settings shipped with the app
@@ -162,7 +164,7 @@ def create_workers(app, workers):
         env.update(parse_settings(settings))
     # Create workers
     for k, v in workers.iteritems():
-        single_worker(app, k, v, env, ordinals[k])
+        single_worker(app, k, v, env, ordinals[k]+1)
         ordinals[k] += 1
 
 
