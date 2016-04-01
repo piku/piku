@@ -2,10 +2,11 @@
 
 import os, sys, stat, re, shutil, socket
 from click import argument, command, group, option, secho as echo
-from os.path import abspath, dirname, exists, getmtime, join, splitext
+from collections import defaultdict, deque
+from glob import glob
+from os.path import abspath, basename, dirname, exists, getmtime, join, splitext
 from subprocess import call
 from time import sleep
-from glob import glob
 
 # === Globals - all tweakable settings are here ===
 
@@ -95,11 +96,15 @@ def do_deploy(app):
     
     app_path = join(APP_ROOT, app)
     procfile = join(app_path, 'Procfile')
+    log_path = join(LOG_ROOT, app)
+
     env = {'GIT_WORK_DIR': app_path}
     if exists(app_path):
         echo("-----> Deploying app '%s'" % app, fg='green')
         call('git pull --quiet', cwd=app_path, env=env, shell=True)
         call('git checkout -f', cwd=app_path, env=env, shell=True)
+        if not exists(log_path):
+            os.makedirs(log_path)
         workers = parse_procfile(procfile)
         if workers:
             if exists(join(app_path, 'requirements.txt')):
@@ -117,7 +122,7 @@ def do_deploy(app):
 def deploy_python(app, workers):
     """Deploy a Python application"""
     
-    virtualenv_path = join(ENV_PATH, app)
+    virtualenv_path = join(ENV_ROOT, app)
     requirements = join(APP_ROOT, app, 'requirements.txt')
 
     if not exists(virtualenv_path):
@@ -125,7 +130,6 @@ def deploy_python(app, workers):
         os.makedirs(virtualenv_path)
         call('virtualenv %s' % app, cwd=ENV_ROOT, shell=True)
 
-    
     if getmtime(requirements) > getmtime(virtualenv_path):
         echo("-----> Running pip for '%s'" % app, fg='green')
         activation_script = join(virtualenv_path,'bin','activate_this.py')
@@ -137,13 +141,13 @@ def deploy_python(app, workers):
 def create_workers(app, workers):
     """Create all workers for an app"""
     
-    ordinal = 1
+    ordinals = defaultdict(1)
     # the Python virtualenv
-    virtualenv_path = join(ENV_PATH, app)
+    virtualenv_path = join(ENV_ROOT, app)
     # Settings shipped with the app
     env_file = join(APP_ROOT, app, 'ENV')
     # Custom overrides
-    settings = join(ENV_ROOT, app)
+    settings = join(ENV_ROOT, app, 'ENV')
     env = {
         'PATH': os.environ['PATH'],
         'VIRTUAL_ENV': virtualenv_path,
@@ -158,8 +162,8 @@ def create_workers(app, workers):
         env.update(parse_settings(settings))
     # Create workers
     for k, v in workers.iteritems():
-        single_worker(app, k, v, env, ordinal)
-        ordinal += 1
+        single_worker(app, k, v, env, ordinals[k])
+        ordinals[k] += 1
 
 
 def single_worker(app, kind, command, env, ordinal=1):
@@ -176,7 +180,7 @@ def single_worker(app, kind, command, env, ordinal=1):
         ('project',         app),
         ('max-requests',    '1000'),
         ('processes',       '1'),
-        ('procname-prefix', '%s_%s_%d' % (app, kind, ordinal))
+        ('procname-prefix', '%s_%s_%d' % (app, kind, ordinal)),
         ('enable-threads',  'true'),
         ('threads',         '4'),
         ('log-maxsize',     '1048576'),
@@ -184,7 +188,7 @@ def single_worker(app, kind, command, env, ordinal=1):
         ('log-backupname',  '%s_%d.log.old' % (join(LOG_ROOT, app, kind), ordinal)),
     ]
     for k, v in env.iteritems():
-        settings.append(('env', '%s=%v' % (k,v)))
+        settings.append(('env', '%s=%s' % (k,v)))
         
     if kind == 'wsgi':
         settings.extend([
@@ -198,9 +202,10 @@ def single_worker(app, kind, command, env, ordinal=1):
         h.write('[uwsgi]\n')
         for k, v in settings:
             h.write("%s = %s\n" % (k, v))
-            
+    
     echo("-----> Enabling '%s:%s_%d'" % (app, kind, ordinal), fg='green')
-    os.unlink(enabled)
+    if exists(enabled):
+        os.unlink(enabled)
     sleep(5) # TODO: replace this with zmq signalling
     shutil.copyfile(available, enabled)
 
@@ -221,12 +226,15 @@ def multi_tail(app, filenames):
     prefixes = {}
     
     for f in filenames:
-        prefixes[f] = splitext(basename(f))[0].replace("%s_" % app, '')
+        prefixes[f] = splitext(basename(f))[0]
         files[f] = open(f)
         inodes[f] = os.stat(f).st_ino
-        h.seek(0, 2)
+        files[f].seek(0, 2)
         
     longest = max(map(len, prefixes.values()))
+    for f in filenames:
+        for line in deque(open(f), 20):
+            yield "%s | %s" % (prefixes[f].ljust(longest), line)
 
     while True:
         updated = False
@@ -238,11 +246,14 @@ def multi_tail(app, filenames):
                 updated = True
                 yield "%s | %s" % (prefixes[f].ljust(longest), line)
         if not updated:
-            time.sleep(1)
+            sleep(1)
             for f in filenames:
-                if os.stat(f).st_ino != inodes[f]:
-                    files[f] = open(f)
-                    inodes[f] = os.stat(f).st_ino
+                if exists(f):
+                    if os.stat(f).st_ino != inodes[f]:
+                        files[f] = open(f)
+                        inodes[f] = os.stat(f).st_ino
+                else:
+                    filenames.remove(f)
 
 
 # === CLI commands ===    
@@ -347,11 +358,10 @@ def tail_logs(app):
     """Tail an application log"""
     
     app = sanitize_app_name(app)
-    logfiles = glob(LOG_ROOT, "%s*.log" % app)
-    
+    logfiles = glob(join(LOG_ROOT, app, '*.log'))
     if len(logfiles):
-        while True:
-            echo(multi_tail(app, logfiles), fg='white')
+        for line in multi_tail(app, logfiles):
+            echo(line.strip(), fg='white')
     else:
         echo("No logs found for app '%s'." % app, fg='yellow')
 
