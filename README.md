@@ -19,7 +19,7 @@ From the bottom up:
 - [ ] CLI command documentation
 - [ ] Complete installation instructions (see `INSTALL.md` for a working draft)
 - [ ] Worker scaling
-- [ ] HTTP port selection (and per-app environment variables)
+- [x] HTTP port selection (and per-app environment variables)
 - [x] Sample Python app
 - [X] `Procfile` support (`wsgi` and 'worker` processes for now, `web` processes being tested)
 - [x] Basic CLI commands to manage apps

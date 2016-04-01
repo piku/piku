@@ -75,17 +75,22 @@ def parse_procfile(filename):
     return workers 
 
 
-def parse_settings(filename):
+def parse_settings(filename, env={}):
     """Parses a settings file and returns a dict with environment variables"""
+
+    def expandvars(buffer, env, default=None, skip_escaped=False):
+        def replace_var(match):
+            return env.get(match.group(2) or match.group(1), match.group(0) if default is None else default)
+        pattern = (r'(?<!\\)' if skip_escaped else '') + r'\$(\w+|\{([^}]*)\})'
+        return re.sub(pattern, replace_var, buffer)
     
-    env = {}
     if not exists(filename):
         return None
     with open(filename, 'r') as settings:
         for line in settings:
             try:
                 k, v = map(lambda x: x.strip(), line.split("=", 1))
-                env[k] = v
+                env[k] = expandvars(v, env)
             except:
                 echo("Warning: malformed setting '%s'" % line, fg='yellow')
     return env
@@ -156,13 +161,14 @@ def create_workers(app, workers):
         'PORT': str(get_free_port()),
         'PWD': dirname(env_file),
     }
+    # TODO: perform $ENV_VAR expansion using os.path.expandvars and a safe context
     
     # Load environment variables shipped with repo (if any)
     if exists(env_file):
-        env.update(parse_settings(env_file))
+        env.update(parse_settings(env_file, env))
     # Override with custom settings (if any)
     if exists(settings):
-        env.update(parse_settings(settings))
+        env.update(parse_settings(settings, env))
     # Create workers
     for k, v in workers.iteritems():
         single_worker(app, k, v, env, ordinals[k]+1)
@@ -183,7 +189,7 @@ def single_worker(app, kind, command, env, ordinal=1):
         ('project',         app),
         ('max-requests',    '1000'),
         ('processes',       '1'),
-        ('procname-prefix', '%s_%s_%d: ' % (app, kind, ordinal)),
+        ('procname-prefix', '%s_%s_%d:' % (app, kind, ordinal)),
         ('enable-threads',  'true'),
         ('threads',         '4'),
         ('log-maxsize',     '1048576'),
