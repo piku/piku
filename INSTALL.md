@@ -34,4 +34,28 @@ sudo update-rc.d uwsgi-piku defaults
 sudo service uwsgi-piku start
 ```
 
+## Go Installation (on Raspberry Pi)
+
+> This is **EXPERIMENTAL** and may not work at all.
+
+Since Raspbian's Go compiler is version 1.0.2, we need something more up-to-date.
+
+1. Get an [ARM 6 binary tarball][goarm]
+2. Unpack it under the `piku` user like such:
+
+```bash
+cd ~
+tar -zxvf /tmp/go1.5.3.linux-arm.tar.gz
+```
+
+3. Give it a temporary `GOPATH` and install `godep`:
+
+```bash
+cd ~
+GOROOT=$HOME/go GOPATH=$HOME/golibs PATH=$PATH:$HOME/go/bin go get github.com/tools/godep
+```
+
+_TODO: complete this._
+
+[goarm]: http://dave.cheney.net/unofficial-arm-tarballs
 [uwsgi]: https://github.com/unbit/uwsgi
