@@ -51,7 +51,6 @@ def setup_authorized_keys(ssh_fingerprint, script_path, pubkey):
         h.write("""command="FINGERPRINT=%(ssh_fingerprint)s NAME=default %(script_path)s $SSH_ORIGINAL_COMMAND",no-agent-forwarding,no-user-rc,no-X11-forwarding,no-port-forwarding %(pubkey)s\n""" % locals())
         
 
-# TODO: allow for multiple workers
 def parse_procfile(filename):
     """Parses a Procfile and returns the worker types. Only one worker of each type is allowed."""
     
@@ -161,7 +160,6 @@ def create_workers(app, workers):
         'PORT': str(get_free_port()),
         'PWD': dirname(env_file),
     }
-    # TODO: perform $ENV_VAR expansion using os.path.expandvars and a safe context
     
     # Load environment variables shipped with repo (if any)
     if exists(env_file):
@@ -216,7 +214,7 @@ def single_worker(app, kind, command, env, ordinal=1):
     echo("-----> Enabling '%s:%s_%d'" % (app, kind, ordinal), fg='green')
     if exists(enabled):
         os.unlink(enabled)
-    sleep(5) # TODO: replace this with zmq signalling
+    sleep(5)
     shutil.copyfile(available, enabled)
 
 
@@ -361,7 +359,6 @@ def list_apps():
         echo(a, fg='green')
 
 
-# TODO: multitail
 @piku.command("tail")
 @argument('app')
 def tail_logs(app):
@@ -390,7 +387,7 @@ def restart_app(app):
         # Destroying the original file signals uWSGI to kill the vassal instead of reloading it
         for e in enabled:
             os.unlink(e)    
-        sleep(5) # TODO: replace this with zmq signalling    
+        sleep(5)
         if len(available):
             for a in available:
                 shutil.copy(a, join(UWSGI_ENABLED, app))
