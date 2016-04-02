@@ -200,6 +200,7 @@ def single_worker(app, kind, command, env, ordinal=1):
         settings.append(('env', '%s=%s' % (k,v)))
         
     if kind == 'wsgi':
+        echo("-----> Setting HTTP port to %s" % env['PORT'], fg='yellow')
         settings.extend([
             ('module', command),
             ('http', ':%s' % env['PORT'])
