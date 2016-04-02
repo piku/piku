@@ -8,7 +8,7 @@ Using [uWSGI][uwsgi] in [emperor mode][emperor] gives us the following features 
 
 * Painless Python WSGI and `virtualenv` integration
 * Process monitoring, restarting, basic resource limiting, etc.
-* Basic security scaffolding, beginning with the ability to define `uid´/`gid` on a per-app basis (if necessary)
+* Basic security scaffolding, beginning with the ability to define `uid`/`gid` on a per-app basis (if necessary)
 
 ## Application packaging
 
@@ -37,6 +37,20 @@ worker: background_worker
 ````
 
 Any worker will be automatically respawned upon failure ([uWSGI][uwsgi] will automatically shun/throttle crashy workers).
+
+## `ENV` settings
+
+Since `piku` is targeted at [12 Factor apps][12f], it allows you to set environment variables in a number of ways, the simplest of which is by adding an `ENV` file to your repository:
+
+```bash
+SETTING1=foo
+# piku supports comments and variable expansion
+SETTING2=${SETTING1}/bar
+# if this isn't defined, piku will assign a random TCP port
+PORT=9080
+```
+
+Environment variables can be changed after deployment using `config:set`.
 
 ## Runtime detection
 
@@ -72,3 +86,4 @@ This separation makes it easier to cope with long/large deployments and restore 
 
 [uwsgi]: https://github.com/unbit/uwsgi
 [emperor]: http://uwsgi-docs.readthedocs.org/en/latest/Emperor.html
+[12f]: http://12factor.net
