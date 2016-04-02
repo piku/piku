@@ -84,7 +84,7 @@ def parse_settings(filename, env={}):
         return re.sub(pattern, replace_var, buffer)
     
     if not exists(filename):
-        return None
+        return {}
     with open(filename, 'r') as settings:
         for line in settings:
             try:
@@ -154,6 +154,8 @@ def create_workers(app, workers):
     env_file = join(APP_ROOT, app, 'ENV')
     # Custom overrides
     settings = join(ENV_ROOT, app, 'ENV')
+    # Live settings
+    live = join(ENV_ROOT, app, 'LIVE_ENV')
     env = {
         'PATH': os.environ['PATH'],
         'VIRTUAL_ENV': virtualenv_path,
@@ -167,6 +169,10 @@ def create_workers(app, workers):
     # Override with custom settings (if any)
     if exists(settings):
         env.update(parse_settings(settings, env))
+    # Save current settings
+    with open(live, 'w') as h:
+        for k, v in env.iteritems():
+            h.write('%s=%s\n' % (k,v))
     # Create workers
     for k, v in workers.iteritems():
         single_worker(app, k, v, env, ordinals[k]+1)
@@ -284,6 +290,68 @@ def cleanup(ctx):
 
 # --- User commands ---
 
+@piku.command("config")
+@argument('app')
+def deploy_app(app):
+    """Show application configuration"""
+    
+    app = sanitize_app_name(app)
+    config_file = join(ENV_ROOT, app, 'ENV')
+    if exists(config_file):
+        echo(open(config_file).read(), fg='white')
+    # no output if file is missing, for scripting purposes
+
+
+@piku.command("config:get")
+@argument('app')
+@argument('setting')
+def deploy_app(app, setting):
+    """Retrieve a configuration setting"""
+    
+    app = sanitize_app_name(app)
+    config_file = join(ENV_ROOT, app, 'ENV')
+    if exists(config_file):
+        env = parse_settings(config_file)
+        if setting in env:
+            echo("%s" % env[setting], fg='white')
+    # no output if file or setting is missing, for scripting purposes
+
+
+@piku.command("config:set")
+@argument('app')
+@argument('settings', nargs=-1)
+def deploy_app(app, settings):
+    """Show application configuration"""
+    
+    app = sanitize_app_name(app)
+    config_file = join(ENV_ROOT, app, 'ENV')
+    env = parse_settings(config_file)
+    items = {}
+    for s in settings:
+        try:
+            k, v = map(lambda x: x.strip(), s.split("=", 1))
+            env[k] = v
+            echo("Setting %s=%s for '%s'" % (k, v, app), fg='white')
+        except:
+            echo("Warning: malformed setting '%s'" % s, fg='yellow')
+    with open(config_file, 'w') as h:
+        for k, v in env.iteritems():
+            h.write("%s=%s\n" % (k, v))
+    do_deploy(app)
+
+
+@piku.command("config:live")
+@argument('app')
+def deploy_app(app):
+    """Show current application settings"""
+    
+    app = sanitize_app_name(app)
+    live_config = join(ENV_ROOT, app, 'LIVE_ENV')
+    if exists(live_config):
+        echo(open(live_config).read(), fg='white')
+    # no output if file or app is missing, for scripting purposes
+
+
 @piku.command("deploy")
 @argument('app')
 def deploy_app(app):
@@ -359,20 +427,6 @@ def list_apps():
         echo(a, fg='green')
 
 
-@piku.command("tail")
-@argument('app')
-def tail_logs(app):
-    """Tail an application log"""
-    
-    app = sanitize_app_name(app)
-    logfiles = glob(join(LOG_ROOT, app, '*.log'))
-    if len(logfiles):
-        for line in multi_tail(app, logfiles):
-            echo(line.strip(), fg='white')
-    else:
-        echo("No logs found for app '%s'." % app, fg='yellow')
-
-
 @piku.command("restart")
 @argument('app')
 def restart_app(app):
@@ -393,6 +447,20 @@ def restart_app(app):
                 shutil.copy(a, join(UWSGI_ENABLED, app))
     else:
         echo("Error: app '%s' not enabled!" % app, fg='red')
+
+
+@piku.command("tail")
+@argument('app')
+def tail_logs(app):
+    """Tail an application log"""
+    
+    app = sanitize_app_name(app)
+    logfiles = glob(join(LOG_ROOT, app, '*.log'))
+    if len(logfiles):
+        for line in multi_tail(app, logfiles):
+            echo(line.strip(), fg='white')
+    else:
+        echo("No logs found for app '%s'." % app, fg='yellow')
 
 
 # --- Internal commands ---

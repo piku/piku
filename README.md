@@ -18,7 +18,8 @@ From the bottom up:
 - [ ] Support barebones binary deployments
 - [ ] CLI command documentation
 - [ ] Complete installation instructions (see `INSTALL.md` for a working draft)
-- [ ] Remote CLI commands for changing settings, worker scaling, etc.
+- [ ] Worker scaling 
+- [x] Remote CLI commands for changing/viewing applied/live settings
 - [x] Remote tailing of all logfiles for a single application
 - [x] HTTP port selection (and per-app environment variables)
 - [x] Sample Python app
