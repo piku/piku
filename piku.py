@@ -220,9 +220,8 @@ def single_worker(app, kind, command, env, ordinal=1):
         ('project',         app),
         ('max-requests',    '1000'),
         ('processes',       '1'),
-        ('procname-prefix', '%s_%s.%d:' % (app, kind, ordinal)),
+        ('procname-prefix', '%s:%s:' % (app, kind)),
         ('enable-threads',  'true'),
-        ('threads',         '4'),
         ('log-maxsize',     '1048576'),
         ('logto',           '%s.%d.log' % (join(LOG_ROOT, app, kind), ordinal)),
         ('log-backupname',  '%s.%d.log.old' % (join(LOG_ROOT, app, kind), ordinal)),
@@ -234,6 +233,7 @@ def single_worker(app, kind, command, env, ordinal=1):
         echo("-----> Setting HTTP port to %s" % env['PORT'], fg='yellow')
         settings.extend([
             ('module', command),
+            ('threads', '4'),
             ('http', ':%s' % env['PORT'])
         ])
     else:
