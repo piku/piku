@@ -513,7 +513,7 @@ def deploy_app(app, settings):
     do_deploy(app)
 
 
-@piku.command("tail")
+@piku.command("logs")
 @argument('app')
 def tail_logs(app):
     """Tail an application log"""
