@@ -95,6 +95,8 @@ def parse_settings(filename, env={}):
         return {}
     with open(filename, 'r') as settings:
         for line in settings:
+            if '#' = line[0]: # allow for comments
+                continue
             try:
                 k, v = map(lambda x: x.strip(), line.split("=", 1))
                 env[k] = expandvars(v, env)
