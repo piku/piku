@@ -196,10 +196,22 @@ def spawn_app(app, deltas={}):
     to_destroy = {}    
     for k, v in worker_count.iteritems():
         to_create[k] = range(1,worker_count[k] + 1)
-        if k in deltas:
+        if k in deltas and deltas[k]:
             to_create[k] = range(1, worker_count[k] + deltas[k] + 1)
-            to_destroy[k] = range(1, worker_count[k] + 1)[deltas[k]::]
+            if deltas[k] < 0:
+                to_destroy[k] = range(worker_count[k], worker_count[k] + deltas[k], -1)
             worker_count[k] = worker_count[k]+deltas[k]
+
+    # Save current settings
+    write_config(live, env)
+    write_config(scaling, worker_count, ':')
+    
+    # Create new workers
+    for k, v in to_create.iteritems():
+        for w in v:
+            enabled = join(UWSGI_ENABLED, '%s_%s.%d.ini' % (app, k, w))
+            if not exists(enabled):
+                spawn_worker(app, k, workers[k], env, w)
         
     # Remove unnecessary workers (leave logfiles)
     for k, v in to_destroy.iteritems():
@@ -208,18 +220,6 @@ def spawn_app(app, deltas={}):
             if exists(enabled):
                 echo("-----> Terminating '%s:%s.%d'" % (app, k, w), fg='yellow')
                 os.unlink(enabled)
-    
-    # Create new workers
-    for k, v in to_create.iteritems():
-        for w in v:
-            enabled = join(UWSGI_ENABLED, '%s_%s.%d.ini' % (app, k, w))
-            if not exists(enabled):
-                spawn_worker(app, k, workers[k], env, w)
-
-    # Save current settings
-    write_config(live, env)
-    write_config(scaling, worker_count, ':')
-    sleep(1) # let uwsgi catch up on a slower Pi
     
 
 def spawn_worker(app, kind, command, env, ordinal=1):
@@ -507,7 +507,7 @@ def deploy_app(app, settings):
     if not exists(join(APP_ROOT, app)):
         return
     config_file = join(ENV_ROOT, app, 'SCALING')
-    worker_count = parse_procfile(config_file)
+    worker_count = {k:int(v) for k, v in parse_procfile(config_file).iteritems()}
     items = {}
     deltas = {}
     for s in settings:
@@ -520,9 +520,7 @@ def deploy_app(app, settings):
             if k not in worker_count:
                 echo("Error: worker type '%s' not present in '%s'" % (k, app), fg='red')
                 return
-            deltas[k] = c - int(worker_count[k])
-            worker_count[k] = v
-            echo("Scaling %s to %s for '%s'" % (k, v, app), fg='white')
+            deltas[k] = c - worker_count[k]
         except:
             echo("Error: malformed setting '%s'" % s, fg='red')
             return
