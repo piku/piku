@@ -45,7 +45,7 @@ def write_config(filename, bag, separator='='):
     
     with open(filename, 'w') as h:
         for k, v in bag.iteritems():
-            h.write('%s%s%s\n' % (k,separator,v))
+            h.write('%s%s%s\n' % (k,separator,str(v)))
 
 
 def setup_authorized_keys(ssh_fingerprint, script_path, pubkey):
@@ -95,7 +95,7 @@ def parse_settings(filename, env={}):
         return {}
     with open(filename, 'r') as settings:
         for line in settings:
-            if '#' = line[0]: # allow for comments
+            if '#' == line[0]: # allow for comments
                 continue
             try:
                 k, v = map(lambda x: x.strip(), line.split("=", 1))
@@ -124,17 +124,17 @@ def do_deploy(app):
         if len(workers):
             if exists(join(app_path, 'requirements.txt')):
                 echo("-----> Python app detected.", fg='green')
-                deploy_python(app, workers)
+                deploy_python(app)
             else:
                 echo("-----> Could not detect runtime!", fg='red')
             # TODO: detect other runtimes
         else:
-            echo("Error: Procfile not found for app '%s'." % app, fg='red')
+            echo("Error: Invalid Procfile for app '%s'." % app, fg='red')
     else:
         echo("Error: app '%s' not found." % app, fg='red')
         
         
-def deploy_python(app, workers):
+def deploy_python(app):
     """Deploy a Python application"""
     
     virtualenv_path = join(ENV_ROOT, app)
@@ -152,14 +152,18 @@ def deploy_python(app, workers):
         activation_script = join(virtualenv_path,'bin','activate_this.py')
         execfile(activation_script, dict(__file__=activation_script))
         call('pip install -r %s' % requirements, cwd=virtualenv_path, shell=True)
-    create_workers(app, workers)
+    spawn_app(app)
 
  
-def create_workers(app, workers):
+def spawn_app(app, deltas={}):
     """Create all workers for an app"""
     
+    app_path = join(APP_ROOT, app)
+    procfile = join(app_path, 'Procfile')
+    workers = parse_procfile(procfile)
     ordinals = defaultdict(lambda:1)
-    worker_count = {k:'1' for k in workers.keys()}
+    worker_count = {k:1 for k in workers.keys()}
+
     # the Python virtualenv
     virtualenv_path = join(ENV_ROOT, app)
     # Settings shipped with the app
@@ -183,32 +187,46 @@ def create_workers(app, workers):
     # Override with custom settings (if any)
     if exists(settings):
         env.update(parse_settings(settings, env))
+    
+    # Configured worker count
     if exists(scaling):
-        worker_count.update(parse_procfile(scaling))
+        worker_count.update({k: int(v) for k,v in parse_procfile(scaling).iteritems()})
+    
+    to_create = {}
+    to_destroy = {}    
+    for k, v in worker_count.iteritems():
+        to_create[k] = range(1,worker_count[k] + 1)
+        if k in deltas:
+            to_create[k] = range(1, worker_count[k] + deltas[k] + 1)
+            to_destroy[k] = range(1, worker_count[k] + 1)[deltas[k]::]
+            worker_count[k] = worker_count[k]+deltas[k]
+        
+    print to_create
+    print to_destroy
+    print deltas
+    print worker_count
+    # Remove unnecessary workers (leave logfiles)
+    for k, v in to_destroy.iteritems():
+        for w in v:
+            enabled = join(UWSGI_ENABLED, '%s_%s.%d.ini' % (app, k, w))
+            if exists(enabled):
+                echo("-----> Terminating '%s:%s.%d'" % (app, k, w), fg='yellow')
+                os.unlink(enabled)
+    
+    # Create new workers
+    for k, v in to_create.iteritems():
+        for w in v:
+            enabled = join(UWSGI_ENABLED, '%s_%s.%d.ini' % (app, k, w))
+            if not exists(enabled):
+                spawn_worker(app, k, workers[k], env, w)
+
     # Save current settings
     write_config(live, env)
     write_config(scaling, worker_count, ':')
-    
-    # Remove all workers
-    current_workers = glob(join(UWSGI_ENABLED, '%s_*.ini' % app))
-    for e in current_workers:
-        os.unlink(e)
-
-    # ...and logfiles
-    logfiles = glob("%s*.log*" % join(LOG_ROOT, app))
-    for l in logfiles:
-        os.unlink(l)
-        
     sleep(1) # let uwsgi catch up on a slower Pi
     
-    # Create new workers
-    for k, v in workers.iteritems():
-        for i in range(int(worker_count[k])):
-            single_worker(app, k, v, env, ordinals[k])
-            ordinals[k] += 1
 
-
-def single_worker(app, kind, command, env, ordinal=1):
+def spawn_worker(app, kind, command, env, ordinal=1):
     """Set up and deploy a single worker of a given kind"""
     
     env_path = join(ENV_ROOT, app)
@@ -246,10 +264,9 @@ def single_worker(app, kind, command, env, ordinal=1):
         for k, v in settings:
             h.write("%s = %s\n" % (k, v))
     
-    echo("-----> Enabling '%s:%s.%d'" % (app, kind, ordinal), fg='green')
     if exists(enabled):
         os.unlink(enabled)
-        sleep(1)
+    echo("-----> Spawning '%s:%s.%d'" % (app, kind, ordinal), fg='green')
     shutil.copyfile(available, enabled)
 
 
@@ -496,6 +513,7 @@ def deploy_app(app, settings):
     config_file = join(ENV_ROOT, app, 'SCALING')
     worker_count = parse_procfile(config_file)
     items = {}
+    deltas = {}
     for s in settings:
         try:
             k, v = map(lambda x: x.strip(), s.split("=", 1))
@@ -506,13 +524,13 @@ def deploy_app(app, settings):
             if k not in worker_count:
                 echo("Error: worker type '%s' not present in '%s'" % (k, app), fg='red')
                 return
+            deltas[k] = c - int(worker_count[k])
             worker_count[k] = v
             echo("Scaling %s to %s for '%s'" % (k, v, app), fg='white')
         except:
             echo("Error: malformed setting '%s'" % s, fg='red')
             return
-    write_config(config_file, worker_count, ':')
-    do_deploy(app)
+    spawn_app(app, deltas)
 
 
 @piku.command("logs")
