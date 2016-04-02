@@ -201,10 +201,6 @@ def spawn_app(app, deltas={}):
             to_destroy[k] = range(1, worker_count[k] + 1)[deltas[k]::]
             worker_count[k] = worker_count[k]+deltas[k]
         
-    print to_create
-    print to_destroy
-    print deltas
-    print worker_count
     # Remove unnecessary workers (leave logfiles)
     for k, v in to_destroy.iteritems():
         for w in v:
