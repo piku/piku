@@ -445,7 +445,7 @@ def enable_app(app):
         echo("Error: app '%s' does not exist.", fg='red')
 
 
-@piku.command("ls")
+@piku.command("apps")
 def list_apps():
     """List applications"""
     
