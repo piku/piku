@@ -470,7 +470,7 @@ def restart_app(app):
         echo("Error: app '%s' not deployed!" % app, fg='red')
 
 
-@piku.command("scale")
+@piku.command("ps")
 @argument('app')
 def deploy_app(app):
     """Show application worker count"""
@@ -482,7 +482,7 @@ def deploy_app(app):
     # no output if file is missing, for scripting purposes
 
 
-@piku.command("scale:set")
+@piku.command("ps:scale")
 @argument('app')
 @argument('settings', nargs=-1)
 def deploy_app(app, settings):
@@ -496,7 +496,7 @@ def deploy_app(app, settings):
     items = {}
     for s in settings:
         try:
-            k, v = map(lambda x: x.strip(), s.split(":", 1))
+            k, v = map(lambda x: x.strip(), s.split("=", 1))
             c = int(v) # check for integer value
             if c < 0:
                 echo("Error: cannot scale type '%s' below 0" % k, fg='red')
