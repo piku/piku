@@ -458,21 +458,16 @@ def list_apps():
 def restart_app(app):
     """Restart an application"""
     
-    app = sanitize_app_name(app)    
-    enabled = glob(join(UWSGI_ENABLED, '%s*.ini' % app))
-    available = glob(join(UWSGI_AVAILABLE, '%s*.ini' % app))
-    
-    if len(enabled):
+    app = sanitize_app_name(app)
+    config = glob(join(UWSGI_ENABLED, '%s*.ini' % app))
+
+    if len(config):
         echo("Restarting app '%s'..." % app, fg='yellow')
-        # Destroying the original file signals uWSGI to kill the vassal instead of reloading it
-        for e in enabled:
-            os.unlink(e)    
-        sleep(5)
-        if len(available):
-            for a in available:
-                shutil.copy(a, join(UWSGI_ENABLED, app))
+        for c in config:
+            os.remove(c)
+        do_deploy(app)
     else:
-        echo("Error: app '%s' not enabled!" % app, fg='red')
+        echo("Error: app '%s' not deployed!" % app, fg='red')
 
 
 @piku.command("scale")
