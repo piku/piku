@@ -502,11 +502,17 @@ def deploy_app(app, settings):
     for s in settings:
         try:
             k, v = map(lambda x: x.strip(), s.split(":", 1))
+            c = int(v) # check for integer value
             if k not in worker_count:
                 echo("Error: worker type '%s' not present in '%s'" % (k, app), fg='red')
                 return
-            _ = int(v) # check for integer value
-            worker_count[k] = v
+            elif k in ['web','wsgi'] and 0 <= c < 1:
+                echo("Error: cannot scale type '%s' above 1" % k, fg='red')
+                return
+            if c < 0 and int(worker_count[k] - c) >= 0:
+                v = worker_count[k] = worker_count[k] - c
+            else:
+                worker_count[k] = v
             echo("Scaling %s to %s for '%s'" % (k, v, app), fg='white')
         except:
             echo("Error: malformed setting '%s'" % s, fg='red')
