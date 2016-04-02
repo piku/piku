@@ -18,6 +18,7 @@ From the bottom up:
 - [ ] Support barebones binary deployments
 - [ ] CLI command documentation
 - [ ] Complete installation instructions (see `INSTALL.md` for a working draft)
+- [ ] Installation helper/SSH key add
 - [x] Worker scaling 
 - [x] Remote CLI commands for changing/viewing applied/live settings
 - [x] Remote tailing of all logfiles for a single application
