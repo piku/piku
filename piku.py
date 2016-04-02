@@ -210,8 +210,8 @@ def single_worker(app, kind, command, env, ordinal=1):
     """Set up and deploy a single worker of a given kind"""
     
     env_path = join(ENV_ROOT, app)
-    available = join(UWSGI_AVAILABLE, '%s_%s_%d.ini' % (app, kind, ordinal))
-    enabled = join(UWSGI_ENABLED, '%s_%s_%d.ini' % (app, kind, ordinal))
+    available = join(UWSGI_AVAILABLE, '%s_%s.%d.ini' % (app, kind, ordinal))
+    enabled = join(UWSGI_ENABLED, '%s_%s.%d.ini' % (app, kind, ordinal))
 
     settings = [
         ('virtualenv',      join(ENV_ROOT, app)),
@@ -220,12 +220,12 @@ def single_worker(app, kind, command, env, ordinal=1):
         ('project',         app),
         ('max-requests',    '1000'),
         ('processes',       '1'),
-        ('procname-prefix', '%s_%s_%d:' % (app, kind, ordinal)),
+        ('procname-prefix', '%s_%s.%d:' % (app, kind, ordinal)),
         ('enable-threads',  'true'),
         ('threads',         '4'),
         ('log-maxsize',     '1048576'),
-        ('logto',           '%s_%d.log' % (join(LOG_ROOT, app, kind), ordinal)),
-        ('log-backupname',  '%s_%d.log.old' % (join(LOG_ROOT, app, kind), ordinal)),
+        ('logto',           '%s.%d.log' % (join(LOG_ROOT, app, kind), ordinal)),
+        ('log-backupname',  '%s.%d.log.old' % (join(LOG_ROOT, app, kind), ordinal)),
     ]
     for k, v in env.iteritems():
         settings.append(('env', '%s=%s' % (k,v)))
@@ -244,7 +244,7 @@ def single_worker(app, kind, command, env, ordinal=1):
         for k, v in settings:
             h.write("%s = %s\n" % (k, v))
     
-    echo("-----> Enabling '%s:%s_%d'" % (app, kind, ordinal), fg='green')
+    echo("-----> Enabling '%s:%s.%d'" % (app, kind, ordinal), fg='green')
     if exists(enabled):
         os.unlink(enabled)
         sleep(1)
