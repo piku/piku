@@ -18,7 +18,8 @@ From the bottom up:
 - [ ] Support barebones binary deployments
 - [ ] CLI command documentation
 - [ ] Complete installation instructions (see `INSTALL.md` for a working draft)
-- [ ] Worker scaling
+- [ ] Remote CLI commands for changing settings, worker scaling, etc.
+- [x] Remote tailing of all logfiles for a single application
 - [x] HTTP port selection (and per-app environment variables)
 - [x] Sample Python app
 - [X] `Procfile` support (`wsgi` and `worker` processes for now, `web` processes being tested)
@@ -33,6 +34,7 @@ From the bottom up:
 * Set up an SSH `git` remote pointing to `piku` with the app name as repo name (`git remote add paas piku@server:app1`) 
 * `git push paas master` your code
 * `piku` determines the runtime and installs the dependencies for your app (building whatever's required)
+    * For Python, it segregates each app's dependencies into a `virtualenv`
 *  It then looks at a `Procfile` and starts the relevant workers using [uWSGI][uwsgi] as a generic process manager
 
 Later on, I intend to do fancier `dokku`-like stuff like reconfiguring `nginx`, but a twist I'm planning on doing is having one `piku` machine act as a build box and deploy the finished product to another.
@@ -49,7 +51,7 @@ In general, it will likely work in any POSIX-like environment where you have Pyt
 
 ## Target Runtimes
 
-I intend to support Python, Go, Node and Clojure (Java), but will be focusing on Python first, moving from shared runtime to `virtualenv` (and later, if feasible, `pyenv`) support.
+I intend to support Python, Go, Node and Clojure (Java), but will be focusing on Python first.
 
 ## FAQ
 
