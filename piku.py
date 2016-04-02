@@ -40,6 +40,14 @@ def get_free_port(address=""):
     return port
 
 
+def write_config(filename, bag, separator='='):
+    """Helper for writing out config files"""
+    
+    with open(filename, 'w') as h:
+        for k, v in bag.iteritems():
+            h.write('%s%s%s\n' % (k,separator,v))
+
+
 def setup_authorized_keys(ssh_fingerprint, script_path, pubkey):
     """Sets up an authorized_keys file to redirect SSH commands"""
     
@@ -66,7 +74,7 @@ def parse_procfile(filename):
             except:
                 echo("Warning: unrecognized Procfile declaration '%s'" % line, fg='yellow')
     if not len(workers):
-        return None
+        return {}
     # WSGI trumps regular web workers
     if 'wsgi' in workers:
         if 'web' in workers:
@@ -91,7 +99,8 @@ def parse_settings(filename, env={}):
                 k, v = map(lambda x: x.strip(), line.split("=", 1))
                 env[k] = expandvars(v, env)
             except:
-                echo("Warning: malformed setting '%s'" % line, fg='yellow')
+                echo("Error: malformed setting '%s', ignoring file." % line, fg='red')
+                return {}
     return env
     
 
@@ -110,7 +119,7 @@ def do_deploy(app):
         if not exists(log_path):
             os.makedirs(log_path)
         workers = parse_procfile(procfile)
-        if workers:
+        if len(workers):
             if exists(join(app_path, 'requirements.txt')):
                 echo("-----> Python app detected.", fg='green')
                 deploy_python(app, workers)
@@ -147,7 +156,8 @@ def deploy_python(app, workers):
 def create_workers(app, workers):
     """Create all workers for an app"""
     
-    ordinals = defaultdict(int)
+    ordinals = defaultdict(lambda:1)
+    worker_count = {k:'1' for k in workers.keys()}
     # the Python virtualenv
     virtualenv_path = join(ENV_ROOT, app)
     # Settings shipped with the app
@@ -156,6 +166,8 @@ def create_workers(app, workers):
     settings = join(ENV_ROOT, app, 'ENV')
     # Live settings
     live = join(ENV_ROOT, app, 'LIVE_ENV')
+    # Scaling
+    scaling = join(ENV_ROOT, app, 'SCALING')
     env = {
         'PATH': os.environ['PATH'],
         'VIRTUAL_ENV': virtualenv_path,
@@ -169,14 +181,29 @@ def create_workers(app, workers):
     # Override with custom settings (if any)
     if exists(settings):
         env.update(parse_settings(settings, env))
+    if exists(scaling):
+        worker_count.update(parse_procfile(scaling))
     # Save current settings
-    with open(live, 'w') as h:
-        for k, v in env.iteritems():
-            h.write('%s=%s\n' % (k,v))
-    # Create workers
+    write_config(live, env)
+    write_config(scaling, worker_count, ':')
+    
+    # Remove all workers
+    current_workers = glob(join(UWSGI_ENABLED, '%s_*.ini' % app))
+    for e in current_workers:
+        os.unlink(e)
+
+    # ...and logfiles
+    logfiles = glob("%s*.log*" % join(LOG_ROOT, app))
+    for l in logfiles:
+        os.unlink(l)
+        
+    sleep(1) # let uwsgi catch up on a slower Pi
+    
+    # Create new workers
     for k, v in workers.iteritems():
-        single_worker(app, k, v, env, ordinals[k]+1)
-        ordinals[k] += 1
+        for i in range(int(worker_count[k])):
+            single_worker(app, k, v, env, ordinals[k])
+            ordinals[k] += 1
 
 
 def single_worker(app, kind, command, env, ordinal=1):
@@ -220,7 +247,7 @@ def single_worker(app, kind, command, env, ordinal=1):
     echo("-----> Enabling '%s:%s_%d'" % (app, kind, ordinal), fg='green')
     if exists(enabled):
         os.unlink(enabled)
-    sleep(5)
+        sleep(1)
     shutil.copyfile(available, enabled)
 
 
@@ -298,7 +325,7 @@ def deploy_app(app):
     app = sanitize_app_name(app)
     config_file = join(ENV_ROOT, app, 'ENV')
     if exists(config_file):
-        echo(open(config_file).read(), fg='white')
+        echo(open(config_file).read().strip(), fg='white')
     # no output if file is missing, for scripting purposes
 
 
@@ -333,10 +360,9 @@ def deploy_app(app, settings):
             env[k] = v
             echo("Setting %s=%s for '%s'" % (k, v, app), fg='white')
         except:
-            echo("Warning: malformed setting '%s'" % s, fg='yellow')
-    with open(config_file, 'w') as h:
-        for k, v in env.iteritems():
-            h.write("%s=%s\n" % (k, v))
+            echo("Error: malformed setting '%s'" % s, fg='red')
+            return
+    write_config(config_file, env)
     do_deploy(app)
 
 
@@ -348,7 +374,7 @@ def deploy_app(app):
     app = sanitize_app_name(app)
     live_config = join(ENV_ROOT, app, 'LIVE_ENV')
     if exists(live_config):
-        echo(open(live_config).read(), fg='white')
+        echo(open(live_config).read().strip(), fg='white')
     # no output if file or app is missing, for scripting purposes
 
 
@@ -447,6 +473,46 @@ def restart_app(app):
                 shutil.copy(a, join(UWSGI_ENABLED, app))
     else:
         echo("Error: app '%s' not enabled!" % app, fg='red')
+
+
+@piku.command("scale")
+@argument('app')
+def deploy_app(app):
+    """Show application worker count"""
+    
+    app = sanitize_app_name(app)
+    config_file = join(ENV_ROOT, app, 'SCALING')
+    if exists(config_file):
+        echo(open(config_file).read().strip(), fg='white')
+    # no output if file is missing, for scripting purposes
+
+
+@piku.command("scale:set")
+@argument('app')
+@argument('settings', nargs=-1)
+def deploy_app(app, settings):
+    """Show application configuration"""
+    
+    app = sanitize_app_name(app)
+    if not exists(join(APP_ROOT, app)):
+        return
+    config_file = join(ENV_ROOT, app, 'SCALING')
+    worker_count = parse_procfile(config_file)
+    items = {}
+    for s in settings:
+        try:
+            k, v = map(lambda x: x.strip(), s.split(":", 1))
+            if k not in worker_count:
+                echo("Error: worker type '%s' not present in '%s'" % (k, app), fg='red')
+                return
+            _ = int(v) # check for integer value
+            worker_count[k] = v
+            echo("Scaling %s to %s for '%s'" % (k, v, app), fg='white')
+        except:
+            echo("Error: malformed setting '%s'" % s, fg='red')
+            return
+    write_config(config_file, worker_count, ':')
+    do_deploy(app)
 
 
 @piku.command("tail")
