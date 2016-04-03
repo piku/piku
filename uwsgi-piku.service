@@ -1,0 +1,24 @@
+[Unit]
+Description=Piku uWSGI Emperor
+After=syslog.target
+
+[Service]
+Environment=PIKU_USER=piku
+Environment=PIKU_ROOT=/home/$PIKU_USER/.piku
+Environment=RUN=$PIKU_ROOT/uwsgi
+Environment=ENABLED_CONFIGS_DIR=$PIKU_ROOT/uwsgi-enabled
+Environment=AVAILABLE_CONFIGS_DIR=$PIKU_ROOT/uwsgi-available
+Environment=OWNER=$PIKU_USER
+Environment=THREADS=4
+Environment=VERSION=uwsgi-piku
+Environment=PIDFILE=$RUN/$VERSION.pid
+ExecStart=/usr/local/bin/uwsgi-piku --chdir $PIKU_ROOT/home/piku/.piku --emperor $ENABLED_CONFIGS_DIR --enable-threads --threads $THREADS
+RuntimeDirectory=$RUN
+Restart=always
+KillSignal=SIGQUIT
+Type=notify
+StandardError=syslog
+NotifyAccess=all
+
+[Install]
+WantedBy=multi-user.target

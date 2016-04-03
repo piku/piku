@@ -15,7 +15,7 @@
 set -e
 
 VERSION=$(basename $0)
-PIKU_USER=paas
+PIKU_USER=piku
 
 PATH=/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON=/usr/local/bin/$VERSION
