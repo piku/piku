@@ -218,7 +218,7 @@ def spawn_app(app, deltas={}):
         for w in v:
             enabled = join(UWSGI_ENABLED, '%s_%s.%d.ini' % (app, k, w))
             if not exists(enabled):
-                echo("-----> Spawning '%s:%s.%d'" % (app, k, ordinal), fg='green')
+                echo("-----> Spawning '%s:%s.%d'" % (app, k, w), fg='green')
                 spawn_worker(app, k, workers[k], env, w)
         
     # Remove unnecessary workers (leave logfiles)
