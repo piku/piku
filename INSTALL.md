@@ -13,7 +13,7 @@ Copy them across to the machine you'll be using as a server before you get start
 
 ## Setting up the `piku` user (Debian Linux, any architecture)
 
-`piku` requires a separate user account to run. To create a new user with the right group membership (we're using the built-in `www-data` group because it's generally thought of as a less-privileged group), enter the following commands:
+`piku` requires a separate user account to run. To create a new user with the right group membership (we're using the built-in `www-data` group because it's generally thought of as a less-privileged group), enter the following command:
 
 ```bash
 sudo adduser --disabled-password --gecos 'PaaS access' --ingroup www-data piku
@@ -26,7 +26,7 @@ sudo su - piku
 mkdir ~/.ssh
 chmod 700 ~/.ssh
 # now copy the piku script to this user account
-cp /tmp/piku.py .
+cp /tmp/piku.py ~/piku.py
 ```
 
 ## Dependencies
@@ -80,7 +80,7 @@ cat .ssh/authorized_keys
 command="FINGERPRINT=85:29:07:cb:de:ad:be:ef:42:65:00:c8:d2:6b:9e:ff NAME=default /home/piku/piku.py $SSH_ORIGINAL_COMMAND",no-agent-forwarding,no-user-rc,no-X11-forwarding,no-port-forwarding ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDhTYZi/qeJBKgU3naI8FNjQgeMYnMsEtqrOmUc4lJoPNH2qBUTNkzwThGqsBm2HNLPURWMiEifBqF+kRixMud67Co7Zs9ys7pwFXkJB9bbZasd2JCGfVZ4UYXHnvgejSWkLAV/4bObhsbP2vWOmbbm91Cwn+PGJgoiW08yrd45lsDmgv9cUAJS3e8LkgVELvIDg49yM5ArB88oxwMEoUgWU2OniHmH0o1zw5I8WXHRhHOjb8cGsdTYfXEizRKKRTM2Mu6dKRt1GNL0UbWi8iS3uJHGD3AcQ4ApdMl5X0gTixKHponStOrSMy19/ltuIy8Sjr7KKPxz07ikMYr7Vpcp youruser@yourlaptop.lan
 ```
 
-This line is what enables you to SSH (and perform `git` over SSH operations) to the `piku` user, restricting what can be done remotely and passing on to `piku` itself the commands you'll be issuing.
+This line is what enables you to SSH (and perform `git` over SSH operations) to the `piku` user without a password, verifying your identity via your public key and restricting what can be done remotely and passing on to `piku` itself the commands you'll be issuing.
 
 ## Testing
 
