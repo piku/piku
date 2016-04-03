@@ -256,9 +256,11 @@ def spawn_worker(app, kind, command, env, ordinal=1):
     if kind == 'wsgi':
         echo("-----> Setting HTTP port to %s" % env['PORT'], fg='yellow')
         settings.extend([
-            ('module', command),
-            ('threads', '4'),
-            ('http', ':%s' % env['PORT'])
+            ('module',      command),
+            ('threads',     '4'),
+            ('plugin',      'python'),
+            ('http',        ':%s' % env['PORT']),
+            ('http-socket', ':%s' % env['PORT']),
         ])
     else:
         settings.append(('attach-daemon', command))
@@ -546,7 +548,7 @@ def init_paths():
             echo("Creating '%s'." % p, fg='green')
             os.makedirs(p)
     # mark this script as executable (in case we were invoked via interpreter)
-    if not(os.stat(__file__).st_mode & stat.S_IXUSR):
+    if not(os.stat(realpath(__file__)).st_mode & stat.S_IXUSR):
         echo("Setting '%s' as executable." % this_script, fg='yellow')
         os.chmod(realpath(this_script), os.stat(this_script).st_mode | stat.S_IXUSR)         
 
@@ -562,8 +564,7 @@ def add_key(public_key_file):
             if re.match('(([0-9a-f]{2}\:){16})', '%s:' % fingerprint):
                 key = open(public_key_file).read().strip()
                 echo("Adding key '%s'." % fingerprint, fg='white')
-                this_script = realpath(__file__)
-                setup_authorized_keys(fingerprint, this_script, key)
+                setup_authorized_keys(fingerprint, realpath(__file__), key)
         except:
             echo("Error: invalid public key file '%s'" % public_key_file, fg='red')
     
