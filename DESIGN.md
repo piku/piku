@@ -80,7 +80,7 @@ Supporting multiple Python versions can be done by deploying `piku` again under 
 
 ## Internals
 
-`piku` uses two `git` repositories for each app: a bare repository for client push, and a clone for deployent (which is efficient in terms of storage since `git` tries to use hardlinks on local clones whenever possible).
+`piku` uses two `git` repositories for each app: a bare repository for client push, and a clone for deployment (which is efficient in terms of storage since `git` tries to use hardlinks on local clones whenever possible).
 
 This separation makes it easier to cope with long/large deployments and restore apps to a pristine condition, since the app will only go live after the deployment clone is reset (via `git checkout -f`).
 

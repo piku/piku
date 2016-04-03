@@ -10,14 +10,15 @@ I kept finding myself wanting an Heroku/CloudFoundry-like way to deploy stuff on
 
 From the bottom up:
 
-- [ ] Support Node deployments (if at all possible in a sane fashion)
-- [ ] `chroot`/namespace isolation
+- [ ] Prebuilt Raspbian image with everything baked in
+- [ ] `chroot`/namespace isolation (tentative)
 - [ ] Proxy deployments to other nodes (build on one box, deploy to many) 
+- [ ] Support Node deployments
 - [ ] Support Clojure/Java deployments
-- [ ] CLI command documentation
-- [ ] Support barebones binary deployments
 - [ ] Sample Go app
 - [ ] Support Go deployments
+- [ ] CLI command documentation
+- [x] Support barebones binary deployments
 - [x] Complete installation instructions (see `INSTALL.md`, which also has a draft of Go installation steps)
 - [x] Installation helper/SSH key setup
 - [x] Worker scaling 
@@ -32,11 +33,11 @@ From the bottom up:
 - [x] Repo creation upon first push
 - [x] Basic understanding of [how `dokku` works](http://off-the-stack.moorman.nu/2013-11-23-how-dokku-works.html)
 
-## Typical Workflow
+## Using `piku``
 
-`piku` aims to support a Heroku-like workflow, like so:
+`piku` supports a Heroku-like workflow, like so:
 
-* Set up an SSH `git` remote pointing to `piku` with the app name as repo name (`git remote add paas piku@server:app1`) 
+* Create a `git` SSH remote pointing to `piku` with the app name as repo name (`git remote add paas piku@server:app1`) 
 * `git push paas master` your code
 * `piku` determines the runtime and installs the dependencies for your app (building whatever's required)
     * For Python, it segregates each app's dependencies into a `virtualenv`
@@ -51,7 +52,7 @@ Later on, I intend to do fancier `dokku`-like stuff like reconfiguring `nginx`, 
 `piku` is intended to work in any POSIX-like environment where you have Python, [uWSGI][uwsgi] and SSH, i.e.: 
 Linux, FreeBSD, [Cygwin][cygwin] and the [Windows Subsystem for Linux][wsl].
 
-As a baseline, I intend to make sure this runs on an original, 256MB Rasbperry Pi Model B (which is where I'm testing it).
+As a baseline, this is currently being developed an original, 256MB Rasbperry Pi Model B.
 
 Since I have an ODROID-U2, [a bunch of Pi 2s][raspi-cluster] and a few more ARM boards on the way, it will be tested on a number of places where running `x64` binaries is unfeasible.
 

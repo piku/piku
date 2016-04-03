@@ -37,7 +37,7 @@ Before running `piku` for the first time, you need to install the following Pyth
 sudo pip install -U click virtualenv
 ```
 
-These may or may not be installed already (`click` usually isn't).
+These may or may not be installed already (`click` usually isn't). For Raspbian this is the preferred approach, since current `apt` packages are fairly outdated.
 
 ## Setting up SSH access
 
@@ -123,7 +123,7 @@ And that's it, you're set. Now to configure [uWSGI][uwsgi], which is what `piku`
 
 ### Raspbian
 
-Since Raspbian's a fairly old distribution by now, its `uwsgi-*` packages are outdated (and depend on Python 2.6), so we have to compile and install our own version, as well as using an old-style `init` script to have it start automatically upon boot.
+Since Raspbian's a fairly old distribution by now, its `uwsgi-*` packages are completely outdated (and depend on Python 2.6), so we have to compile and install our own version, as well as using an old-style `init` script to have it start automatically upon boot.
 
 ```bash
 sudo apt-get install build-essential python-dev libpcre3-dev
