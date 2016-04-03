@@ -33,11 +33,20 @@ cp /tmp/piku.py ~/piku.py
 
 Before running `piku` for the first time, you need to install the following Python packages at the system level:
 
+### Raspbian Jessie, Debian 8, Ubuntu
+
 ```bash
+sudo apt-get install python-virtualenv python-pip
+sudo pip install -U click
+```
+
+### Raspbian Wheezy
+```bash
+sudo easy_install pip
 sudo pip install -U click virtualenv
 ```
 
-These may or may not be installed already (`click` usually isn't). For Raspbian this is the preferred approach, since current `apt` packages are fairly outdated.
+These may or may not be installed already (`click` usually isn't). For Raspbian Wheezy this is the preferred approach, since current `apt` packages are fairly outdated.
 
 ## Setting up SSH access
 
@@ -121,9 +130,22 @@ And that's it, you're set. Now to configure [uWSGI][uwsgi], which is what `piku`
 
 [uWSGI][uwsgi] can be installed in a variety of fashions. However, these instructions assume you're installing it from source, and as such may vary from system to system.
 
-### Raspbian
+### Raspbian Jessie
 
-Since Raspbian's a fairly old distribution by now, its `uwsgi-*` packages are completely outdated (and depend on Python 2.6), so we have to compile and install our own version, as well as using an old-style `init` script to have it start automatically upon boot.
+```bash
+# at the time of this writing, this installs uwsgi 2.0.7
+sudo apt-get install uwsgi
+# refer to our executable using a link, in case there are more versions installed
+sudo ln -s `which uwsgi` /usr/local/bin/uwsgi-piku
+# disable the standard uwsgi startup script
+sudo systemctl disable uwsgi
+```
+
+_TODO: complete this with a new systemd setup that covers the required paths for uWSGI._
+
+### Raspbian Wheezy
+
+Since Raspbian Wheezy is a fairly old distribution by now, its `uwsgi-*` packages are completely outdated (and depend on Python 2.6), so we have to compile and install our own version, as well as using an old-style `init` script to have it start automatically upon boot.
 
 ```bash
 sudo apt-get install build-essential python-dev libpcre3-dev
@@ -139,11 +161,11 @@ sudo update-rc.d uwsgi-piku defaults
 sudo service uwsgi-piku start
 ```
 
-## Go Installation (Debian Linux variants, on Raspberry Pi)
+## Go Installation (All Debian Linux variants, on Raspberry Pi)
 
 > This is **EXPERIMENTAL** and may not work at all.
 
-### Raspbian
+### Raspbian Wheezy/Jessie
 
 Since Raspbian's Go compiler is version 1.0.2, we need something more up-to-date.
 
