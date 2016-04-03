@@ -7,7 +7,7 @@ You can, however, run `piku` on any POSIX-like environment where you have Python
 For installation, you only require `root`/`sudo` access and the following two files:
 
 * `piku.py`
-* `uwsgi-piku.dist`
+* `uwsgi-piku.dist` (this one should only be necessary on older systems)
 
 Copy them across to the machine you'll be using as a server before you get started with the rest.
 
