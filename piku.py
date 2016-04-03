@@ -125,6 +125,8 @@ def do_deploy(app):
             if exists(join(app_path, 'requirements.txt')):
                 echo("-----> Python app detected.", fg='green')
                 deploy_python(app)
+            # if exists(join(app_path, 'Godeps')) or len(glob(join(app_path),'*.go')):
+            # Go deployment
             else:
                 echo("-----> Could not detect runtime!", fg='red')
             # TODO: detect other runtimes
@@ -174,6 +176,8 @@ def spawn_app(app, deltas={}):
     live = join(ENV_ROOT, app, 'LIVE_ENV')
     # Scaling
     scaling = join(ENV_ROOT, app, 'SCALING')
+    
+    # Bootstrap environment
     env = {
         'PATH': os.environ['PATH'],
         'VIRTUAL_ENV': virtualenv_path,
@@ -184,6 +188,7 @@ def spawn_app(app, deltas={}):
     # Load environment variables shipped with repo (if any)
     if exists(env_file):
         env.update(parse_settings(env_file, env))
+    
     # Override with custom settings (if any)
     if exists(settings):
         env.update(parse_settings(settings, env))
@@ -211,6 +216,7 @@ def spawn_app(app, deltas={}):
         for w in v:
             enabled = join(UWSGI_ENABLED, '%s_%s.%d.ini' % (app, k, w))
             if not exists(enabled):
+                echo("-----> Spawning '%s:%s.%d'" % (app, kind, ordinal), fg='green')
                 spawn_worker(app, k, workers[k], env, w)
         
     # Remove unnecessary workers (leave logfiles)
@@ -260,15 +266,13 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         for k, v in settings:
             h.write("%s = %s\n" % (k, v))
     
-    if exists(enabled):
-        os.unlink(enabled)
-    echo("-----> Spawning '%s:%s.%d'" % (app, kind, ordinal), fg='green')
     shutil.copyfile(available, enabled)
 
 
-def multi_tail(app, filenames):
+def multi_tail(app, filenames, catch_up=20):
     """Tails multiple log files"""
     
+    # Seek helper
     def peek(handle):
         where = handle.tell()
         line = handle.readline()
@@ -281,6 +285,7 @@ def multi_tail(app, filenames):
     files = {}
     prefixes = {}
     
+    # Set up current state for each log file
     for f in filenames:
         prefixes[f] = splitext(basename(f))[0]
         files[f] = open(f)
@@ -288,12 +293,15 @@ def multi_tail(app, filenames):
         files[f].seek(0, 2)
         
     longest = max(map(len, prefixes.values()))
+    
+    # Grab a little history (if any) 
     for f in filenames:
-        for line in deque(open(f), 20):
+        for line in deque(open(f), catch_up):
             yield "%s | %s" % (prefixes[f].ljust(longest), line)
 
     while True:
         updated = False
+        # Check for updates on every file
         for f in filenames:
             line = peek(files[f])
             if not line:
@@ -301,8 +309,10 @@ def multi_tail(app, filenames):
             else:
                 updated = True
                 yield "%s | %s" % (prefixes[f].ljust(longest), line)
+                
         if not updated:
             sleep(1)
+            # Check if logs rotated
             for f in filenames:
                 if exists(f):
                     if os.stat(f).st_ino != inodes[f]:
@@ -316,7 +326,8 @@ def multi_tail(app, filenames):
     
 @group()
 def piku():
-    """Initialize paths"""
+    """The smallest PaaS you've ever seen"""
+    # Initialize paths
     for p in [APP_ROOT, GIT_ROOT, ENV_ROOT, UWSGI_ROOT, UWSGI_AVAILABLE, UWSGI_ENABLED, LOG_ROOT]:
         if not exists(p):
             os.makedirs(p)
@@ -363,7 +374,7 @@ def deploy_app(app, setting):
 @argument('app')
 @argument('settings', nargs=-1)
 def deploy_app(app, settings):
-    """Show application configuration"""
+    """Set a configuration setting"""
     
     app = sanitize_app_name(app)
     config_file = join(ENV_ROOT, app, 'ENV')
@@ -384,7 +395,7 @@ def deploy_app(app, settings):
 @piku.command("config:live")
 @argument('app')
 def deploy_app(app):
-    """Show current application settings"""
+    """Show live configuration settings"""
     
     app = sanitize_app_name(app)
     live_config = join(ENV_ROOT, app, 'LIVE_ENV')

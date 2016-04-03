@@ -14,11 +14,12 @@ From the bottom up:
 - [ ] `chroot`/namespace isolation
 - [ ] Proxy deployments to other nodes (build on one box, deploy to many) 
 - [ ] Support Clojure/Java deployments
-- [ ] Support Go deployments
-- [ ] Support barebones binary deployments
 - [ ] CLI command documentation
 - [ ] Complete installation instructions (see `INSTALL.md` for a working draft)
 - [ ] Installation helper/SSH key add
+- [ ] Support barebones binary deployments
+- [ ] Sample Go app
+- [ ] Support Go deployments
 - [x] Worker scaling 
 - [x] Remote CLI commands for changing/viewing applied/live settings
 - [x] Remote tailing of all logfiles for a single application
@@ -27,7 +28,7 @@ From the bottom up:
 - [X] `Procfile` support (`wsgi` and `worker` processes for now, `web` processes being tested)
 - [x] Basic CLI commands to manage apps
 - [x] `virtualenv` isolation
-- [x] Support Python deployments (currently hardcoded until `Procfile` is implemented)
+- [x] Support Python deployments
 - [x] Repo creation upon first push
 - [x] Basic understanding of [how `dokku` works](http://off-the-stack.moorman.nu/2013-11-23-how-dokku-works.html)
 
@@ -37,6 +38,7 @@ From the bottom up:
 * `git push paas master` your code
 * `piku` determines the runtime and installs the dependencies for your app (building whatever's required)
     * For Python, it segregates each app's dependencies into a `virtualenv`
+    * For Go, it defines a separate `GOPATH` for each app
 *  It then looks at a `Procfile` and starts the relevant workers using [uWSGI][uwsgi] as a generic process manager
 
 Later on, I intend to do fancier `dokku`-like stuff like reconfiguring `nginx`, but a twist I'm planning on doing is having one `piku` machine act as a build box and deploy the finished product to another.
@@ -61,6 +63,10 @@ I intend to support Python, Go, Node and Clojure (Java), but will be focusing on
 
 **A:** Partly because it's supposed to run on a [Pi][pi], because it's Japanese onomatopeia for 'twitch' or 'jolt', and because I know the name will annoy some of my friends.
 
+**Q:** Why Python/why not Go?
+
+**A:** I actually thought about doing this in Go right off the bat, but [click][click] is so cool and I needed to have [uWSGI][uwsgi] running anyway, so I caved in. But I'm very likely to take something like [suture](https://github.com/thejerf/suture) and port this across, doing away with [uWSGI][uwsgi] altogether.
+
 **Q:** Does it run under Python 3?
 
 **A:** It should. `click` goes a long way towards abstracting the simpler stuff, and I tried to avoid most obvious incompatibilities (other than a few differences in `subprocess.call` and the like). However, this targets Python 2.7 first, since that's the default on Raspbian. Pull requests are welcome.
@@ -69,6 +75,7 @@ I intend to support Python, Go, Node and Clojure (Java), but will be focusing on
 
 **A:** I use `dokku` daily, and for most of my personal stuff. But the `dokku` stack relies on a number of `x64` containers that need to be completely rebuilt for ARM, and when I decided I needed something like this (March 2016) that was barely possible - `docker` itself is not fully baked for ARM yet, and people are still trying to get `herokuish` and `buildstep` to build on ARM.
 
+[click]: http://click.poocoo.org
 [pi]: http://www.raspberrypi.org
 [dokku]: https://github.com/dokku/dokku
 [raspi-cluster]: https://github.com/rcarmo/raspi-cluster
