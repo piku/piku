@@ -16,10 +16,10 @@ From the bottom up:
 - [ ] Support Clojure/Java deployments
 - [ ] CLI command documentation
 - [ ] Complete installation instructions (see `INSTALL.md` for a working draft)
-- [ ] Installation helper/SSH key add
 - [ ] Support barebones binary deployments
 - [ ] Sample Go app
 - [ ] Support Go deployments
+- [ ] Installation helper/SSH key add
 - [x] Worker scaling 
 - [x] Remote CLI commands for changing/viewing applied/live settings
 - [x] Remote tailing of all logfiles for a single application
@@ -32,30 +32,32 @@ From the bottom up:
 - [x] Repo creation upon first push
 - [x] Basic understanding of [how `dokku` works](http://off-the-stack.moorman.nu/2013-11-23-how-dokku-works.html)
 
-## Workflow
+## Typical Workflow
+
+`piku` aims to support a Heroku-like workflow, like so:
 
 * Set up an SSH `git` remote pointing to `piku` with the app name as repo name (`git remote add paas piku@server:app1`) 
 * `git push paas master` your code
 * `piku` determines the runtime and installs the dependencies for your app (building whatever's required)
     * For Python, it segregates each app's dependencies into a `virtualenv`
     * For Go, it defines a separate `GOPATH` for each app
-*  It then looks at a `Procfile` and starts the relevant workers using [uWSGI][uwsgi] as a generic process manager
+* It then looks at a `Procfile` and starts the relevant workers using [uWSGI][uwsgi] as a generic process manager
+* You can then remotely change application settings (`config:set`) or scale up/down worker processes (`ps:scale`) at will.
 
 Later on, I intend to do fancier `dokku`-like stuff like reconfiguring `nginx`, but a twist I'm planning on doing is having one `piku` machine act as a build box and deploy the finished product to another.
 
-Might take a while, though.
+## Supported Platforms
 
-## Target Platforms
+`piku` is intended to work in any POSIX-like environment where you have Python, [uWSGI][uwsgi] and SSH, i.e.: 
+Linux, FreeBSD, [Cygwin][cygwin] and the [Windows Subsystem for Linux][wsl].
 
-As a baseline, I intend to make sure this runs on the original Rasbperry Pi Model B (which is where I'm testing it).
+As a baseline, I intend to make sure this runs on an original, 256MB Rasbperry Pi Model B (which is where I'm testing it).
 
-But since I have an ODROID-U2, [a bunch of Pi 2s][raspi-cluster] and a few more boards on the way, it will be tested on a number of places where running `x64` binaries is unfeasible.
+Since I have an ODROID-U2, [a bunch of Pi 2s][raspi-cluster] and a few more ARM boards on the way, it will be tested on a number of places where running `x64` binaries is unfeasible.
 
-In general, it will likely work in any POSIX-like environment where you have Python and SSH (I'm very likely to test it under [Cygwin][cygwin] at some point).
+## Supported Runtimes
 
-## Target Runtimes
-
-I intend to support Python, Go, Node and Clojure (Java), but will be focusing on Python first.
+`piku` will support deploying apps written in Python, Go, Clojure (Java) and Node (see [above](#project-statustodo)).
 
 ## FAQ
 
@@ -81,3 +83,4 @@ I intend to support Python, Go, Node and Clojure (Java), but will be focusing on
 [raspi-cluster]: https://github.com/rcarmo/raspi-cluster
 [cygwin]: http://www.cygwin.com
 [uwsgi]: https://github.com/unbit/uwsgi
+[wsl]: https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux

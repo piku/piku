@@ -2,7 +2,7 @@
 
 These installation notes should cover most Debian Linux variants (on any architecture). Very minor changes should be required to deploy on RHEL variants like CentOS, and there is specific emphasis on Raspbian because that's the typical deployment target.
 
-You can, however, run `piku` on _any_ POSIX system where [uWSGI][uwsgi] and Python are available.
+You can, however, run `piku` on any POSIX-like environment where you have Python, [uWSGI][uwsgi] and SSH.
 
 _TODO: describe the overall installation process._
 
