@@ -4,8 +4,8 @@ import os, sys, stat, re, shutil, socket
 from click import argument, command, group, option, secho as echo
 from collections import defaultdict, deque
 from glob import glob
-from os.path import abspath, basename, dirname, exists, getmtime, join, splitext
-from subprocess import call
+from os.path import abspath, basename, dirname, exists, getmtime, join, realpath, splitext
+from subprocess import call, check_output
 from time import sleep
 
 # === Globals - all tweakable settings are here ===
@@ -57,6 +57,8 @@ def setup_authorized_keys(ssh_fingerprint, script_path, pubkey):
     # Restrict features and force all SSH commands to go through our script 
     with open(authorized_keys, 'a') as h:
         h.write("""command="FINGERPRINT=%(ssh_fingerprint)s NAME=default %(script_path)s $SSH_ORIGINAL_COMMAND",no-agent-forwarding,no-user-rc,no-X11-forwarding,no-port-forwarding %(pubkey)s\n""" % locals())
+    os.chmod(authorized_keys, stat.S_IRUSR | stat.S_IWUSR)
+
         
 
 def parse_procfile(filename):
@@ -537,6 +539,27 @@ def deploy_app(app, settings):
             return
     spawn_app(app, deltas)
 
+
+@piku.command("setup:ssh")
+@argument('public_key_file')
+def add_key(public_key_file):
+    """Set up a new SSH key"""
+    
+    if exists(public_key_file):
+        try:
+            fingerprint = check_output('ssh-keygen -lf %s' % public_key_file, shell=True).split(' ',4)[1]
+            if re.match('(([0-9a-f]{2}\:){16})', '%s:' % fingerprint):
+                key = open(public_key_file).read().strip()
+                echo("Adding key '%s'." % fingerprint, fg='white')
+                this_script = realpath(__file__)
+                setup_authorized_keys(fingerprint, this_script, key)
+                # mark this script as executable (in case we were invoked via interpreter)
+                if not(os.stat(this_script).st_mode & stat.S_IXUSR):
+                    echo("Setting '%s' as executable." % this_script, fg='yellow')
+                    os.chmod(realpath(this_script), os.stat(this_script).st_mode | stat.S_IXUSR)         
+        except:
+            echo("Error: invalid public key file '%s'" % public_key_file, fg='red')
+    
 
 @piku.command("logs")
 @argument('app')

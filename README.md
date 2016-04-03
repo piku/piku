@@ -15,11 +15,11 @@ From the bottom up:
 - [ ] Proxy deployments to other nodes (build on one box, deploy to many) 
 - [ ] Support Clojure/Java deployments
 - [ ] CLI command documentation
-- [ ] Complete installation instructions (see `INSTALL.md` for a working draft)
 - [ ] Support barebones binary deployments
 - [ ] Sample Go app
 - [ ] Support Go deployments
-- [ ] Installation helper/SSH key add
+- [x] Complete installation instructions (see `INSTALL.md`, which also has a draft of Go installation steps)
+- [x] Installation helper/SSH key setup
 - [x] Worker scaling 
 - [x] Remote CLI commands for changing/viewing applied/live settings
 - [x] Remote tailing of all logfiles for a single application
