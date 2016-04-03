@@ -4,9 +4,10 @@ These installation notes should cover most Debian Linux variants (on any archite
 
 You can, however, run `piku` on any POSIX-like environment where you have Python, [uWSGI][uwsgi] and SSH.
 
-For installation, you only require `root`/`sudo` access and the following two files:
+For installation, you only require `root`/`sudo` access and the following three files:
 
 * `piku.py`
+* `uwsgi-piku.service` (this one is for `systemd` systems such as Raspbian Jessie/Debian 8)
 * `uwsgi-piku.dist` (this one should only be necessary on older systems)
 
 Copy them across to the machine you'll be using as a server before you get started with the rest.
@@ -50,6 +51,22 @@ sudo pip install -U click virtualenv
 
 These may or may not be installed already (`click` usually isn't). For Raspbian Wheezy this is the preferred approach, since current `apt` packages are fairly outdated.
 
+## Intialization
+
+To set everthing up, type `python piku.py setup`:
+
+```bash
+python piku.py setup
+Creating '/home/piku/.piku/apps'.
+Creating '/home/piku/.piku/repos'.
+Creating '/home/piku/.piku/envs'.
+Creating '/home/piku/.piku/uwsgi'.
+Creating '/home/piku/.piku/uwsgi-available'.
+Creating '/home/piku/.piku/uwsgi-enabled'.
+Creating '/home/piku/.piku/logs'.
+Setting '/home/piku/piku.py' as executable.
+```
+
 ## Setting up SSH access
 
 If you don't have an SSH public key (or never used one before), you need to create one. The following instructions assume you're running some form of UNIX on your own machine (Windows users should check the documentation for their SSH client, unless you have [Cygwin][cygwin] installed).
@@ -81,7 +98,6 @@ Copy the resulting `id_rsa.pub` (or equivalent, just make sure it's the _public_
 su - piku
 python piku.py setup:ssh /tmp/id_rsa.pub
 Adding key '85:29:07:cb:de:ad:be:ef:42:65:00:c8:d2:6b:9e:ff'.
-Setting '/home/piku/piku.py' as executable.
 ```
 
 Now if you look at `.ssh/authorized_keys`, you should see something like this:
@@ -132,18 +148,24 @@ And that's it, you're set. Now to configure [uWSGI][uwsgi], which is what `piku`
 
 [uWSGI][uwsgi] can be installed in a variety of fashions. However, these instructions assume you're installing it from source, and as such may vary from system to system.
 
-### Raspbian Jessie
+### Raspbian Jessie, Debian 8
+
+In Raspbian Jessie, Debian 8 and other `systemd` distributions, do the following:
 
 ```bash
 # at the time of this writing, this installs uwsgi 2.0.7
-sudo apt-get install uwsgi
+sudo apt-get install uwsgi uwsgi-plugin-python
 # refer to our executable using a link, in case there are more versions installed
 sudo ln -s `which uwsgi` /usr/local/bin/uwsgi-piku
 # disable the standard uwsgi startup script
 sudo systemctl disable uwsgi
-```
 
-_TODO: complete this with a new systemd setup that covers the required settings for uWSGI to pick up the piku .ini files._
+# add our own startup script
+sudo cp /tmp/uwsgi-piku.service /etc/systemd/system/
+sudo systemctl enable uwsgi-piku
+sudo systemctl start uwsgi-piku
+```
+**Important Note:** Make sure you run `piku.py setup` as outlined above before starting the service.
 
 ### Raspbian Wheezy
 
@@ -162,6 +184,7 @@ sudo chmod +x /etc/init.d/uwsgi-piku
 sudo update-rc.d uwsgi-piku defaults
 sudo service uwsgi-piku start
 ```
+**Important Note:** Make sure you run `piku.py setup` as outlined above before starting the service.
 
 ## Go Installation (All Debian Linux variants, on Raspberry Pi)
 

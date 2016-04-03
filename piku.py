@@ -329,10 +329,7 @@ def multi_tail(app, filenames, catch_up=20):
 @group()
 def piku():
     """The smallest PaaS you've ever seen"""
-    # Initialize paths
-    for p in [APP_ROOT, GIT_ROOT, ENV_ROOT, UWSGI_ROOT, UWSGI_AVAILABLE, UWSGI_ENABLED, LOG_ROOT]:
-        if not exists(p):
-            os.makedirs(p)
+    pass
 
     
 @piku.resultcallback()
@@ -540,6 +537,20 @@ def deploy_app(app, settings):
     spawn_app(app, deltas)
 
 
+@piku.command("setup")
+def init_paths():
+    """Initialize paths"""
+    
+    for p in [APP_ROOT, GIT_ROOT, ENV_ROOT, UWSGI_ROOT, UWSGI_AVAILABLE, UWSGI_ENABLED, LOG_ROOT]:
+        if not exists(p):
+            echo("Creating '%s'." % p, fg='green')
+            os.makedirs(p)
+    # mark this script as executable (in case we were invoked via interpreter)
+    if not(os.stat(this_script).st_mode & stat.S_IXUSR):
+        echo("Setting '%s' as executable." % this_script, fg='yellow')
+        os.chmod(realpath(this_script), os.stat(this_script).st_mode | stat.S_IXUSR)         
+
+
 @piku.command("setup:ssh")
 @argument('public_key_file')
 def add_key(public_key_file):
@@ -553,10 +564,6 @@ def add_key(public_key_file):
                 echo("Adding key '%s'." % fingerprint, fg='white')
                 this_script = realpath(__file__)
                 setup_authorized_keys(fingerprint, this_script, key)
-                # mark this script as executable (in case we were invoked via interpreter)
-                if not(os.stat(this_script).st_mode & stat.S_IXUSR):
-                    echo("Setting '%s' as executable." % this_script, fg='yellow')
-                    os.chmod(realpath(this_script), os.stat(this_script).st_mode | stat.S_IXUSR)         
         except:
             echo("Error: invalid public key file '%s'" % public_key_file, fg='red')
     

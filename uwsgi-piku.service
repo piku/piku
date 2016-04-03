@@ -3,17 +3,10 @@ Description=Piku uWSGI Emperor
 After=syslog.target
 
 [Service]
-Environment=PIKU_USER=piku
-Environment=PIKU_ROOT=/home/$PIKU_USER/.piku
-Environment=RUN=$PIKU_ROOT/uwsgi
-Environment=ENABLED_CONFIGS_DIR=$PIKU_ROOT/uwsgi-enabled
-Environment=AVAILABLE_CONFIGS_DIR=$PIKU_ROOT/uwsgi-available
-Environment=OWNER=$PIKU_USER
-Environment=THREADS=4
-Environment=VERSION=uwsgi-piku
-Environment=PIDFILE=$RUN/$VERSION.pid
-ExecStart=/usr/local/bin/uwsgi-piku --chdir $PIKU_ROOT/home/piku/.piku --emperor $ENABLED_CONFIGS_DIR --enable-threads --threads $THREADS
-RuntimeDirectory=$RUN
+ExecStart=/usr/local/bin/uwsgi-piku --chdir /home/piku/.piku --emperor /home/piku/.piku/uwsgi-enabled --enable-threads --threads 4 --logto=/home/piku/.piku/uwsgi/uwsgi.log
+User=piku
+Group=www-data
+RuntimeDirectory=/home/piku/.piku/uwsgi
 Restart=always
 KillSignal=SIGQUIT
 Type=notify
