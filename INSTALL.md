@@ -138,6 +138,7 @@ Commands:
   ps                Show application worker count
   ps:scale          Show application configuration
   restart           Restart an application
+  setup             Initialize paths
   setup:ssh         Set up a new SSH key
 Connection to pi.lan closed.
 ```
