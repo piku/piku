@@ -36,13 +36,15 @@ Before running `piku` for the first time, you need to install the following Pyth
 ### Raspbian Jessie, Debian 8, Ubuntu
 
 ```bash
-sudo apt-get install python-virtualenv python-pip
+sudo apt-get install git python-virtualenv python-pip
 sudo pip install -U click
 ```
 
 ### Raspbian Wheezy
+
 ```bash
-sudo easy_install pip
+sudo apt-get install git python2.7
+sudo easy_install -U pip
 sudo pip install -U click virtualenv
 ```
 
