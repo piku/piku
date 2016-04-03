@@ -3,7 +3,7 @@ Description=Piku uWSGI Emperor
 After=syslog.target
 
 [Service]
-ExecStart=/usr/local/bin/uwsgi-piku --chdir /home/piku/.piku --emperor /home/piku/.piku/uwsgi-enabled --enable-threads --threads 4 --logto=/home/piku/.piku/uwsgi/uwsgi.log
+ExecStart=/usr/local/bin/uwsgi-piku --plugin python --chdir /home/piku/.piku --emperor /home/piku/.piku/uwsgi-enabled --enable-threads --threads 4 --logto=/home/piku/.piku/uwsgi/uwsgi.log  --socket=/home/piku/.piku/uwsgi/uwsgi.sock
 User=piku
 Group=www-data
 RuntimeDirectory=/home/piku/.piku/uwsgi

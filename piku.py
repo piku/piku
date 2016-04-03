@@ -256,9 +256,11 @@ def spawn_worker(app, kind, command, env, ordinal=1):
     if kind == 'wsgi':
         echo("-----> Setting HTTP port to %s" % env['PORT'], fg='yellow')
         settings.extend([
-            ('module', command),
-            ('threads', '4'),
-            ('http', ':%s' % env['PORT'])
+            ('module',      command),
+            ('threads',     '4'),
+            ('plugin',      'python'),
+            ('http',        ':%s' % env['PORT']),
+            ('http-socket', ':%s' % env['PORT']),
         ])
     else:
         settings.append(('attach-daemon', command))
