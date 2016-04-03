@@ -33,7 +33,7 @@ From the bottom up:
 - [x] Repo creation upon first push
 - [x] Basic understanding of [how `dokku` works](http://off-the-stack.moorman.nu/2013-11-23-how-dokku-works.html)
 
-## Using `piku``
+## Using `piku`
 
 `piku` supports a Heroku-like workflow, like so:
 
