@@ -151,10 +151,11 @@ And that's it, you're set. Now to configure [uWSGI][uwsgi], which is what `piku`
 
 ### Raspbian Jessie, Debian 8
 
-In Raspbian Jessie, Debian 8 and other `systemd` distributions, do the following:
+In Raspbian Jessie, Debian 8 and other `systemd` distributions where [uWSGI][uwsgi] is already available pre-compiled (but split into a number of plugins), do the following:
 
 ```bash
-# at the time of this writing, this installs uwsgi 2.0.7
+# at the time of this writing, this installs uwsgi 2.0.7. 
+# You can also install uwsgi-plugins-all if you want to get runtime support for other languages besides Go
 sudo apt-get install uwsgi uwsgi-plugin-python
 # refer to our executable using a link, in case there are more versions installed
 sudo ln -s `which uwsgi` /usr/local/bin/uwsgi-piku
