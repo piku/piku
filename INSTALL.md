@@ -141,7 +141,7 @@ sudo ln -s `which uwsgi` /usr/local/bin/uwsgi-piku
 sudo systemctl disable uwsgi
 ```
 
-_TODO: complete this with a new systemd setup that covers the required paths for uWSGI._
+_TODO: complete this with a new systemd setup that covers the required settings for uWSGI to pick up the piku .ini files._
 
 ### Raspbian Wheezy
 
