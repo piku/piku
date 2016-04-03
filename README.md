@@ -52,9 +52,11 @@ Later on, I intend to do fancier `dokku`-like stuff like reconfiguring `nginx`, 
 `piku` is intended to work in any POSIX-like environment where you have Python, [uWSGI][uwsgi] and SSH, i.e.: 
 Linux, FreeBSD, [Cygwin][cygwin] and the [Windows Subsystem for Linux][wsl].
 
-As a baseline, this is currently being developed an original, 256MB Rasbperry Pi Model B.
+As a baseline, this is currently being developed on an original, 256MB Rasbperry Pi Model B.
 
 Since I have an ODROID-U2, [a bunch of Pi 2s][raspi-cluster] and a few more ARM boards on the way, it will be tested on a number of places where running `x64` binaries is unfeasible.
+
+But there are already a few folk using `piku` on vanilla `x64` Linux without any issues whatsoever, so yes, you can use it as a micro-PaaS for 'real' stuff. Your mileage may vary.
 
 ## Supported Runtimes
 
