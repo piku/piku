@@ -173,6 +173,9 @@ sudo systemctl disable uwsgi
 sudo cp /tmp/uwsgi-piku.service /etc/systemd/system/
 sudo systemctl enable uwsgi-piku
 sudo systemctl start uwsgi-piku
+
+# check it's running
+sudo systemctl status uwsgi-piku.service
 ```
 **Important Note:** Make sure you run `piku.py setup` as outlined above before starting the service.
 

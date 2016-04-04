@@ -4,6 +4,7 @@ import os, sys, stat, re, shutil, socket
 from click import argument, command, group, option, secho as echo
 from collections import defaultdict, deque
 from glob import glob
+from multiprocessing import cpu_count
 from os.path import abspath, basename, dirname, exists, getmtime, join, realpath, splitext
 from subprocess import call, check_output
 from time import sleep
@@ -19,6 +20,7 @@ LOG_ROOT = abspath(join(PIKU_ROOT, "logs"))
 UWSGI_AVAILABLE = abspath(join(PIKU_ROOT, "uwsgi-available"))
 UWSGI_ENABLED = abspath(join(PIKU_ROOT, "uwsgi-enabled"))
 UWSGI_ROOT = abspath(join(PIKU_ROOT, "uwsgi"))
+UWSGI_LOG_MAXSIZE = '1048576'
 
 
 # === Utility functions ===
@@ -246,7 +248,7 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         ('processes',       '1'),
         ('procname-prefix', '%s:%s:' % (app, kind)),
         ('enable-threads',  'true'),
-        ('log-maxsize',     '1048576'),
+        ('log-maxsize',     UWSGI_LOG_MAXSIZE),
         ('logto',           '%s.%d.log' % (join(LOG_ROOT, app, kind), ordinal)),
         ('log-backupname',  '%s.%d.log.old' % (join(LOG_ROOT, app, kind), ordinal)),
     ]
@@ -578,12 +580,30 @@ def deploy_app(app, settings):
 
 @piku.command("setup")
 def init_paths():
-    """Initialize paths"""
+    """Initialize environment"""
     
+    # Create required paths
     for p in [APP_ROOT, GIT_ROOT, ENV_ROOT, UWSGI_ROOT, UWSGI_AVAILABLE, UWSGI_ENABLED, LOG_ROOT]:
         if not exists(p):
             echo("Creating '%s'." % p, fg='green')
             os.makedirs(p)
+    
+    # Set up the uWSGI emperor config
+    settings = [
+        ('chdir',           UWSGI_ROOT),
+        ('emperor',         UWSGI_ENABLED),
+        ('log-maxsize',     UWSGI_LOG_MAXSIZE),
+        ('logto',           join(UWSGI_ROOT, 'uwsgi.log')),
+        ('log-backupname',  join(UWSGI_ROOT, 'uwsgi.old.log')),
+        ('socket',          join(UWSGI_ROOT, 'uwsgi.sock')),
+        ('enable-threads',  'true'),
+        ('threads',         '%d' % (cpu_count() * 2)),
+    ]
+    with open(join(UWSGI_ROOT,'uwsgi.ini'), 'w') as h:
+        h.write('[uwsgi]\n')
+        for k, v in settings:
+            h.write("%s = %s\n" % (k, v))
+
     # mark this script as executable (in case we were invoked via interpreter)
     if not(os.stat(realpath(__file__)).st_mode & stat.S_IXUSR):
         echo("Setting '%s' as executable." % this_script, fg='yellow')

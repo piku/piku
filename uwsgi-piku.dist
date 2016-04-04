@@ -57,12 +57,9 @@ do_start()
     local PIDFILE=$RUN/$VERSION.pid
     set -o noglob
     local START_OPTS=" \
-        --chdir $PIKU_ROOT \
-        --emperor $ENABLED_CONFIGS_DIR \
-        --pidfile $PIDFILE \
-        --daemonize $RUN/$VERSION-emperor.log \
-        --enable-threads
-        --threads $THREADS"
+        --ini $RUN/uwsgi.ini \
+        --daemonize $RUN/uwsgi.log \
+        --pidfile $PIDFILE"
     if do_pid_check $PIDFILE; then
         sudo -u $OWNER -i $VERSION $DAEMON_OPTS $START_OPTS
     else
