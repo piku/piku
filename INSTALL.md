@@ -56,7 +56,9 @@ These may or may not be installed already (`click` usually isn't). For Raspbian 
 To set everthing up, type `python piku.py setup`:
 
 ```bash
+sudo su - piku
 python piku.py setup
+
 Creating '/home/piku/.piku/apps'.
 Creating '/home/piku/.piku/repos'.
 Creating '/home/piku/.piku/envs'.
@@ -74,7 +76,8 @@ If you don't have an SSH public key (or never used one before), you need to crea
 **On your own machine**, issue the `ssh-keygen` command and follow the prompts:
 
 ```bash
-$ ssh-keygen 
+ssh-keygen 
+
 Generating public/private rsa key pair.
 Enter file in which to save the key (/home/youruser/.ssh/id_rsa): 
 Created directory '/home/youruser/.ssh'.
@@ -95,26 +98,30 @@ The key's randomart image is:
 Copy the resulting `id_rsa.pub` (or equivalent, just make sure it's the _public_ file) to your `piku` server and do the following:
 
 ```bash
-su - piku
+sudo su - piku
 python piku.py setup:ssh /tmp/id_rsa.pub
+
 Adding key '85:29:07:cb:de:ad:be:ef:42:65:00:c8:d2:6b:9e:ff'.
 ```
 
 Now if you look at `.ssh/authorized_keys`, you should see something like this:
 
 ```bash
-cat .ssh/authorized_keys 
+sudo su - piku
+cat .ssh/authorized_keys
+ 
 command="FINGERPRINT=85:29:07:cb:de:ad:be:ef:42:65:00:c8:d2:6b:9e:ff NAME=default /home/piku/piku.py $SSH_ORIGINAL_COMMAND",no-agent-forwarding,no-user-rc,no-X11-forwarding,no-port-forwarding ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDhTYZi/qeJBKgU3naI8FNjQgeMYnMsEtqrOmUc4lJoPNH2qBUTNkzwThGqsBm2HNLPURWMiEifBqF+kRixMud67Co7Zs9ys7pwFXkJB9bbZasd2JCGfVZ4UYXHnvgejSWkLAV/4bObhsbP2vWOmbbm91Cwn+PGJgoiW08yrd45lsDmgv9cUAJS3e8LkgVELvIDg49yM5ArB88oxwMEoUgWU2OniHmH0o1zw5I8WXHRhHOjb8cGsdTYfXEizRKKRTM2Mu6dKRt1GNL0UbWi8iS3uJHGD3AcQ4ApdMl5X0gTixKHponStOrSMy19/ltuIy8Sjr7KKPxz07ikMYr7Vpcp youruser@yourlaptop.lan
 ```
 
-This line is what enables you to SSH (and perform `git` over SSH operations) to the `piku` user without a password, verifying your identity via your public key and restricting what can be done remotely and passing on to `piku` itself the commands you'll be issuing.
+This line is what enables you to SSH (and perform `git` over SSH operations) to the `piku` user without a password, verifying your identity via your public key, restricting what can be done remotely and passing on to `piku` itself the commands you'll be issuing.
 
 ## Testing
 
 From your machine, do:
 
 ```bash
-$ ssh piku@pi.lan
+ssh piku@pi.lan
+
 Usage: piku.py [OPTIONS] COMMAND [ARGS]...
 
   The smallest PaaS you've ever seen
@@ -147,7 +154,7 @@ And that's it, you're set. Now to configure [uWSGI][uwsgi], which is what `piku`
 
 ## uWSGI Installation (Debian Linux variants, any architecture)
 
-[uWSGI][uwsgi] can be installed in a variety of fashions. However, these instructions assume you're installing it from source, and as such may vary from system to system.
+[uWSGI][uwsgi] can be installed in a variety of fashions. These instructions cover both pre-packaged and source installs depending on your system.
 
 ### Raspbian Jessie, Debian 8
 
@@ -155,7 +162,7 @@ In Raspbian Jessie, Debian 8 and other `systemd` distributions where [uWSGI][uws
 
 ```bash
 # At the time of this writing, this installs uwsgi 2.0.7 on Raspbian Jessie.
-# You can also install uwsgi-plugins-all if you want to get runtime support for other languages besides Go
+# You can also install uwsgi-plugins-all if you want to get runtime support for other languages
 sudo apt-get install uwsgi uwsgi-plugin-python
 # refer to our executable using a link, in case there are more versions installed
 sudo ln -s `which uwsgi` /usr/local/bin/uwsgi-piku
