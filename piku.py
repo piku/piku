@@ -350,10 +350,14 @@ def deploy_app(app):
     """Show application configuration"""
     
     app = sanitize_app_name(app)
+    if not exists(join(APP_ROOT, app)):
+        echo("Error: app '%s' not found." % app, fg='red')
+        return
+    
     config_file = join(ENV_ROOT, app, 'ENV')
     if exists(config_file):
         echo(open(config_file).read().strip(), fg='white')
-    # no output if file is missing, for scripting purposes
+    echo("Warning: app '%s' not deployed, no config found." % app, fg='yellow')
 
 
 @piku.command("config:get")
@@ -363,6 +367,10 @@ def deploy_app(app, setting):
     """Retrieve a configuration setting"""
     
     app = sanitize_app_name(app)
+    if not exists(join(APP_ROOT, app)):
+        echo("Error: app '%s' not found." % app, fg='red')
+        return
+    
     config_file = join(ENV_ROOT, app, 'ENV')
     if exists(config_file):
         env = parse_settings(config_file)
@@ -378,6 +386,10 @@ def deploy_app(app, settings):
     """Set a configuration setting"""
     
     app = sanitize_app_name(app)
+    if not exists(join(APP_ROOT, app)):
+        echo("Error: app '%s' not found." % app, fg='red')
+        return
+    
     config_file = join(ENV_ROOT, app, 'ENV')
     env = parse_settings(config_file)
     items = {}
@@ -399,10 +411,14 @@ def deploy_app(app):
     """Show live configuration settings"""
     
     app = sanitize_app_name(app)
+    if not exists(join(APP_ROOT, app)):
+        echo("Error: app '%s' not found." % app, fg='red')
+        return
+
     live_config = join(ENV_ROOT, app, 'LIVE_ENV')
     if exists(live_config):
         echo(open(live_config).read().strip(), fg='white')
-    # no output if file or app is missing, for scripting purposes
+    echo("Warning: app '%s' not deployed, no config found." % app, fg='yellow')
 
 
 @piku.command("deploy")
@@ -411,6 +427,9 @@ def deploy_app(app):
     """Deploy an application"""
     
     app = sanitize_app_name(app)
+    if not exists(join(APP_ROOT, app)):
+        echo("Error: app '%s' not found." % app, fg='red')
+        return
     do_deploy(app)
 
 
@@ -420,6 +439,9 @@ def destroy_app(app):
     """Destroy an application"""
     
     app = sanitize_app_name(app)
+    if not exists(join(APP_ROOT, app)):
+        echo("Error: app '%s' not found." % app, fg='red')
+        return
     
     for p in [join(x, app) for x in [APP_ROOT, GIT_ROOT, ENV_ROOT, LOG_ROOT]]:
         if exists(p):
@@ -440,6 +462,10 @@ def disable_app(app):
     """Disable an application"""
     
     app = sanitize_app_name(app)
+    if not exists(join(APP_ROOT, app)):
+        echo("Error: app '%s' not found." % app, fg='red')
+        return
+
     config = glob(join(UWSGI_ENABLED, '%s*.ini' % app))
     
     if len(config):
@@ -457,19 +483,20 @@ def enable_app(app):
     app = sanitize_app_name(app)
     enabled = glob(join(UWSGI_ENABLED, '%s*.ini' % app))
     available = glob(join(UWSGI_AVAILABLE, '%s*.ini' % app))
+
+    if not exists(join(APP_ROOT, app)):
+        echo("Error: app '%s' not found." % app, fg='red')
+        return
     
-    if exists(join(APP_ROOT, app)):
-        if len(enabled):
-            if len(available):
-                echo("Enabling app '%s'..." % app, fg='yellow')
-                for a in available:
-                    shutil.copy(a, join(UWSGI_ENABLED, app))
-            else:
-                echo("Error: app '%s' is not configured.", fg='red')
+    if len(enabled):
+        if len(available):
+            echo("Enabling app '%s'..." % app, fg='yellow')
+            for a in available:
+                shutil.copy(a, join(UWSGI_ENABLED, app))
         else:
-           echo("Warning: app '%s' is already enabled, skipping.", fg='yellow')       
+            echo("Error: app '%s' is not configured.", fg='red')
     else:
-        echo("Error: app '%s' does not exist.", fg='red')
+        echo("Warning: app '%s' is already enabled, skipping.", fg='yellow')       
 
 
 @piku.command("apps")
@@ -486,6 +513,10 @@ def restart_app(app):
     """Restart an application"""
     
     app = sanitize_app_name(app)
+    if not exists(join(APP_ROOT, app)):
+        echo("Error: app '%s' not found." % app, fg='red')
+        return
+    
     config = glob(join(UWSGI_ENABLED, '%s*.ini' % app))
 
     if len(config):
@@ -503,10 +534,14 @@ def deploy_app(app):
     """Show application worker count"""
     
     app = sanitize_app_name(app)
+    if not exists(join(APP_ROOT, app)):
+        echo("Error: app '%s' not found." % app, fg='red')
+        return
+
     config_file = join(ENV_ROOT, app, 'SCALING')
     if exists(config_file):
         echo(open(config_file).read().strip(), fg='white')
-    # no output if file is missing, for scripting purposes
+    echo("Error: no workers found for app '%s'." % app, fg='red')
 
 
 @piku.command("ps:scale")
@@ -517,7 +552,9 @@ def deploy_app(app, settings):
     
     app = sanitize_app_name(app)
     if not exists(join(APP_ROOT, app)):
+        echo("Error: app '%s' not found." % app, fg='red')
         return
+
     config_file = join(ENV_ROOT, app, 'SCALING')
     worker_count = {k:int(v) for k, v in parse_procfile(config_file).iteritems()}
     items = {}
@@ -575,6 +612,10 @@ def tail_logs(app):
     """Tail an application log"""
     
     app = sanitize_app_name(app)
+    if not exists(join(APP_ROOT, app)):
+        echo("Error: app '%s' not found." % app, fg='red')
+        return
+
     logfiles = glob(join(LOG_ROOT, app, '*.log'))
     if len(logfiles):
         for line in multi_tail(app, logfiles):
