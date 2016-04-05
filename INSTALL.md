@@ -200,7 +200,7 @@ sudo service uwsgi-piku start
 
 ### Ubuntu 14.04 LTS
 
-This is a mix of both the above, and should change soon when we get 16.04.
+This is a mix of both the above, and should change soon when we get 16.04. If you have trouble, install [uWSGI][uwsgi] via `pip` instead.
 
 ```bash
 # At the time of this writing, this installs uwsgi 1.9.17 on Ubuntu 14.04 LTS.
