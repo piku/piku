@@ -359,7 +359,8 @@ def deploy_app(app):
     config_file = join(ENV_ROOT, app, 'ENV')
     if exists(config_file):
         echo(open(config_file).read().strip(), fg='white')
-    echo("Warning: app '%s' not deployed, no config found." % app, fg='yellow')
+    else:
+        echo("Warning: app '%s' not deployed, no config found." % app, fg='yellow')
 
 
 @piku.command("config:get")
@@ -420,7 +421,8 @@ def deploy_app(app):
     live_config = join(ENV_ROOT, app, 'LIVE_ENV')
     if exists(live_config):
         echo(open(live_config).read().strip(), fg='white')
-    echo("Warning: app '%s' not deployed, no config found." % app, fg='yellow')
+    else:
+        echo("Warning: app '%s' not deployed, no config found." % app, fg='yellow')
 
 
 @piku.command("deploy")
