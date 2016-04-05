@@ -198,6 +198,24 @@ sudo service uwsgi-piku start
 ```
 **Important Note:** Make sure you run `piku.py setup` as outlined above before starting the service.
 
+### Ubuntu 14.04 LTS
+
+This is a mix of both the above, and should change soon when we get 16.04.
+
+```bash
+# At the time of this writing, this installs uwsgi 1.9.17 on Ubuntu 14.04 LTS.
+# You can also install uwsgi-plugins-all if you want to get runtime support for other languages
+sudo apt-get install uwsgi uwsgi-plugin-python
+# refer to our executable using a link, in case there are more versions installed
+sudo ln -s `which uwsgi` /usr/local/bin/uwsgi-piku
+
+# set up our init script
+sudo cp /tmp/uwsgi-piku.dist /etc/init.d/uwsgi-piku
+sudo chmod +x /etc/init.d/uwsgi-piku
+sudo update-rc.d uwsgi-piku defaults
+sudo service uwsgi-piku start
+```
+
 ## Go Installation (All Debian Linux variants, on Raspberry Pi)
 
 > This is **EXPERIMENTAL** and may not work at all.
