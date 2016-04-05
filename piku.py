@@ -607,9 +607,10 @@ def init_paths():
             h.write("%s = %s\n" % (k, v))
 
     # mark this script as executable (in case we were invoked via interpreter)
-    if not(os.stat(realpath(__file__)).st_mode & stat.S_IXUSR):
+    this_script = realpath(__file__)
+    if not(os.stat(this_script).st_mode & stat.S_IXUSR):
         echo("Setting '%s' as executable." % this_script, fg='yellow')
-        os.chmod(realpath(this_script), os.stat(this_script).st_mode | stat.S_IXUSR)         
+        os.chmod(this_script, os.stat(this_script).st_mode | stat.S_IXUSR)         
 
 
 @piku.command("setup:ssh")
