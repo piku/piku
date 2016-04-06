@@ -453,43 +453,6 @@ def destroy_app(app):
                 os.remove(f)
 
 
-@piku.command("disable")
-@argument('app')
-def disable_app(app):
-    """Disable an application"""
-    
-    app = exit_if_invalid(app)
-
-    config = glob(join(UWSGI_ENABLED, '%s*.ini' % app))
-    
-    if len(config):
-        echo("Disabling app '%s'..." % app, fg='yellow')
-        for c in config:
-            os.remove(c)
-    else:
-        echo("Error: app '%s' not deployed!" % app, fg='red')
-
-
-@piku.command("enable")
-@argument('app')
-def enable_app(app):
-    """Enable an application"""
-
-    app = exit_if_invalid(app)
-    enabled = glob(join(UWSGI_ENABLED, '%s*.ini' % app))
-    available = glob(join(UWSGI_AVAILABLE, '%s*.ini' % app))
-
-    if len(enabled):
-        if len(available):
-            echo("Enabling app '%s'..." % app, fg='yellow')
-            for a in available:
-                shutil.copy(a, join(UWSGI_ENABLED, app))
-        else:
-            echo("Error: app '%s' is not configured.", fg='red')
-    else:
-        echo("Warning: app '%s' is already enabled, skipping.", fg='yellow')       
-
-
 @piku.command("apps")
 def list_apps():
     """List applications"""
