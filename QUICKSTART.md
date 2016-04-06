@@ -1,59 +1,59 @@
-# Start here:
+# Setting up a Raspberry Pi Piku Server from Scratch
 
 ## DISCLAIMER!
+
 ### These instructions are correct as of April 1st 2016
 
-Start by flashing a SD card with the latest Raspbian Jessie Lite image.
-You can get it from [Raspberry Pi website](https://www.raspberrypi.org/downloads/raspbian/)
+Start by flashing a SD card with [the latest Raspbian Jessie Lite image](https://www.raspberrypi.org/downloads/raspbian/).
 
 # Do this in your Raspberry Pi as 'pi' user
 
-Boot it, launch *raspi-config* to perform (at least) the following configurations:
-```
+Boot it, launch *raspi-config* to perform (at least) the following configuration:
+
+```bash
 # as 'pi' user
 sudo raspi-config
 ```
 
 * 1) expand filesystem 
 * 2) change default user password
-* A3) setup memory split as you wish (I recommend 16Mb for GPU)
+* 3) set up memory split as you wish (for a headless server, 16MB for GPU)
 
 Optionally:
-* 8) setup overclocking.
 
-# Secure your installation
+* 4) set up over-clocking.
 
-Delete generated SSH keys and recreate them.
-(why this matters? [read it here](https://www.raspberrypi.org/forums/viewtopic.php?t=126892))
-```
+# Secure your install
+
+Delete the existing SSH keys and recreate them (why? [read this](https://www.raspberrypi.org/forums/viewtopic.php?t=126892)).
+
+```bash
 # as 'pi' user
 sudo rm -v /etc/ssh/ssh_host_*
 sudo dpkg-reconfigure openssh-server
 sudo reboot
 ```
 
-After the previous step you've created new SSH keys. 
+This will recreate the server keys. Next, update your system:
 
-Update installed packages
-```
+```bash
 # as 'pi' user
 sudo apt update
 sudo apt upgrade
 ```
 
-# Install additional packages
+# Install required packages
 
-(needs validation if all packages are recent enough)
-```
+As of April 2016, the shipping versions with Raspbian are recent enough to run `piku`:
+
+```bash
 # as 'pi' user
 sudo apt install -y python-virtualenv python-pip git uwsgi uwsgi-plugin-python
 sudo pip install -U click
 sudo reboot
 ```
 
-# Meanwhile, go get the goodies while Raspberry Pi is rebootting
-
-
+# Meanwhile, go get the goodies while Raspberry Pi is rebooting
 
 (We assume you know about ssh keys and have one "at hand", you'll need to copy it)
 
