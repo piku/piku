@@ -1,0 +1,6 @@
+{
+        "ImportPath": ".",
+        "GoVersion": "go1.5",
+        "GodepVersion": "v61",
+        "Deps": ["github.com/labstack/echo"]
+}

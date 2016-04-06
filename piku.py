@@ -139,8 +139,9 @@ def do_deploy(app, deltas={}):
             if exists(join(app_path, 'requirements.txt')):
                 echo("-----> Python app detected.", fg='green')
                 deploy_python(app, deltas)
-            # if exists(join(app_path, 'Godeps')) or len(glob(join(app_path),'*.go')):
-            # Go deployment
+            if exists(join(app_path, 'Godeps')) or len(glob(join(app_path),'*.go')):
+                echo("-----> Go app detected.", fg='green')
+                deploy_go(app, deltas)
             else:
                 echo("-----> Could not detect runtime!", fg='red')
             # TODO: detect other runtimes
@@ -150,6 +151,33 @@ def do_deploy(app, deltas={}):
         echo("Error: app '%s' not found." % app, fg='red')
         
         
+def deploy_go(app, deltas={}):
+    """Deploy a Go application"""
+
+    go_path = join(ENV_ROOT, app)
+    deps = join(APP_ROOT, app, 'Godeps')
+
+    first_time = False
+    if not exists(go_path):
+        echo("-----> Creating GOPATH for '%s'" % app, fg='green')
+        os.makedirs(go_path)
+        # copy across a pre-built GOPATH to save provisioning time 
+        call('cp -a $HOME/gopath %s' % app, cwd=ENV_ROOT, shell=True)
+        first_time = True
+
+    if exists(deps):
+        if first_time or getmtime(deps) > getmtime(go_path):
+            echo("-----> Running godep for '%s'" % app, fg='green')
+            env = {
+                'GOPATH': '$HOME/gopath',
+                'GOROOT': '$HOME/go',
+                'PATH': '$PATH:$HOME/go/bin',
+                'GO15VENDOREXPERIMENT': '1'
+            }
+            call('godep update ...', cwd=join(APP_ROOT, app), env=env, shell=True)
+    spawn_app(app, deltas)
+
+
 def deploy_python(app, deltas={}):
     """Deploy a Python application"""
     

@@ -228,17 +228,19 @@ Since Raspbian's Go compiler is version 1.0.2, we need something more up-to-date
 2. Unpack it under the `piku` user like such:
 
 ```bash
-su - piku
-cd ~
+sudo su - piku
 tar -zxvf /tmp/go1.5.3.linux-arm.tar.gz
+# remove unnecessary files
+rm -rf go/api go/blog go/doc go/misc go/test
 ```
 
 3. Give it a temporary `GOPATH` and install `godep`:
 
 ```bash
-su - piku
-cd ~
-GOROOT=$HOME/go GOPATH=$HOME/golibs PATH=$PATH:$HOME/go/bin go get github.com/tools/godep
+sudo su - piku
+GOROOT=$HOME/go GOPATH=$HOME/gopath PATH=$PATH:$HOME/go/bin go get github.com/tools/godep
+# temporary workaround until this is fixed in godep or Go 1.7(?)
+GOROOT=$HOME/go GOPATH=$HOME/gopath PATH=$PATH:$HOME/go/bin go get golang.org/x/sys/unix
 ```
 
 _TODO: complete this._
