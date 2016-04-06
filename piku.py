@@ -474,7 +474,7 @@ def restart_app(app):
         echo("Restarting app '%s'..." % app, fg='yellow')
         for c in config:
             os.remove(c)
-        do_deploy(app)
+        spawn_app(app)
     else:
         echo("Error: app '%s' not deployed!" % app, fg='red')
 
