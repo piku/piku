@@ -121,7 +121,7 @@ def parse_settings(filename, env={}):
     return env
     
 
-def do_deploy(app):
+def do_deploy(app, deltas={}):
     """Deploy an app by resetting the work directory"""
     
     app_path = join(APP_ROOT, app)
@@ -139,7 +139,7 @@ def do_deploy(app):
         if len(workers):
             if exists(join(app_path, 'requirements.txt')):
                 echo("-----> Python app detected.", fg='green')
-                deploy_python(app)
+                deploy_python(app, deltas)
             # if exists(join(app_path, 'Godeps')) or len(glob(join(app_path),'*.go')):
             # Go deployment
             else:
@@ -151,7 +151,7 @@ def do_deploy(app):
         echo("Error: app '%s' not found." % app, fg='red')
         
         
-def deploy_python(app):
+def deploy_python(app, deltas={}):
     """Deploy a Python application"""
     
     virtualenv_path = join(ENV_ROOT, app)
@@ -164,12 +164,13 @@ def deploy_python(app):
         call('virtualenv %s' % app, cwd=ENV_ROOT, shell=True)
         first_time = True
 
+    activation_script = join(virtualenv_path,'bin','activate_this.py')
+    execfile(activation_script, dict(__file__=activation_script))
+
     if first_time or getmtime(requirements) > getmtime(virtualenv_path):
         echo("-----> Running pip for '%s'" % app, fg='green')
-        activation_script = join(virtualenv_path,'bin','activate_this.py')
-        execfile(activation_script, dict(__file__=activation_script))
         call('pip install -r %s' % requirements, cwd=virtualenv_path, shell=True)
-    spawn_app(app)
+    spawn_app(app, deltas)
 
  
 def spawn_app(app, deltas={}):
@@ -474,7 +475,7 @@ def restart_app(app):
         echo("Restarting app '%s'..." % app, fg='yellow')
         for c in config:
             os.remove(c)
-        spawn_app(app)
+        do_deploy(app)
     else:
         echo("Error: app '%s' not deployed!" % app, fg='red')
 
@@ -519,7 +520,7 @@ def deploy_app(app, settings):
         except:
             echo("Error: malformed setting '%s'" % s, fg='red')
             return
-    spawn_app(app, deltas)
+    do_deploy(app, deltas)
 
 
 @piku.command("setup")
