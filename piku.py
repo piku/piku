@@ -9,6 +9,7 @@ from os.path import abspath, basename, dirname, exists, getmtime, join, realpath
 from subprocess import call, check_output
 from time import sleep
 
+
 # === Globals - all tweakable settings are here ===
 
 PIKU_ROOT = os.environ.get('PIKU_ROOT', join(os.environ['HOME'],'.piku'))
@@ -24,7 +25,6 @@ UWSGI_LOG_MAXSIZE = '1048576'
 
 
 # === Utility functions ===
-
 
 def sanitize_app_name(app):
     """Sanitize the app name and build matching path"""
@@ -72,7 +72,6 @@ def setup_authorized_keys(ssh_fingerprint, script_path, pubkey):
         h.write("""command="FINGERPRINT=%(ssh_fingerprint)s NAME=default %(script_path)s $SSH_ORIGINAL_COMMAND",no-agent-forwarding,no-user-rc,no-X11-forwarding,no-port-forwarding %(pubkey)s\n""" % locals())
     os.chmod(authorized_keys, stat.S_IRUSR | stat.S_IWUSR)
 
-        
 
 def parse_procfile(filename):
     """Parses a Procfile and returns the worker types. Only one worker of each type is allowed."""
@@ -350,13 +349,19 @@ def piku():
     
 @piku.resultcallback()
 def cleanup(ctx):
-    """Callback from command execution -- currently used for debugging"""
+    """Callback from command execution -- add debugging to taste"""
     pass
-    #print sys.argv[1:]
-    #print os.environ
 
 
 # --- User commands ---
+
+@piku.command("apps")
+def list_apps():
+    """List applications"""
+    
+    for a in os.listdir(APP_ROOT):
+        echo(a, fg='green')
+
 
 @piku.command("config")
 @argument('app')
@@ -385,7 +390,8 @@ def deploy_app(app, setting):
         env = parse_settings(config_file)
         if setting in env:
             echo("%s" % env[setting], fg='white')
-    # no output if file or setting is missing, for scripting purposes
+    else:
+        echo("Warning: no active configuration for '%s'" % app)
 
 
 @piku.command("config:set")
@@ -453,31 +459,20 @@ def destroy_app(app):
                 echo("Removing file '%s'" % f, fg='yellow')
                 os.remove(f)
 
-
-@piku.command("apps")
-def list_apps():
-    """List applications"""
     
-    for a in os.listdir(APP_ROOT):
-        echo(a, fg='green')
-
-
-@piku.command("restart")
+@piku.command("logs")
 @argument('app')
-def restart_app(app):
-    """Restart an application"""
+def tail_logs(app):
+    """Tail an application log"""
     
     app = exit_if_invalid(app)
-    
-    config = glob(join(UWSGI_ENABLED, '%s*.ini' % app))
 
-    if len(config):
-        echo("Restarting app '%s'..." % app, fg='yellow')
-        for c in config:
-            os.remove(c)
-        do_deploy(app)
+    logfiles = glob(join(LOG_ROOT, app, '*.log'))
+    if len(logfiles):
+        for line in multi_tail(app, logfiles):
+            echo(line.strip(), fg='white')
     else:
-        echo("Error: app '%s' not deployed!" % app, fg='red')
+        echo("No logs found for app '%s'." % app, fg='yellow')
 
 
 @piku.command("ps")
@@ -521,6 +516,24 @@ def deploy_app(app, settings):
             echo("Error: malformed setting '%s'" % s, fg='red')
             return
     do_deploy(app, deltas)
+
+
+@piku.command("restart")
+@argument('app')
+def restart_app(app):
+    """Restart an application"""
+    
+    app = exit_if_invalid(app)
+    
+    config = glob(join(UWSGI_ENABLED, '%s*.ini' % app))
+
+    if len(config):
+        echo("Restarting app '%s'..." % app, fg='yellow')
+        for c in config:
+            os.remove(c)
+        do_deploy(app)
+    else:
+        echo("Error: app '%s' not deployed!" % app, fg='red')
 
 
 @piku.command("setup")
@@ -572,23 +585,25 @@ def add_key(public_key_file):
             echo("Error: invalid public key file '%s'" % public_key_file, fg='red')
     else:
         echo("Error: public key file '%s' not found." % public_key_file, fg='red')
-    
 
-@piku.command("logs")
+
+@piku.command("stop")
 @argument('app')
-def tail_logs(app):
-    """Tail an application log"""
+def stop_app(app):
+    """Stop an application"""
     
     app = exit_if_invalid(app)
+    
+    config = glob(join(UWSGI_ENABLED, '%s*.ini' % app))
 
-    logfiles = glob(join(LOG_ROOT, app, '*.log'))
-    if len(logfiles):
-        for line in multi_tail(app, logfiles):
-            echo(line.strip(), fg='white')
+    if len(config):
+        echo("Stopping app '%s'..." % app, fg='yellow')
+        for c in config:
+            os.remove(c)
     else:
-        echo("No logs found for app '%s'." % app, fg='yellow')
-
-
+        echo("Error: app '%s' not deployed!" % app, fg='red')
+        
+        
 # --- Internal commands ---
 
 @piku.command("git-hook")
