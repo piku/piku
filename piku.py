@@ -577,10 +577,9 @@ def add_key(public_key_file):
     if exists(public_key_file):
         try:
             fingerprint = check_output('ssh-keygen -lf %s' % public_key_file, shell=True).split(' ',4)[1]
-            if re.match('(([0-9a-f]{2}\:){16})', '%s:' % fingerprint):
-                key = open(public_key_file).read().strip()
-                echo("Adding key '%s'." % fingerprint, fg='white')
-                setup_authorized_keys(fingerprint, realpath(__file__), key)
+            key = open(public_key_file).read().strip()
+            echo("Adding key '%s'." % fingerprint, fg='white')
+            setup_authorized_keys(fingerprint, realpath(__file__), key)
         except:
             echo("Error: invalid public key file '%s'" % public_key_file, fg='red')
     else:
