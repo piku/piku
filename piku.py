@@ -340,13 +340,14 @@ def spawn_app(app, deltas={}):
                 
     # Set up nginx if $SERVER_NAME is present
     if 'SERVER_NAME' in env:
+        domain = env['SERVER_NAME'].split()[0]       
         key, req, crt, conf = [join(CA_ROOT,'%s.%s' % (app,x)) for x in ['key','req','crt','conf']]
         cakey, cacrt = [join(CA_ROOT, 'ca.%s' % x) for x in ['key','crt']]
-        serial = md5(SERVER_NAME.split()[0] + str(datetime.now())).hexdigest()
+        serial = md5(domain + str(datetime.now())).hexdigest()
         if not exists(key):
             call('openssl genrsa -out %(key)s 1024' % locals(), shell=True)
             with open(conf,'w') as h:
-                h.write(SSL_TEMPLATE % {'domain': domain})
+                h.write(SSL_TEMPLATE % locals())
             call('openssl req -new -key %(key)s -out %(req)s -config %(conf)s' % locals(), shell=True)
             call('openssl x509 -req -days 3650 -in %(req)s -CA %(cacrt)s -CAkey %(cakey)s -set_serial 0x%(serial)s -out %(crt)s -extensions v3_req -extfile %(conf)s' % locals(), shell=True)
     
@@ -573,7 +574,9 @@ def destroy_app(app):
                 echo("Removing file '%s'" % f, fg='yellow')
                 os.remove(f)
                 
-    for f in [join(CA_ROOT, "%s.%s" % (app,x)) for x in ['conf','key','crt']].append(join(NGINX_ROOT,"%s.conf" % app)):
+    nginx_files = [join(CA_ROOT, "%s.%s" % (app,x)) for x in ['conf','key','crt']].
+    nginx_files.append(join(NGINX_ROOT,"%s.conf" % app))
+    for f in nginx_files:
         if exists(f):
             echo("Removing file '%s'" % f, fg='yellow')
             os.remove(f)
@@ -683,11 +686,12 @@ def init_paths():
     
     # Create a local certificate authority
     key, crt, conf = [join(CA_ROOT, 'ca.%s' % x) for x in ['key','crt','conf']]
+    domain = 'piku.local'
     if not exists(key):
         echo("Creating local certificate authority...", fg='yellow')
         call('openssl genrsa -des3 -out %(key)s 4096' % locals(), shell=True)
         with open(conf,'w') as h:
-            h.write(SSL_TEMPLATE % {'domain': domain})
+            h.write(SSL_TEMPLATE % locals())
         call('openssl req -new -x509 -days 3650 -key %(key)s -out %(crt)s -config %(conf)s' % locals(), shell=True)
 
     # mark this script as executable (in case we were invoked via interpreter)
