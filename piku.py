@@ -172,7 +172,7 @@ def do_deploy(app, deltas={}):
             if exists(join(app_path, 'requirements.txt')):
                 echo("-----> Python app detected.", fg='green')
                 deploy_python(app, deltas)
-            if exists(join(app_path, 'Godeps')) or len(glob(join(app_path),'*.go')):
+            if exists(join(app_path, 'Godeps')) or len(glob(join(app_path,'*.go'))):
                 echo("-----> Go app detected.", fg='green')
                 deploy_go(app, deltas)
             else:
@@ -255,6 +255,8 @@ def spawn_app(app, deltas={}):
     
     # Bootstrap environment
     env = {
+        'APP': app,
+        'LOG_ROOT': LOG_ROOT,
         'HOME': os.environ['HOME'],
         'PATH': os.environ['PATH'],
         'VIRTUAL_ENV': virtualenv_path,
