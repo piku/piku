@@ -18,9 +18,9 @@ From the bottom up:
 - [ ] Sample Go app
 - [ ] Support Go deployments (in progress)
 - [ ] CLI command documentation
-- [ ] nginx SSL optimization/cypher suites
+- [ ] nginx SSL optimization/cypher suites, HTTPv2
 - [ ] nginx log rotation docs
-- [x] Basic nginx SSL/SPDY config
+- [x] Basic nginx SSL config
 - [x] nginx support - creates an nginx config file if `SERVER_NAME` is defined
 - [x] Testing with pre-packaged [uWSGI][uwsgi] versions on Debian Jessie (yes, it was painful)
 - [x] Support barebones binary deployments
