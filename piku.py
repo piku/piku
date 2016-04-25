@@ -8,7 +8,7 @@ from glob import glob
 from hashlib import md5
 from multiprocessing import cpu_count
 from os.path import abspath, basename, dirname, exists, getmtime, join, realpath, splitext
-from subprocess import call, check_output
+from subprocess import call, check_output, STDOUT
 from time import sleep
 
 
@@ -161,7 +161,9 @@ def expandvars(buffer, env, default=None, skip_escaped=False):
 def command_output(cmd):
     """executes a command and grabs its output, if any"""
     try:
-        return check_output(cmd, shell=True)
+        env = os.environ
+        env['PATH'] = env['PATH'] + "/usr/sbin:/usr/local/sbin"
+        return check_output(cmd, stderr=STDOUT, env=env, shell=True)
     except:
         return ""
 
