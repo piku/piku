@@ -307,7 +307,7 @@ def spawn_app(app, deltas={}):
     # Set up nginx if $SERVER_NAME is present
     if 'SERVER_NAME' in env:
         buffer = expandvars(NGINX_TEMPLATE, env)
-        echo("-----> Setting up nginx for '%s:" % (app, env['SERVER_NAME']))
+        echo("-----> Setting up nginx for '%s:%s'" % (app, env['SERVER_NAME']))
         echo(buffer)
         with open(join(NGINX_ROOT,"%s.conf" % app), "w") as h:
             h.write(buffer)        
