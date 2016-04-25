@@ -528,8 +528,11 @@ def destroy_app(app):
             for f in g:
                 echo("Removing file '%s'" % f, fg='yellow')
                 os.remove(f)
-    echo("Removing file '%s.conf'" % join(NGINX_ROOT,app), fg='yellow')
-    os.remove(join(NGINX_ROOT, "%s.conf" % app))
+                
+    nginx = join(NGINX_ROOT, "%s.conf" % app)
+    if exists(nginx):
+        echo("Removing file '%s'" % nginx, fg='yellow')
+        os.remove(nginx)
 
     
 @piku.command("logs")
