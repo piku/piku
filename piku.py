@@ -28,7 +28,7 @@ UWSGI_LOG_MAXSIZE = '1048576'
 
 NGINX_TEMPLATE = """
 upstream $APP {
-  server $NGINX_ROOT/$APP.sock;
+  server unix://$NGINX_ROOT/$APP.sock;
   # server $BIND_ADDRESS:$PORT;
 }
 server {
@@ -304,6 +304,9 @@ def spawn_app(app, deltas={}):
         elif "--with-http_spdy_module" in nginx:
             nginx_ssl += " spdy"
     
+        if 'PORT' in env:
+            del env['PORT']
+
         env.update({ 
             'NGINX_SSL': nginx_ssl,
             'NGINX_ROOT': NGINX_ROOT,
@@ -390,7 +393,7 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         # If running under nginx, don't expose a port at all
         if 'SERVER_NAME' in env:
             settings.extend([
-                ('socket', join(NGINX_ROOT, app, "%s.sock" % app)),
+                ('socket', join(NGINX_ROOT, "%s.sock" % app)),
             ])
         else:
             settings.extend([
