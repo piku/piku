@@ -573,7 +573,7 @@ def destroy_app(app):
                 echo("Removing file '%s'" % f, fg='yellow')
                 os.remove(f)
                 
-    nginx_files = [join(CA_ROOT, "%s.%s" % (app,x)) for x in ['conf','key','crt']].
+    nginx_files = [join(CA_ROOT, "%s.%s" % (app,x)) for x in ['conf','key','crt']]
     nginx_files.append(join(NGINX_ROOT,"%s.conf" % app))
     for f in nginx_files:
         if exists(f):
