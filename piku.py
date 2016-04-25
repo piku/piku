@@ -31,9 +31,10 @@ upstream $APP {
 server {
   listen      [::]:80;
   listen      80;
+  user        $USER;
   server_name $SERVER_NAME;
-  access_log  $LOG_ROOT/$APP-access.log;
-  error_log   $LOG_ROOT/$APP-error.log;
+  access_log  $LOG_ROOT/$APP/access.log;
+  error_log   $LOG_ROOT/$APP/error.log;
 
   # set a custom header for requests
   add_header X-Deployed-By Piku;
@@ -257,6 +258,7 @@ def spawn_app(app, deltas={}):
     env = {
         'APP': app,
         'LOG_ROOT': LOG_ROOT,
+        'USER': os.environ['USER'],
         'HOME': os.environ['HOME'],
         'PATH': os.environ['PATH'],
         'VIRTUAL_ENV': virtualenv_path,
