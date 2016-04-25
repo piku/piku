@@ -57,17 +57,18 @@ sudo reboot
 
 (We assume you know about ssh keys and have one "at hand", you'll need to copy it)
 
-Clone [piku repo](https://github.com/rcarmo/piku) somewhere and copy files to your Raspberry Pi
-```
+Clone the [piku repo](https://github.com/rcarmo/piku) somewhere and copy files to your Raspberry Pi
+
+```bash
 # as yourself in your desktop/laptop computer
-scp piku.py uwsgi-piku.service pi@your_machine:/tmp
-scp your_public_ssh_key.pub    pi@your_machine:/tmp
+scp piku.py uwsgi-piku.service nginx.default.dist incron.dist pi@your_machine:/tmp
+scp your_public_ssh_key.pub pi@your_machine:/tmp
 ```
 
 # Back to the Pi
 
 Prepare uWSGI (part one):
-```
+```bash
 # as 'pi' user
 sudo ln -s `which uwsgi` /usr/local/bin/uwsgi-piku
 sudo systemctl disable uwsgi
@@ -76,8 +77,21 @@ sudo systemctl daemon-reload
 sudo systemctl enable uwsgi-piku
 ```
 
-Create 'piku' user and set it up
+Prepare nginx:
+
+```bash
+sudo apt-get install nginx incron
+# Set up nginx to pick up our config files
+sudo cp /tmp/nginx.default.dist /etc/nginx/sites-available/default
+# Set up incron to reload nginx upon config changes
+sudo cp /tmp/incron.dist /etc/incron.d/piku
+sudo systemctl restart incron
+sudo systemctl restart nginx
 ```
+
+Create 'piku' user and set it up
+
+```bash
 # as 'pi' user
 sudo adduser --disabled-password --gecos 'PaaS access' --ingroup www-data piku
 sudo su - piku
@@ -92,7 +106,8 @@ exit
 ```
 
 Prepare uWSGI (part two):
-```
+
+```bash
 # as 'pi' user
 sudo systemctl start uwsgi-piku
 sudo systemctl status uwsgi-piku.service
@@ -103,7 +118,7 @@ sudo systemctl status uwsgi-piku.service
 
 Go back to your machine and try these commands:
 
-```
+```bash
 # as yourself in your desktop/laptop computer
 ssh piku@your_machine
 
@@ -135,4 +150,4 @@ Commands:
 Connection to your_machine closed.
 ```
 
-If you find any bugs with this Gist, please let [Luis Correia](http://twitter.com/luisfcorreia) know ;)
+If you find any bugs with this quickstart guide, please let [Luis Correia](http://twitter.com/luisfcorreia) know ;)
