@@ -48,7 +48,7 @@ As of April 2016, the shipping versions with Raspbian are recent enough to run `
 
 ```bash
 # as 'pi' user
-sudo apt install -y python-virtualenv python-pip git uwsgi uwsgi-plugin-python
+sudo apt install -y python-virtualenv python-pip git uwsgi uwsgi-plugin-python incron nginx
 sudo pip install -U click
 sudo reboot
 ```

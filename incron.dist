@@ -1,0 +1,1 @@
+/home/piku/.piku/nginx IN_MODIFY,IN_NO_LOOP /bin/systemctl reload nginx

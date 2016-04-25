@@ -18,11 +18,39 @@ APP_ROOT = abspath(join(PIKU_ROOT, "apps"))
 ENV_ROOT = abspath(join(PIKU_ROOT, "envs"))
 GIT_ROOT = abspath(join(PIKU_ROOT, "repos"))
 LOG_ROOT = abspath(join(PIKU_ROOT, "logs"))
+NGINX_ROOT = abspath(join(PIKU_ROOT, "nginx"))
 UWSGI_AVAILABLE = abspath(join(PIKU_ROOT, "uwsgi-available"))
 UWSGI_ENABLED = abspath(join(PIKU_ROOT, "uwsgi-enabled"))
 UWSGI_ROOT = abspath(join(PIKU_ROOT, "uwsgi"))
 UWSGI_LOG_MAXSIZE = '1048576'
 
+NGINX_TEMPLATE = """
+upstream $APP {
+  server $BIND_ADDRESS:$PORT;
+}
+server {
+  listen      [::]:80;
+  listen      80;
+  server_name $NOSSL_SERVER_NAME;
+  access_log  $LOG_ROOT/$APP-access.log;
+  error_log   $LOG_ROOT/$APP-error.log;
+
+  # set a custom header for requests
+  add_header X-Deployed-By Piku;
+
+  location    / {
+    proxy_pass  http://$APP;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_set_header X-Forwarded-Port $server_port;
+    proxy_set_header X-Request-Start $msec;
+  }
+}
+"""
 
 # === Utility functions ===
 
@@ -486,6 +514,8 @@ def destroy_app(app):
             for f in g:
                 echo("Removing file '%s'" % f, fg='yellow')
                 os.remove(f)
+    echo("Removing file '%s.conf'" % join(NGINX_ROOT,app), fg='yellow')
+    os.remove(join(NGINX_ROOT, "%s.conf" % app))
 
     
 @piku.command("logs")
@@ -569,7 +599,7 @@ def init_paths():
     """Initialize environment"""
     
     # Create required paths
-    for p in [APP_ROOT, GIT_ROOT, ENV_ROOT, UWSGI_ROOT, UWSGI_AVAILABLE, UWSGI_ENABLED, LOG_ROOT]:
+    for p in [APP_ROOT, GIT_ROOT, ENV_ROOT, UWSGI_ROOT, UWSGI_AVAILABLE, UWSGI_ENABLED, LOG_ROOT, NGINX_ROOT]:
         if not exists(p):
             echo("Creating '%s'." % p, fg='green')
             os.makedirs(p)

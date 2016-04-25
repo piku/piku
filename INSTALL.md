@@ -216,6 +216,18 @@ sudo update-rc.d uwsgi-piku defaults
 sudo service uwsgi-piku start
 ```
 
+## nginx Installation (Raspbian 8, Ubuntu 16.04)
+
+```bash
+sudo apt-get install nginx incron
+# Set up nginx to pick up our config files
+sudo cp /tmp/nginx.default.dist /etc/nginx/sites-available/default
+# Set up incron to reload nginx upon config changes
+sudo cp /tmp/incron.dist /etc/incron.d/piku
+sudo systemctl restart incron
+sudo systemctl restart nginx
+```
+
 ## Go Installation (All Debian Linux variants, on Raspberry Pi)
 
 > This is **EXPERIMENTAL** and may not work at all.
