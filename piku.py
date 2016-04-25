@@ -682,11 +682,13 @@ def init_paths():
             h.write("%s = %s\n" % (k, v))
     
     # Create a local certificate authority
-    key, crt = [join(CA_ROOT, 'ca.%s' % x) for x in ['key','crt']]
+    key, crt, conf = [join(CA_ROOT, 'ca.%s' % x) for x in ['key','crt','conf']]
     if not exists(key):
         echo("Creating local certificate authority...", fg='yellow')
         call('openssl genrsa -des3 -out %(key)s 4096' % locals(), shell=True)
-        call('openssl req -new -x509 -days 3650 -key %(key)s -out %(crt)s' % locals(), shell=True)
+        with open(conf,'w') as h:
+            h.write(SSL_TEMPLATE % {'domain': domain})
+        call('openssl req -new -x509 -days 3650 -key %(key)s -out %(crt)s -config %(conf)s' % locals(), shell=True)
 
     # mark this script as executable (in case we were invoked via interpreter)
     this_script = realpath(__file__)
