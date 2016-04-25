@@ -348,7 +348,7 @@ def spawn_app(app, deltas={}):
             with open(conf,'w') as h:
                 h.write(SSL_TEMPLATE % locals())
             call('openssl req -new -key %(key)s -out %(req)s -config %(conf)s' % locals(), shell=True)
-                    call('openssl x509 -req -days 3650 -in %(req)s -CA %(cacrt)s -CAkey %(cakey)s -passin pass:piku -set_serial 0x%(serial)s -out %(crt)s -extensions v3_req -extfile %(conf)s' % locals(), shell=True)
+            call('openssl x509 -req -days 3650 -in %(req)s -CA %(cacrt)s -CAkey %(cakey)s -passin pass:piku -set_serial 0x%(serial)s -out %(crt)s -extensions v3_req -extfile %(conf)s' % locals(), shell=True)
     
         buffer = expandvars(NGINX_TEMPLATE, env)
         echo("-----> Setting up nginx for '%s:%s'" % (app, env['SERVER_NAME']))
