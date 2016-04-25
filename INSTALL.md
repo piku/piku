@@ -216,6 +216,18 @@ sudo update-rc.d uwsgi-piku defaults
 sudo service uwsgi-piku start
 ```
 
+## nginx Installation (Raspbian 8, Ubuntu 16.04)
+
+```bash
+sudo apt-get install nginx incron
+# Set up nginx to pick up our config files
+sudo cp /tmp/nginx.default.dist /etc/nginx/sites-available/default
+# Set up incron to reload nginx upon config changes
+sudo cp /tmp/incron.dist /etc/incron.d/piku
+sudo systemctl restart incron
+sudo systemctl restart nginx
+```
+
 ## Go Installation (All Debian Linux variants, on Raspberry Pi)
 
 > This is **EXPERIMENTAL** and may not work at all.
@@ -228,17 +240,19 @@ Since Raspbian's Go compiler is version 1.0.2, we need something more up-to-date
 2. Unpack it under the `piku` user like such:
 
 ```bash
-su - piku
-cd ~
+sudo su - piku
 tar -zxvf /tmp/go1.5.3.linux-arm.tar.gz
+# remove unnecessary files
+rm -rf go/api go/blog go/doc go/misc go/test
 ```
 
 3. Give it a temporary `GOPATH` and install `godep`:
 
 ```bash
-su - piku
-cd ~
-GOROOT=$HOME/go GOPATH=$HOME/golibs PATH=$PATH:$HOME/go/bin go get github.com/tools/godep
+sudo su - piku
+GOROOT=$HOME/go GOPATH=$HOME/gopath PATH=$PATH:$HOME/go/bin go get github.com/tools/godep
+# temporary workaround until this is fixed in godep or Go 1.7(?)
+GOROOT=$HOME/go GOPATH=$HOME/gopath PATH=$PATH:$HOME/go/bin go get golang.org/x/sys/unix
 ```
 
 _TODO: complete this._

@@ -3,10 +3,12 @@
 import os, sys, stat, re, shutil, socket
 from click import argument, command, group, option, secho as echo
 from collections import defaultdict, deque
+from datetime import datetime
 from glob import glob
+from hashlib import md5
 from multiprocessing import cpu_count
 from os.path import abspath, basename, dirname, exists, getmtime, join, realpath, splitext
-from subprocess import call, check_output
+from subprocess import call, check_output, STDOUT
 from time import sleep
 
 
@@ -18,11 +20,61 @@ APP_ROOT = abspath(join(PIKU_ROOT, "apps"))
 ENV_ROOT = abspath(join(PIKU_ROOT, "envs"))
 GIT_ROOT = abspath(join(PIKU_ROOT, "repos"))
 LOG_ROOT = abspath(join(PIKU_ROOT, "logs"))
+NGINX_ROOT = abspath(join(PIKU_ROOT, "nginx"))
 UWSGI_AVAILABLE = abspath(join(PIKU_ROOT, "uwsgi-available"))
 UWSGI_ENABLED = abspath(join(PIKU_ROOT, "uwsgi-enabled"))
 UWSGI_ROOT = abspath(join(PIKU_ROOT, "uwsgi"))
 UWSGI_LOG_MAXSIZE = '1048576'
 
+NGINX_TEMPLATE = """
+upstream $APP {
+  server unix://$NGINX_ROOT/$APP.sock;
+  # server $BIND_ADDRESS:$PORT;
+}
+server {
+  listen              [::]:80;
+  listen              80;
+
+  listen              [::]:$NGINX_SSL;
+  listen              $NGINX_SSL;
+  ssl                 on;
+  ssl_certificate     $NGINX_ROOT/$APP.crt;
+  ssl_certificate_key $NGINX_ROOT/$APP.key;
+  server_name         $SERVER_NAME;
+
+  # These are not required under systemd - enable for debugging only
+  # access_log        $LOG_ROOT/$APP/access.log;
+  # error_log         $LOG_ROOT/$APP/error.log;
+
+  # set a custom header for requests
+  add_header X-Deployed-By Piku;
+
+  location    / {
+    uwsgi_pass $APP;
+    uwsgi_param QUERY_STRING $query_string;
+    uwsgi_param REQUEST_METHOD $request_method;
+    uwsgi_param CONTENT_TYPE $content_type;
+    uwsgi_param CONTENT_LENGTH $content_length;
+    uwsgi_param REQUEST_URI $request_uri;
+    uwsgi_param PATH_INFO $document_uri;
+    uwsgi_param DOCUMENT_ROOT $document_root;
+    uwsgi_param SERVER_PROTOCOL $server_protocol;
+    uwsgi_param REMOTE_ADDR $remote_addr;
+    uwsgi_param REMOTE_PORT $remote_port;
+    uwsgi_param SERVER_ADDR $server_addr;
+    uwsgi_param SERVER_PORT $server_port;
+    uwsgi_param SERVER_NAME $server_name;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_set_header X-Forwarded-Port $server_port;
+    proxy_set_header X-Request-Start $msec;
+  }
+}
+"""
 
 # === Utility functions ===
 
@@ -96,17 +148,32 @@ def parse_procfile(filename):
     return workers 
 
 
+def expandvars(buffer, env, default=None, skip_escaped=False):
+    """expand shell-style environment variables in a buffer"""
+    
+    def replace_var(match):
+        return env.get(match.group(2) or match.group(1), match.group(0) if default is None else default)
+    
+    pattern = (r'(?<!\\)' if skip_escaped else '') + r'\$(\w+|\{([^}]*)\})'
+    return re.sub(pattern, replace_var, buffer)
+
+
+def command_output(cmd):
+    """executes a command and grabs its output, if any"""
+    try:
+        env = os.environ
+        env['PATH'] = env['PATH'] + ":/usr/sbin:/usr/local/sbin"
+        return check_output(cmd, stderr=STDOUT, env=env, shell=True)
+    except:
+        return ""
+
+
 def parse_settings(filename, env={}):
     """Parses a settings file and returns a dict with environment variables"""
-
-    def expandvars(buffer, env, default=None, skip_escaped=False):
-        def replace_var(match):
-            return env.get(match.group(2) or match.group(1), match.group(0) if default is None else default)
-        pattern = (r'(?<!\\)' if skip_escaped else '') + r'\$(\w+|\{([^}]*)\})'
-        return re.sub(pattern, replace_var, buffer)
     
     if not exists(filename):
         return {}
+        
     with open(filename, 'r') as settings:
         for line in settings:
             if '#' == line[0]: # allow for comments
@@ -139,8 +206,9 @@ def do_deploy(app, deltas={}):
             if exists(join(app_path, 'requirements.txt')):
                 echo("-----> Python app detected.", fg='green')
                 deploy_python(app, deltas)
-            # if exists(join(app_path, 'Godeps')) or len(glob(join(app_path),'*.go')):
-            # Go deployment
+            elif exists(join(app_path, 'Godeps')) or len(glob(join(app_path,'*.go'))):
+                echo("-----> Go app detected.", fg='green')
+                deploy_go(app, deltas)
             else:
                 echo("-----> Could not detect runtime!", fg='red')
             # TODO: detect other runtimes
@@ -150,6 +218,33 @@ def do_deploy(app, deltas={}):
         echo("Error: app '%s' not found." % app, fg='red')
         
         
+def deploy_go(app, deltas={}):
+    """Deploy a Go application"""
+
+    go_path = join(ENV_ROOT, app)
+    deps = join(APP_ROOT, app, 'Godeps')
+
+    first_time = False
+    if not exists(go_path):
+        echo("-----> Creating GOPATH for '%s'" % app, fg='green')
+        os.makedirs(go_path)
+        # copy across a pre-built GOPATH to save provisioning time 
+        call('cp -a $HOME/gopath %s' % app, cwd=ENV_ROOT, shell=True)
+        first_time = True
+
+    if exists(deps):
+        if first_time or getmtime(deps) > getmtime(go_path):
+            echo("-----> Running godep for '%s'" % app, fg='green')
+            env = {
+                'GOPATH': '$HOME/gopath',
+                'GOROOT': '$HOME/go',
+                'PATH': '$PATH:$HOME/go/bin',
+                'GO15VENDOREXPERIMENT': '1'
+            }
+            call('godep update ...', cwd=join(APP_ROOT, app), env=env, shell=True)
+    spawn_app(app, deltas)
+
+
 def deploy_python(app, deltas={}):
     """Deploy a Python application"""
     
@@ -191,13 +286,16 @@ def spawn_app(app, deltas={}):
     live = join(ENV_ROOT, app, 'LIVE_ENV')
     # Scaling
     scaling = join(ENV_ROOT, app, 'SCALING')
-    
+
     # Bootstrap environment
     env = {
+        'APP': app,
+        'LOG_ROOT': LOG_ROOT,
+        'HOME': os.environ['HOME'],
+        'USER': os.environ['USER'],
         'PATH': os.environ['PATH'],
-        'VIRTUAL_ENV': virtualenv_path,
-        'PORT': str(get_free_port()),
         'PWD': dirname(env_file),
+        'VIRTUAL_ENV': virtualenv_path,
     }
     
     # Load environment variables shipped with repo (if any)
@@ -207,7 +305,28 @@ def spawn_app(app, deltas={}):
     # Override with custom settings (if any)
     if exists(settings):
         env.update(parse_settings(settings, env))
+
+    # Pick a port if none defined and we're not running under nginx
+    if 'PORT' not in env and 'SERVER_NAME' not in env:
+        env['PORT'] = str(get_free_port())
     
+    # Set up nginx if needed
+    if 'SERVER_NAME' in env:
+        nginx = command_output("nginx -V")
+        nginx_ssl = "443 ssl"
+        if "--with-http_v2_module" in nginx:
+            nginx_ssl += " http2"
+        elif "--with-http_spdy_module" in nginx:
+            nginx_ssl += " spdy"
+    
+        if 'PORT' in env:
+            del env['PORT']
+
+        env.update({ 
+            'NGINX_SSL': nginx_ssl,
+            'NGINX_ROOT': NGINX_ROOT,
+        })
+
     # Configured worker count
     if exists(scaling):
         worker_count.update({k: int(v) for k,v in parse_procfile(scaling).iteritems()})
@@ -241,6 +360,18 @@ def spawn_app(app, deltas={}):
             if exists(enabled):
                 echo("-----> Terminating '%s:%s.%d'" % (app, k, w), fg='yellow')
                 os.unlink(enabled)
+                
+    # Set up nginx if $SERVER_NAME is present
+    if 'SERVER_NAME' in env:
+        domain = env['SERVER_NAME'].split()[0]       
+        key, crt = [join(NGINX_ROOT,'%s.%s' % (app,x)) for x in ['key','crt']]
+        if not exists(key):
+            call('openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 -subj "/C=US/ST=NY/L=New York/O=Piku/OU=Self-Signed/CN=%(domain)s" -keyout %(key)s -out %(crt)s' % locals(), shell=True)
+    
+        buffer = expandvars(NGINX_TEMPLATE, env)
+        echo("-----> Setting up nginx for '%s:%s'" % (app, env['SERVER_NAME']))
+        with open(join(NGINX_ROOT,"%s.conf" % app), "w") as h:
+            h.write(buffer)
     
 
 def spawn_worker(app, kind, command, env, ordinal=1):
@@ -267,14 +398,26 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         settings.append(('env', '%s=%s' % (k,v)))
         
     if kind == 'wsgi':
-        echo("-----> Setting HTTP port to %s" % env['PORT'], fg='yellow')
         settings.extend([
             ('module',      command),
             ('threads',     '4'),
             ('plugin',      'python'),
-            ('http',        ':%s' % env['PORT']),
-            ('http-socket', ':%s' % env['PORT']),
         ])
+
+        # If running under nginx, don't expose a port at all
+        if 'SERVER_NAME' in env:
+            sock = join(NGINX_ROOT, "%s.sock" % app)
+            echo("-----> Binding uWSGI to %s" % sock , fg='yellow')
+            settings.extend([
+                ('socket', sock),
+                ('chmod-socket', '664'),
+            ])
+        else:
+            echo("-----> Setting HTTP port to %s" % env['PORT'], fg='yellow')
+            settings.extend([
+                ('http',        ':%s' % env['PORT']),
+                ('http-socket', ':%s' % env['PORT']),
+            ])
     else:
         settings.append(('attach-daemon', command))
         
@@ -458,6 +601,12 @@ def destroy_app(app):
             for f in g:
                 echo("Removing file '%s'" % f, fg='yellow')
                 os.remove(f)
+                
+    nginx_files = [join(NGINX_ROOT, "%s.%s" % (app,x)) for x in ['conf','sock','key','crt']]
+    for f in nginx_files:
+        if exists(f):
+            echo("Removing file '%s'" % f, fg='yellow')
+            os.remove(f)
 
     
 @piku.command("logs")
@@ -541,7 +690,7 @@ def init_paths():
     """Initialize environment"""
     
     # Create required paths
-    for p in [APP_ROOT, GIT_ROOT, ENV_ROOT, UWSGI_ROOT, UWSGI_AVAILABLE, UWSGI_ENABLED, LOG_ROOT]:
+    for p in [APP_ROOT, GIT_ROOT, ENV_ROOT, UWSGI_ROOT, UWSGI_AVAILABLE, UWSGI_ENABLED, LOG_ROOT, NGINX_ROOT]:
         if not exists(p):
             echo("Creating '%s'." % p, fg='green')
             os.makedirs(p)
