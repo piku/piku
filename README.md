@@ -18,6 +18,7 @@ From the bottom up:
 - [ ] Sample Go app
 - [ ] Support Go deployments
 - [ ] CLI command documentation
+- [ ] nginx log rotation and SSL/SPDY config
 - [x] nginx support - creates an nginx config file if `SERVER_NAME` is defined
 - [x] Testing with pre-packaged [uWSGI][uwsgi] versions on Debian Jessie (yes, it was painful)
 - [x] Support barebones binary deployments
