@@ -162,7 +162,7 @@ def command_output(cmd):
     """executes a command and grabs its output, if any"""
     try:
         env = os.environ
-        env['PATH'] = env['PATH'] + "/usr/sbin:/usr/local/sbin"
+        env['PATH'] = env['PATH'] + ":/usr/sbin:/usr/local/sbin"
         return check_output(cmd, stderr=STDOUT, env=env, shell=True)
     except:
         return ""
