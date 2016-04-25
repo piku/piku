@@ -3,7 +3,7 @@
 import os, sys, stat, re, shutil, socket
 from click import argument, command, group, option, secho as echo
 from collections import defaultdict, deque
-from datetime.datetime import now
+from datetime import datetime
 from glob import glob
 from hashlib import md5
 from multiprocessing import cpu_count
@@ -342,13 +342,13 @@ def spawn_app(app, deltas={}):
     if 'SERVER_NAME' in env:
         key, req, crt, conf = [join(CA_ROOT,'%s.%s' % (app,x)) for x in ['key','req','crt','conf']]
         cakey, cacrt = [join(CA_ROOT, 'ca.%s' % x) for x in ['key','crt']]
-        serial = md5(SERVER_NAME.split()[0] + str(now())).hexdigest()
+        serial = md5(SERVER_NAME.split()[0] + str(datetime.now())).hexdigest()
         if not exists(key):
-            call('openssl genrsa -out %(key)s 1024' % locals())
+            call('openssl genrsa -out %(key)s 1024' % locals(), shell=True)
             with open(conf,'w') as h:
                 h.write(SSL_TEMPLATE % {'domain': domain})
-            call('openssl req -new -key %(key)s -out %(req)s -config %(conf)s' % locals())
-            call('openssl x509 -req -days 3650 -in %(req)s -CA %(cacrt)s -CAkey %(cakey)s -set_serial 0x%(serial)s -out %(crt)s -extensions v3_req -extfile %(conf)s' % locals())
+            call('openssl req -new -key %(key)s -out %(req)s -config %(conf)s' % locals(), shell=True)
+            call('openssl x509 -req -days 3650 -in %(req)s -CA %(cacrt)s -CAkey %(cakey)s -set_serial 0x%(serial)s -out %(crt)s -extensions v3_req -extfile %(conf)s' % locals(), shell=True)
     
         buffer = expandvars(NGINX_TEMPLATE, env)
         echo("-----> Setting up nginx for '%s:%s'" % (app, env['SERVER_NAME']))
@@ -573,7 +573,7 @@ def destroy_app(app):
                 echo("Removing file '%s'" % f, fg='yellow')
                 os.remove(f)
                 
-    for f in [join(CA_ROOT, "%s.%s" % (app,x) for x in ['conf','key','crt']].append(join(NGINX_ROOT,"%s.conf" % app)):
+    for f in [join(CA_ROOT, "%s.%s" % (app,x)) for x in ['conf','key','crt']].append(join(NGINX_ROOT,"%s.conf" % app)):
         if exists(f):
             echo("Removing file '%s'" % f, fg='yellow')
             os.remove(f)
@@ -685,8 +685,8 @@ def init_paths():
     key, crt = [join(CA_ROOT, 'ca.%s' % x) for x in ['key','crt']]
     if not exists(key):
         echo("Creating local certificate authority...", fg='yellow')
-        call('openssl genrsa -des3 -out %(key)s 4096' % locals())
-        call('openssl req -new -x509 -days 3650 -key %(key)s -out %(crt)s' % locals())
+        call('openssl genrsa -des3 -out %(key)s 4096' % locals(), shell=True)
+        call('openssl req -new -x509 -days 3650 -key %(key)s -out %(crt)s' % locals(), shell=True)
 
     # mark this script as executable (in case we were invoked via interpreter)
     this_script = realpath(__file__)
