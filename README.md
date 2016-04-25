@@ -16,9 +16,11 @@ From the bottom up:
 - [ ] Support Node deployments
 - [ ] Support Clojure/Java deployments
 - [ ] Sample Go app
-- [ ] Support Go deployments
+- [ ] Support Go deployments (in progress)
 - [ ] CLI command documentation
-- [ ] nginx log rotation and SSL/SPDY config
+- [ ] nginx SSL optimization/cypher suites
+- [ ] nginx log rotation docs
+- [x] Basic nginx SSL/SPDY config
 - [x] nginx support - creates an nginx config file if `SERVER_NAME` is defined
 - [x] Testing with pre-packaged [uWSGI][uwsgi] versions on Debian Jessie (yes, it was painful)
 - [x] Support barebones binary deployments
