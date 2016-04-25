@@ -172,7 +172,7 @@ def do_deploy(app, deltas={}):
             if exists(join(app_path, 'requirements.txt')):
                 echo("-----> Python app detected.", fg='green')
                 deploy_python(app, deltas)
-            if exists(join(app_path, 'Godeps')) or len(glob(join(app_path,'*.go'))):
+            elif exists(join(app_path, 'Godeps')) or len(glob(join(app_path,'*.go'))):
                 echo("-----> Go app detected.", fg='green')
                 deploy_go(app, deltas)
             else:
