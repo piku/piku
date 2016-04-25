@@ -39,7 +39,6 @@ server {
   ssl                 on;
   ssl_certificate     $CA_ROOT/$APP.crt;
   ssl_certificate_key $CA_ROOT/$APP.key;
-  user                $USER;
   server_name         $SERVER_NAME;
   access_log          $LOG_ROOT/$APP/access.log;
   error_log           $LOG_ROOT/$APP/error.log;
@@ -349,7 +348,7 @@ def spawn_app(app, deltas={}):
             with open(conf,'w') as h:
                 h.write(SSL_TEMPLATE % locals())
             call('openssl req -new -key %(key)s -out %(req)s -config %(conf)s' % locals(), shell=True)
-            call('openssl x509 -req -days 3650 -in %(req)s -CA %(cacrt)s -CAkey %(cakey)s -set_serial 0x%(serial)s -out %(crt)s -extensions v3_req -extfile %(conf)s' % locals(), shell=True)
+                    call('openssl x509 -req -days 3650 -in %(req)s -CA %(cacrt)s -CAkey %(cakey)s -passin pass:piku -set_serial 0x%(serial)s -out %(crt)s -extensions v3_req -extfile %(conf)s' % locals(), shell=True)
     
         buffer = expandvars(NGINX_TEMPLATE, env)
         echo("-----> Setting up nginx for '%s:%s'" % (app, env['SERVER_NAME']))
@@ -692,7 +691,7 @@ def init_paths():
         call('openssl genrsa -des3 -out %(key)s 4096' % locals(), shell=True)
         with open(conf,'w') as h:
             h.write(SSL_TEMPLATE % locals())
-        call('openssl req -new -x509 -days 3650 -key %(key)s -out %(crt)s -config %(conf)s' % locals(), shell=True)
+        call('openssl req -new -x509 -days 3650 -key %(key)s -passout pass:piku -out %(crt)s -config %(conf)s' % locals(), shell=True)
 
     # mark this script as executable (in case we were invoked via interpreter)
     this_script = realpath(__file__)
