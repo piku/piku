@@ -34,8 +34,8 @@ upstream $APP {
 server {
   listen              [::]:80;
   listen              80;
-  listen              [::]:443 ssl spdy2;
-  listen              443 ssl spdy2;
+  listen              [::]:443 ssl http2;
+  listen              443 ssl http2;
   ssl                 on;
   ssl_certificate     $CA_ROOT/$APP.crt;
   ssl_certificate_key $CA_ROOT/$APP.key;
