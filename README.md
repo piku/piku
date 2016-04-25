@@ -19,7 +19,7 @@ From the bottom up:
 - [ ] Support Go deployments (in progress)
 - [ ] CLI command documentation
 - [ ] nginx SSL optimization/cypher suites, HTTPv2, own certificates
-- [x] Basic nginx SSL config with self-signed certificates
+- [x] Basic nginx SSL config with self-signed certificates and UNIX domain socket connection
 - [x] nginx support - creates an nginx config file if `SERVER_NAME` is defined
 - [x] Testing with pre-packaged [uWSGI][uwsgi] versions on Debian Jessie (yes, it was painful)
 - [x] Support barebones binary deployments

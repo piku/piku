@@ -383,7 +383,6 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         settings.append(('env', '%s=%s' % (k,v)))
         
     if kind == 'wsgi':
-        echo("-----> Setting HTTP port to %s" % env['PORT'], fg='yellow')
         settings.extend([
             ('module',      command),
             ('threads',     '4'),
@@ -392,10 +391,13 @@ def spawn_worker(app, kind, command, env, ordinal=1):
 
         # If running under nginx, don't expose a port at all
         if 'SERVER_NAME' in env:
+            sock = join(NGINX_ROOT, "%s.sock" % app)
+            echo("-----> Binding uWSGI to %s" % sock , fg='yellow')
             settings.extend([
-                ('socket', join(NGINX_ROOT, "%s.sock" % app)),
+                ('socket', sock),
             ])
         else:
+            echo("-----> Setting HTTP port to %s" % env['PORT'], fg='yellow')
             settings.extend([
                 ('http',        ':%s' % env['PORT']),
                 ('http-socket', ':%s' % env['PORT']),
@@ -584,7 +586,7 @@ def destroy_app(app):
                 echo("Removing file '%s'" % f, fg='yellow')
                 os.remove(f)
                 
-    nginx_files = [join(NGINX_ROOT, "%s.%s" % (app,x)) for x in ['sock','key','crt']]
+    nginx_files = [join(NGINX_ROOT, "%s.%s" % (app,x)) for x in ['conf','sock','key','crt']]
     for f in nginx_files:
         if exists(f):
             echo("Removing file '%s'" % f, fg='yellow')
