@@ -31,7 +31,7 @@ upstream $APP {
 server {
   listen      [::]:80;
   listen      80;
-  server_name $NOSSL_SERVER_NAME;
+  server_name $SERVER_NAME;
   access_log  $LOG_ROOT/$APP-access.log;
   error_log   $LOG_ROOT/$APP-error.log;
 
@@ -39,7 +39,7 @@ server {
   add_header X-Deployed-By Piku;
 
   location    / {
-    proxy_pass  http://$APP;
+    proxy_pass  http://$BIND_ADDRESS:$PORT;
     proxy_http_version 1.1;
     proxy_set_header Upgrade $http_upgrade;
     proxy_set_header Connection "upgrade";
@@ -124,17 +124,22 @@ def parse_procfile(filename):
     return workers 
 
 
+def expandvars(buffer, env, default=None, skip_escaped=False):
+    """expand shell-style environment variables in a buffer"""
+    
+    def replace_var(match):
+        return env.get(match.group(2) or match.group(1), match.group(0) if default is None else default)
+    
+    pattern = (r'(?<!\\)' if skip_escaped else '') + r'\$(\w+|\{([^}]*)\})'
+    return re.sub(pattern, replace_var, buffer)
+
+
 def parse_settings(filename, env={}):
     """Parses a settings file and returns a dict with environment variables"""
-
-    def expandvars(buffer, env, default=None, skip_escaped=False):
-        def replace_var(match):
-            return env.get(match.group(2) or match.group(1), match.group(0) if default is None else default)
-        pattern = (r'(?<!\\)' if skip_escaped else '') + r'\$(\w+|\{([^}]*)\})'
-        return re.sub(pattern, replace_var, buffer)
     
     if not exists(filename):
         return {}
+        
     with open(filename, 'r') as settings:
         for line in settings:
             if '#' == line[0]: # allow for comments
@@ -250,6 +255,7 @@ def spawn_app(app, deltas={}):
     
     # Bootstrap environment
     env = {
+        'HOME': os.environ['HOME'],
         'PATH': os.environ['PATH'],
         'VIRTUAL_ENV': virtualenv_path,
         'PORT': str(get_free_port()),
@@ -297,6 +303,14 @@ def spawn_app(app, deltas={}):
             if exists(enabled):
                 echo("-----> Terminating '%s:%s.%d'" % (app, k, w), fg='yellow')
                 os.unlink(enabled)
+                
+    # Set up nginx if $SERVER_NAME is present
+    if 'SERVER_NAME' in env:
+        buffer = expandvars(NGINX_TEMPLATE, env)
+        echo("-----> Setting up nginx for '%s:" % (app, env['SERVER_NAME']))
+        echo(buffer)
+        with open(join(NGINX_ROOT,"%s.conf" % app), "w") as h:
+            h.write(buffer)        
     
 
 def spawn_worker(app, kind, command, env, ordinal=1):
