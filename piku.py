@@ -17,7 +17,6 @@ from time import sleep
 PIKU_ROOT = os.environ.get('PIKU_ROOT', join(os.environ['HOME'],'.piku'))
 
 APP_ROOT = abspath(join(PIKU_ROOT, "apps"))
-CA_ROOT = abspath(join(PIKU_ROOT, "certs"))
 ENV_ROOT = abspath(join(PIKU_ROOT, "envs"))
 GIT_ROOT = abspath(join(PIKU_ROOT, "repos"))
 LOG_ROOT = abspath(join(PIKU_ROOT, "logs"))
@@ -29,19 +28,23 @@ UWSGI_LOG_MAXSIZE = '1048576'
 
 NGINX_TEMPLATE = """
 upstream $APP {
-  server $BIND_ADDRESS:$PORT;
+  server $NGINX_ROOT/$APP.sock;
+  # server $BIND_ADDRESS:$PORT;
 }
 server {
   listen              [::]:80;
   listen              80;
-  listen              [::]:443 ssl;
-  listen              443 ssl;
+
+  listen              [::]:$NGINX_SSL;
+  listen              $NGINX_SSL;
   ssl                 on;
-  ssl_certificate     $CA_ROOT/$APP.crt;
-  ssl_certificate_key $CA_ROOT/$APP.key;
+  ssl_certificate     $NGINX_ROOT/$APP.crt;
+  ssl_certificate_key $NGINX_ROOT/$APP.key;
   server_name         $SERVER_NAME;
-  access_log          $LOG_ROOT/$APP/access.log;
-  error_log           $LOG_ROOT/$APP/error.log;
+
+  # These are not required under systemd - enable for debugging only
+  # access_log        $LOG_ROOT/$APP/access.log;
+  # error_log         $LOG_ROOT/$APP/error.log;
 
   # set a custom header for requests
   add_header X-Deployed-By Piku;
@@ -58,27 +61,6 @@ server {
     proxy_set_header X-Request-Start $msec;
   }
 }
-"""
-
-SSL_TEMPLATE = """
-prompt = no
-distinguished_name = req_distinguished_name
-req_extensions = v3_req
-[ req_distinguished_name ]
-C = US
-ST = NY
-L = New York
-O = Piku
-OU = Private Certificate Authority
-CN = %(domain)s
-emailAddress = piku@%(domain)s
-[ v3_req ]
-basicConstraints = CA:FALSE
-keyUsage = nonRepudiation, digitalSignature, keyEncipherment
-subjectAltName = @alt_names
-[ alt_names ]
-DNS.1 = %(domain)s
-DNS.2 = *.%(domain)s
 """
 
 # === Utility functions ===
@@ -161,6 +143,14 @@ def expandvars(buffer, env, default=None, skip_escaped=False):
     
     pattern = (r'(?<!\\)' if skip_escaped else '') + r'\$(\w+|\{([^}]*)\})'
     return re.sub(pattern, replace_var, buffer)
+
+
+def command_output(cmd):
+    """executes a command and grabs its output, if any"""
+    try:
+        return check_output(cmd, shell=True)
+    except:
+        return ""
 
 
 def parse_settings(filename, env={}):
@@ -281,16 +271,14 @@ def spawn_app(app, deltas={}):
     live = join(ENV_ROOT, app, 'LIVE_ENV')
     # Scaling
     scaling = join(ENV_ROOT, app, 'SCALING')
-    
+
     # Bootstrap environment
     env = {
         'APP': app,
-        'CA_ROOT': CA_ROOT,
         'LOG_ROOT': LOG_ROOT,
         'HOME': os.environ['HOME'],
         'USER': os.environ['USER'],
         'PATH': os.environ['PATH'],
-        'PORT': str(get_free_port()),
         'PWD': dirname(env_file),
         'VIRTUAL_ENV': virtualenv_path,
     }
@@ -302,7 +290,25 @@ def spawn_app(app, deltas={}):
     # Override with custom settings (if any)
     if exists(settings):
         env.update(parse_settings(settings, env))
+
+    # Pick a port if none defined and we're not running under nginx
+    if 'PORT' not in env and 'SERVER_NAME' not in env:
+        env['PORT'] = str(get_free_port())
     
+    # Set up nginx if needed
+    if 'SERVER_NAME' in env:
+        nginx = command_output("nginx -V")
+        nginx_ssl = "443 ssl"
+        if "--with-http_v2_module" in nginx:
+            nginx_ssl += " http2"
+        elif "--with-http_spdy_module" in nginx:
+            nginx_ssl += " spdy"
+    
+        env.update({ 
+            'NGINX_SSL': nginx_ssl,
+            'NGINX_ROOT': NGINX_ROOT,
+        })
+
     # Configured worker count
     if exists(scaling):
         worker_count.update({k: int(v) for k,v in parse_procfile(scaling).iteritems()})
@@ -340,19 +346,12 @@ def spawn_app(app, deltas={}):
     # Set up nginx if $SERVER_NAME is present
     if 'SERVER_NAME' in env:
         domain = env['SERVER_NAME'].split()[0]       
-        key, req, crt, conf = [join(CA_ROOT,'%s.%s' % (app,x)) for x in ['key','req','crt','conf']]
-        cakey, cacrt = [join(CA_ROOT, 'ca.%s' % x) for x in ['key','crt']]
-        serial = md5(domain + str(datetime.now())).hexdigest()
+        key, crt = [join(NGINX_ROOT,'%s.%s' % (app,x)) for x in ['key','crt']]
         if not exists(key):
-            call('openssl genrsa -out %(key)s 1024' % locals(), shell=True)
-            with open(conf,'w') as h:
-                h.write(SSL_TEMPLATE % locals())
-            call('openssl req -new -key %(key)s -out %(req)s -config %(conf)s' % locals(), shell=True)
-            call('openssl x509 -req -days 3650 -in %(req)s -CA %(cacrt)s -CAkey %(cakey)s -passin pass:piku -set_serial 0x%(serial)s -out %(crt)s -extensions v3_req -extfile %(conf)s' % locals(), shell=True)
+            call('openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 -subj "/C=US/ST=NY/L=New York/O=Piku/OU=Self-Signed/CN=%(domain)s" -keyout %(key)s -out %(crt)s' % locals(), shell=True)
     
         buffer = expandvars(NGINX_TEMPLATE, env)
         echo("-----> Setting up nginx for '%s:%s'" % (app, env['SERVER_NAME']))
-        echo(buffer)
         with open(join(NGINX_ROOT,"%s.conf" % app), "w") as h:
             h.write(buffer)
     
@@ -386,9 +385,18 @@ def spawn_worker(app, kind, command, env, ordinal=1):
             ('module',      command),
             ('threads',     '4'),
             ('plugin',      'python'),
-            ('http',        ':%s' % env['PORT']),
-            ('http-socket', ':%s' % env['PORT']),
         ])
+
+        # If running under nginx, don't expose a port at all
+        if 'SERVER_NAME' in env:
+            settings.extend([
+                ('socket', join(NGINX_ROOT, app, "%s.sock" % app)),
+            ])
+        else:
+            settings.extend([
+                ('http',        ':%s' % env['PORT']),
+                ('http-socket', ':%s' % env['PORT']),
+            ])
     else:
         settings.append(('attach-daemon', command))
         
@@ -573,8 +581,7 @@ def destroy_app(app):
                 echo("Removing file '%s'" % f, fg='yellow')
                 os.remove(f)
                 
-    nginx_files = [join(CA_ROOT, "%s.%s" % (app,x)) for x in ['conf','key','crt']]
-    nginx_files.append(join(NGINX_ROOT,"%s.conf" % app))
+    nginx_files = [join(NGINX_ROOT, "%s.%s" % (app,x)) for x in ['sock','key','crt']]
     for f in nginx_files:
         if exists(f):
             echo("Removing file '%s'" % f, fg='yellow')
@@ -662,7 +669,7 @@ def init_paths():
     """Initialize environment"""
     
     # Create required paths
-    for p in [APP_ROOT, CA_ROOT, GIT_ROOT, ENV_ROOT, UWSGI_ROOT, UWSGI_AVAILABLE, UWSGI_ENABLED, LOG_ROOT, NGINX_ROOT]:
+    for p in [APP_ROOT, GIT_ROOT, ENV_ROOT, UWSGI_ROOT, UWSGI_AVAILABLE, UWSGI_ENABLED, LOG_ROOT, NGINX_ROOT]:
         if not exists(p):
             echo("Creating '%s'." % p, fg='green')
             os.makedirs(p)
@@ -682,16 +689,6 @@ def init_paths():
         h.write('[uwsgi]\n')
         for k, v in settings:
             h.write("%s = %s\n" % (k, v))
-    
-    # Create a local certificate authority
-    key, crt, conf = [join(CA_ROOT, 'ca.%s' % x) for x in ['key','crt','conf']]
-    domain = 'piku.local'
-    if not exists(key):
-        echo("Creating local certificate authority...", fg='yellow')
-        call('openssl genrsa -des3 -out %(key)s 4096' % locals(), shell=True)
-        with open(conf,'w') as h:
-            h.write(SSL_TEMPLATE % locals())
-        call('openssl req -new -x509 -days 3650 -key %(key)s -passout pass:piku -out %(crt)s -config %(conf)s' % locals(), shell=True)
 
     # mark this script as executable (in case we were invoked via interpreter)
     this_script = realpath(__file__)
