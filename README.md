@@ -8,17 +8,21 @@ I kept finding myself wanting an Heroku/CloudFoundry-like way to deploy stuff on
 
 ## Project Status/ToDo:
 
+This is currently being used for production deployments of http://taoofmac.com and a few other projects of mine. Regardless, there is still room for improvement:
+
 From the bottom up:
 
 - [ ] Prebuilt Raspbian image with everything baked in
 - [ ] `chroot`/namespace isolation (tentative)
+- [ ] Relay commands to other nodes
 - [ ] Proxy deployments to other nodes (build on one box, deploy to many) 
+- [ ] Support Clojure/Java deployments through `boot` or `lein` 
 - [ ] Support Node deployments
-- [ ] Support Clojure/Java deployments
 - [ ] Sample Go app
 - [ ] Support Go deployments (in progress)
 - [ ] CLI command documentation
-- [ ] nginx SSL optimization/cypher suites, HTTPv2, own certificates
+- [ ] nginx SSL optimization/cypher suites, own certificates
+- [x] Autodetect SPDY/HTTPv2 support and activate it
 - [x] Basic nginx SSL config with self-signed certificates and UNIX domain socket connection
 - [x] nginx support - creates an nginx config file if `SERVER_NAME` is defined
 - [x] Testing with pre-packaged [uWSGI][uwsgi] versions on Debian Jessie (yes, it was painful)
