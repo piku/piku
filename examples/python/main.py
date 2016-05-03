@@ -1,18 +1,27 @@
 import os
-from bottle import app, get, request
+from bottle import default_app, route, request, view, static_file, run
 
-app = app()
-
-@get("/")
+@route("/")
+@view("base")
 def default():
-    table = ['<table border="0">']
+    result = {}
+    table = ['<table class="u-full-width"><tbody>']
     for k, v in os.environ.iteritems():
         table.append('<tr><th>%s</th><td>%s</td></tr>' % (k, v))
-    table.append('</table><table>')
-    for k, v in request.environ.iteritems():
+    table.append('</tbody></table>')
+    result['sys_data'] = '\n'.join(table)
+    table = ['<table class="u-full-width"><tbody>']
+    for k, v in dict(request.environ).iteritems():
         table.append('<tr><th>%s</th><td>%s</td></tr>' % (k, v))
-    table.append('</table>')
-    return '\n'.join(table)
+    table.append('</tbody></table>')
+    result['req_data'] = '\n'.join(table)
+    return result
+
+@route("/<path:path>")
+def static(path):
+    return static_file(path, root="static")
+
+app = default_app()
 
 if __name__ == '__main__':
     run(port=int(os.environ.get("PORT",8080)))
