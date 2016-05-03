@@ -561,7 +561,6 @@ def deploy_app(app, settings):
     
     config_file = join(ENV_ROOT, app, 'ENV')
     env = parse_settings(config_file)
-    items = {}
     for s in settings:
         try:
             k, v = map(lambda x: x.strip(), s.split("=", 1))
@@ -570,6 +569,24 @@ def deploy_app(app, settings):
         except:
             echo("Error: malformed setting '%s'" % s, fg='red')
             return
+    write_config(config_file, env)
+    do_deploy(app)
+
+
+@piku.command("config:unset")
+@argument('app')
+@argument('settings', nargs=-1)
+def deploy_app(app, settings):
+    """Set a configuration setting"""
+    
+    app = exit_if_invalid(app)
+    
+    config_file = join(ENV_ROOT, app, 'ENV')
+    env = parse_settings(config_file)
+    for s in settings:
+        if s in env:
+            del env[s]
+            echo("Unsetting %s for '%s'" % (s, app), fg='white')
     write_config(config_file, env)
     do_deploy(app)
 
@@ -662,7 +679,6 @@ def deploy_app(app, settings):
 
     config_file = join(ENV_ROOT, app, 'SCALING')
     worker_count = {k:int(v) for k, v in parse_procfile(config_file).iteritems()}
-    items = {}
     deltas = {}
     for s in settings:
         try:
