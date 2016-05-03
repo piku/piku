@@ -28,8 +28,7 @@ UWSGI_LOG_MAXSIZE = '1048576'
 
 NGINX_TEMPLATE = """
 upstream $APP {
-  server unix://$NGINX_ROOT/$APP.sock;
-  # server $BIND_ADDRESS:$PORT;
+  server $NGINX_SOCKET;
 }
 server {
   listen              [::]:80;
@@ -322,9 +321,6 @@ def spawn_app(app, deltas={}):
         elif "--with-http_spdy_module" in nginx:
             nginx_ssl += " spdy"
     
-        if 'PORT' in env:
-            del env['PORT']
-
         env.update({ 
             'NGINX_SSL': nginx_ssl,
             'NGINX_ROOT': NGINX_ROOT,
@@ -365,7 +361,13 @@ def spawn_app(app, deltas={}):
                 os.unlink(enabled)
                 
     # Set up nginx if $SERVER_NAME is present
-    if 'SERVER_NAME' in env:
+    if ('wsgi' in workers or 'web' in workers) and 'SERVER_NAME' in env:
+        if 'wsgi' in workers:
+            sock = join(NGINX_ROOT, "%s.sock" % app)
+            env['NGINX_SOCKET'] = "unix://" + sock
+        else:
+            env['NGINX_SOCKET'] = "%(BIND_ADDRESS)s:%(PORT)s" % env 
+    
         domain = env['SERVER_NAME'].split()[0]       
         key, crt = [join(NGINX_ROOT,'%s.%s' % (app,x)) for x in ['key','crt']]
         if not exists(key):
@@ -380,6 +382,7 @@ def spawn_app(app, deltas={}):
 def spawn_worker(app, kind, command, env, ordinal=1):
     """Set up and deploy a single worker of a given kind"""
     
+    env['PROC_TYPE'] = kind
     env_path = join(ENV_ROOT, app)
     available = join(UWSGI_AVAILABLE, '%s_%s.%d.ini' % (app, kind, ordinal))
     enabled = join(UWSGI_ENABLED, '%s_%s.%d.ini' % (app, kind, ordinal))
@@ -397,8 +400,6 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         ('logto',           '%s.%d.log' % (join(LOG_ROOT, app, kind), ordinal)),
         ('log-backupname',  '%s.%d.log.old' % (join(LOG_ROOT, app, kind), ordinal)),
     ]
-    for k, v in env.iteritems():
-        settings.append(('env', '%s=%s' % (k,v)))
         
     if kind == 'wsgi':
         settings.extend([
@@ -415,6 +416,9 @@ def spawn_worker(app, kind, command, env, ordinal=1):
                 ('socket', sock),
                 ('chmod-socket', '664'),
             ])
+            if 'PORT' in env:
+                del env['PORT']
+            env['BIND_ADDRESS'] = sock
         else:
             echo("-----> Setting HTTP to listen on %(BIND_ADDRESS)s:%(PORT)s" % env, fg='yellow')
             settings.extend([
@@ -430,6 +434,9 @@ def spawn_worker(app, kind, command, env, ordinal=1):
     else:
         settings.append(('attach-daemon', command))
         
+    for k, v in env.iteritems():
+        settings.append(('env', '%s=%s' % (k,v)))
+
     with open(available, 'w') as h:
         h.write('[uwsgi]\n')
         for k, v in settings:
