@@ -305,26 +305,44 @@ def spawn_app(app, deltas={}):
     if exists(settings):
         env.update(parse_settings(settings, env))
 
-    # Pick a port if none defined and we're not running under nginx
-    if 'PORT' not in env and 'SERVER_NAME' not in env:
-        env['PORT'] = str(get_free_port())
+    if 'web' in workers or 'wsgi' in workers:
+        # Pick a port if none defined and we're not running under nginx
+        if 'PORT' not in env and 'SERVER_NAME' not in env:
+            env['PORT'] = str(get_free_port())
+
+        # Safe default for bind address            
+        if 'BIND_ADDRESS' not in env:
+            env['BIND_ADDRESS'] = '127.0.0.1'
+                
+        # Set up nginx if we have SERVER_NAME set
+        if 'SERVER_NAME' in env:
+            nginx = command_output("nginx -V")
+            nginx_ssl = "443 ssl"
+            if "--with-http_v2_module" in nginx:
+                nginx_ssl += " http2"
+            elif "--with-http_spdy_module" in nginx:
+                nginx_ssl += " spdy"
         
-    if 'BIND_ADDRESS' not in env:
-        env['BIND_ADDRESS'] = '127.0.0.1'
-    
-    # Set up nginx if needed
-    if 'SERVER_NAME' in env:
-        nginx = command_output("nginx -V")
-        nginx_ssl = "443 ssl"
-        if "--with-http_v2_module" in nginx:
-            nginx_ssl += " http2"
-        elif "--with-http_spdy_module" in nginx:
-            nginx_ssl += " spdy"
-    
-        env.update({ 
-            'NGINX_SSL': nginx_ssl,
-            'NGINX_ROOT': NGINX_ROOT,
-        })
+            env.update({ 
+                'NGINX_SSL': nginx_ssl,
+                'NGINX_ROOT': NGINX_ROOT,
+            })
+            
+            if 'wsgi' in workers:
+                sock = join(NGINX_ROOT, "%s.sock" % app)
+                env['NGINX_SOCKET'] = env['BIND_ADDRESS'] = "unix://" + sock
+            else:
+                env['NGINX_SOCKET'] = "%(BIND_ADDRESS)s:%(PORT)s" % env 
+        
+            domain = env['SERVER_NAME'].split()[0]       
+            key, crt = [join(NGINX_ROOT,'%s.%s' % (app,x)) for x in ['key','crt']]
+            if not exists(key):
+                call('openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 -subj "/C=US/ST=NY/L=New York/O=Piku/OU=Self-Signed/CN=%(domain)s" -keyout %(key)s -out %(crt)s' % locals(), shell=True)
+        
+            buffer = expandvars(NGINX_TEMPLATE, env)
+            echo("-----> Setting up nginx for '%s:%s'" % (app, env['SERVER_NAME']))
+            with open(join(NGINX_ROOT,"%s.conf" % app), "w") as h:
+                h.write(buffer)            
 
     # Configured worker count
     if exists(scaling):
@@ -359,24 +377,6 @@ def spawn_app(app, deltas={}):
             if exists(enabled):
                 echo("-----> Terminating '%s:%s.%d'" % (app, k, w), fg='yellow')
                 os.unlink(enabled)
-                
-    # Set up nginx if $SERVER_NAME is present
-    if ('wsgi' in workers or 'web' in workers) and 'SERVER_NAME' in env:
-        if 'wsgi' in workers:
-            sock = join(NGINX_ROOT, "%s.sock" % app)
-            env['NGINX_SOCKET'] = "unix://" + sock
-        else:
-            env['NGINX_SOCKET'] = "%(BIND_ADDRESS)s:%(PORT)s" % env 
-    
-        domain = env['SERVER_NAME'].split()[0]       
-        key, crt = [join(NGINX_ROOT,'%s.%s' % (app,x)) for x in ['key','crt']]
-        if not exists(key):
-            call('openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 -subj "/C=US/ST=NY/L=New York/O=Piku/OU=Self-Signed/CN=%(domain)s" -keyout %(key)s -out %(crt)s' % locals(), shell=True)
-    
-        buffer = expandvars(NGINX_TEMPLATE, env)
-        echo("-----> Setting up nginx for '%s:%s'" % (app, env['SERVER_NAME']))
-        with open(join(NGINX_ROOT,"%s.conf" % app), "w") as h:
-            h.write(buffer)
     
 
 def spawn_worker(app, kind, command, env, ordinal=1):
@@ -416,9 +416,6 @@ def spawn_worker(app, kind, command, env, ordinal=1):
                 ('socket', sock),
                 ('chmod-socket', '664'),
             ])
-            if 'PORT' in env:
-                del env['PORT']
-            env['BIND_ADDRESS'] = sock
         else:
             echo("-----> Setting HTTP to listen on %(BIND_ADDRESS)s:%(PORT)s" % env, fg='yellow')
             settings.extend([
