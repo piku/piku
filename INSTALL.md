@@ -218,7 +218,7 @@ sudo service uwsgi-piku start
 
 ## nginx Installation (Raspbian 8, Ubuntu 16.04)
 
-*PLEASE NOTE:* There is a bug in `nginx` 1.6.2 under Raspbian 8 that causes it to try to allocate around a gigabyte of RAM when using SSL. I seriously recommend using Ubuntu instead, if you can, or disabling SSL altogether.
+*PLEASE NOTE:* There is a bug in `nginx` 1.6.2 under Raspbian 8 that causes it to try to allocate around a gigabyte of RAM when using SSL with SPDY. I seriously recommend using Ubuntu instead, if you can, or disabling SSL altogether.
 
 ```bash
 sudo apt-get install nginx incron

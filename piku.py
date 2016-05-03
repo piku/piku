@@ -320,7 +320,7 @@ def spawn_app(app, deltas={}):
             nginx_ssl = "443 ssl"
             if "--with-http_v2_module" in nginx:
                 nginx_ssl += " http2"
-            elif "--with-http_spdy_module" in nginx:
+            elif "--with-http_spdy_module" in nginx and "nginx/1.6.2" not in nginx: # avoid Raspbian bug
                 nginx_ssl += " spdy"
         
             env.update({ 
