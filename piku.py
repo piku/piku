@@ -309,6 +309,9 @@ def spawn_app(app, deltas={}):
     # Pick a port if none defined and we're not running under nginx
     if 'PORT' not in env and 'SERVER_NAME' not in env:
         env['PORT'] = str(get_free_port())
+        
+    if 'BIND_ADDRESS' not in env:
+        env['BIND_ADDRESS'] = '127.0.0.1'
     
     # Set up nginx if needed
     if 'SERVER_NAME' in env:
@@ -413,11 +416,17 @@ def spawn_worker(app, kind, command, env, ordinal=1):
                 ('chmod-socket', '664'),
             ])
         else:
-            echo("-----> Setting HTTP port to %s" % env['PORT'], fg='yellow')
+            echo("-----> Setting HTTP to listen on %(BIND_ADDRESS)s:%(PORT)s" % env, fg='yellow')
             settings.extend([
-                ('http',        ':%s' % env['PORT']),
-                ('http-socket', ':%s' % env['PORT']),
+                ('http',        '%(BIND_ADDRESS)s:%(PORT)s' % env),
+                ('http-socket', '%(BIND_ADDRESS)s:%(PORT)s' % env),
             ])
+    elif kind == 'web':
+        echo("-----> Setting HTTP to listen on %(BIND_ADDRESS)s:%(PORT)s" % env, fg='yellow')
+        settings.extend([
+            ('http',        '%(BIND_ADDRESS)s:%(PORT)s' % env),
+            ('http-socket', '%(BIND_ADDRESS)s:%(PORT)s' % env),
+        ])
     else:
         settings.append(('attach-daemon', command))
         
