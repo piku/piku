@@ -352,7 +352,7 @@ def spawn_app(app, deltas={}):
                     cf = loads(urlopen('https://api.cloudflare.com/client/v4/ips').read())
                 except Exception, e:
                     cf = defaultdict()
-                    echo("----> Could not retrieve CloudFlare IP ranges: %s" % e.text, fg="red")
+                    echo("-----> Could not retrieve CloudFlare IP ranges: %s" % e.text, fg="red")
                 if cf['success'] == True:
                     for i in cf['result']['ipv4_cidrs']:
                         acl.append("allow %s;" % i)
@@ -361,7 +361,7 @@ def spawn_app(app, deltas={}):
                     # allow access from controlling machine
                     if 'SSH_CLIENT' in os.environ:
                         remote_ip = os.environ['SSH_CLIENT'].split()[0]
-                        echo("----> Adding your IP (%s) to nginx ACL" % remote_ip)
+                        echo("-----> Adding your IP (%s) to nginx ACL" % remote_ip)
                         acl.append("allow %s;" % remote_ip)
                     acl.extend(["allow 127.0.0.1;","deny all;"])
             env['NGINX_ACL'] = "\n".join(acl)
