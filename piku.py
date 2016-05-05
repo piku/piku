@@ -72,8 +72,8 @@ server {
     proxy_set_header X-Forwarded-For $remote_addr;
     proxy_set_header X-Forwarded-Port $server_port;
     proxy_set_header X-Request-Start $msec;
-    $NGINX_ACLS
-  }
+    $NGINX_ACL
+ }
 }
 """
 
