@@ -335,7 +335,8 @@ def spawn_app(app, deltas={}):
             if 'wsgi' in workers:
                 sock = join(NGINX_ROOT, "%s.sock" % app)
                 env['NGINX_SOCKET'] = env['BIND_ADDRESS'] = "unix://" + sock
-                del env['PORT']
+                if 'PORT' in env:
+                    del env['PORT']
             else:
                 env['NGINX_SOCKET'] = "%(BIND_ADDRESS)s:%(PORT)s" % env 
         
