@@ -11,6 +11,7 @@ from multiprocessing import cpu_count
 from os.path import abspath, basename, dirname, exists, getmtime, join, realpath, splitext
 from subprocess import call, check_output, STDOUT
 from time import sleep
+from urllib2 import urlopen
 
 
 # === Globals - all tweakable settings are here ===
@@ -163,7 +164,8 @@ def command_output(cmd):
     """executes a command and grabs its output, if any"""
     try:
         env = os.environ
-        env['PATH'] = env['PATH'] + ":/usr/sbin:/usr/local/sbin"
+        if 'sbin' not in env['PATH']:
+            env['PATH'] = env['PATH'] + ":/usr/sbin:/usr/local/sbin"
         return check_output(cmd, stderr=STDOUT, env=env, shell=True)
     except:
         return ""
@@ -344,9 +346,9 @@ def spawn_app(app, deltas={}):
             
             # restrict access to server from CloudFlare IP addresses
             acl = ""
-            if env.get('CLOUDFLARE_ACL', 'false').lower == 'true':
+            if env.get('CLOUDFLARE_ACL', 'false').lower() == 'true':
                 try:
-                    cf = loads(check_output('curl -X GET "https://api.cloudflare.com/client/v4/ips"'))
+                    cf = loads(urlopen('https://api.cloudflare.com/client/v4/ips').read())
                 except Exception, e:
                     cf = defaultdict()
                     echo("----> Could not retrieve CloudFlare IP ranges: %s" % e.text, fg="red")
