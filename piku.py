@@ -345,7 +345,7 @@ def spawn_app(app, deltas={}):
                 call('openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 -subj "/C=US/ST=NY/L=New York/O=Piku/OU=Self-Signed/CN=%(domain)s" -keyout %(key)s -out %(crt)s' % locals(), shell=True)
             
             # restrict access to server from CloudFlare IP addresses
-            acl = ""
+            acl = []
             if env.get('CLOUDFLARE_ACL', 'false').lower() == 'true':
                 try:
                     cf = loads(urlopen('https://api.cloudflare.com/client/v4/ips').read())
@@ -354,14 +354,14 @@ def spawn_app(app, deltas={}):
                     echo("----> Could not retrieve CloudFlare IP ranges: %s" % e.text, fg="red")
                 if cf['success'] == True:
                     for i in cf['result']['ipv4_cidrs']:
-                        acl += "allow %s;\n" % i
+                        acl.append("allow %s;" % i)
                     for i in cf['result']['ipv6_cidrs']:
-                        acl += "allow %s;\n" % i
+                        acl.append("allow %s;" % i)
                     # allow access from controlling machine
                     if 'SSH_CLIENT' in os.environ:
-                        acl += "allow %s\n" % os.environ['SSH_CLIENT'].split()[0]
-                    acl += "allow 127.0.0.1;\ndeny all;\n"
-            env['NGINX_ACL'] = acl
+                        acl.append("allow %s;" % os.environ['SSH_CLIENT'].split()[0])
+                    acl.extend(["allow 127.0.0.1;","deny all;"])
+            env['NGINX_ACL'] = "\n".join(acl)
             
             buffer = expandvars(NGINX_TEMPLATE, env)
             echo("-----> Setting up nginx for '%s:%s'" % (app, env['SERVER_NAME']))
