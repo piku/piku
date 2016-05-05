@@ -6,6 +6,7 @@ from collections import defaultdict, deque
 from datetime import datetime
 from glob import glob
 from hashlib import md5
+from json import loads
 from multiprocessing import cpu_count
 from os.path import abspath, basename, dirname, exists, getmtime, join, realpath, splitext
 from subprocess import call, check_output, STDOUT
@@ -71,6 +72,7 @@ server {
     proxy_set_header X-Forwarded-For $remote_addr;
     proxy_set_header X-Forwarded-Port $server_port;
     proxy_set_header X-Request-Start $msec;
+    $NGINX_ACLS
   }
 }
 """
@@ -339,7 +341,26 @@ def spawn_app(app, deltas={}):
             key, crt = [join(NGINX_ROOT,'%s.%s' % (app,x)) for x in ['key','crt']]
             if not exists(key):
                 call('openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 -subj "/C=US/ST=NY/L=New York/O=Piku/OU=Self-Signed/CN=%(domain)s" -keyout %(key)s -out %(crt)s' % locals(), shell=True)
-        
+            
+            # restrict access to server from CloudFlare IP addresses
+            acl = ""
+            if env.get('CLOUDFLARE_ACL', 'false').lower == 'true':
+                try:
+                    cf = loads(check_output('curl -X GET "https://api.cloudflare.com/client/v4/ips"'))
+                except Exception, e:
+                    cf = defaultdict()
+                    echo("----> Could not retrieve CloudFlare IP ranges: %s" % e.text, fg="red")
+                if cf['success'] == True:
+                    for i in cf['result']['ipv4_cidrs']:
+                        acl += "allow %s;\n" % i
+                    for i in cf['result']['ipv6_cidrs']:
+                        acl += "allow %s;\n" % i
+                    # allow access from controlling machine
+                    if 'SSH_CLIENT' in os.environ:
+                        acl += "allow %s\n" % os.environ['SSH_CLIENT'].split()[0]
+                    acl += "allow 127.0.0.1;\ndeny all;\n"
+            env['NGINX_ACL'] = acl
+            
             buffer = expandvars(NGINX_TEMPLATE, env)
             echo("-----> Setting up nginx for '%s:%s'" % (app, env['SERVER_NAME']))
             with open(join(NGINX_ROOT,"%s.conf" % app), "w") as h:
