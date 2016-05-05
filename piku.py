@@ -359,7 +359,9 @@ def spawn_app(app, deltas={}):
                         acl.append("allow %s;" % i)
                     # allow access from controlling machine
                     if 'SSH_CLIENT' in os.environ:
-                        acl.append("allow %s;" % os.environ['SSH_CLIENT'].split()[0])
+                        remote_ip = os.environ['SSH_CLIENT'].split()[0]
+                        echo("----> Adding your IP (%s) to nginx ACL" % remote_ip)
+                        acl.append("allow %s;" % remote_ip)
                     acl.extend(["allow 127.0.0.1;","deny all;"])
             env['NGINX_ACL'] = "\n".join(acl)
             
