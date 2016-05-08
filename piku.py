@@ -46,7 +46,16 @@ server {
   # These are not required under systemd - enable for debugging only
   # access_log        $LOG_ROOT/$APP/access.log;
   # error_log         $LOG_ROOT/$APP/error.log;
-
+  
+  # Enable gzip compression
+  gzip on;
+  gzip_proxied any;
+  gzip_types text/plain text/xml text/css application/x-javascript text/javascript application/xml+rss application/atom+xml;
+  gzip_comp_level 7;
+  gzip_min_length 512;
+  gzip_vary on;
+  gzip_disable "MSIE [1-6]\.(?!.*SV1)";
+  
   # set a custom header for requests
   add_header X-Deployed-By Piku;
 
