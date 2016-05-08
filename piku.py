@@ -52,7 +52,7 @@ server {
   gzip_proxied any;
   gzip_types text/plain text/xml text/css application/x-javascript text/javascript application/xml+rss application/atom+xml;
   gzip_comp_level 7;
-  gzip_min_length 512;
+  gzip_min_length 2048;
   gzip_vary on;
   gzip_disable "MSIE [1-6]\.(?!.*SV1)";
   
