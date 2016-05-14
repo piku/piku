@@ -22,6 +22,7 @@ From the bottom up:
 - [ ] Support Go deployments (in progress)
 - [ ] CLI command documentation
 - [ ] nginx SSL optimization/cypher suites, own certificates
+- [ ] `gevent` settings
 - [x] CloudFlare support
 - [x] Autodetect SPDY/HTTPv2 support and activate it
 - [x] Basic nginx SSL config with self-signed certificates and UNIX domain socket connection
