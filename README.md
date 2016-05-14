@@ -22,11 +22,11 @@ From the bottom up:
 - [ ] Support Go deployments (in progress)
 - [ ] CLI command documentation
 - [ ] nginx SSL optimization/cypher suites, own certificates
-- [ ] `gevent` settings
-- [x] CloudFlare support
+- [x] `gevent` activated when `UWSGI_GEVENT = <integer>` 
+- [x] enable CloudFlare ACL when `NGINX_CLOUDFLARE_ACL = True` 
 - [x] Autodetect SPDY/HTTPv2 support and activate it
 - [x] Basic nginx SSL config with self-signed certificates and UNIX domain socket connection
-- [x] nginx support - creates an nginx config file if `SERVER_NAME` is defined
+- [x] nginx support - creates an nginx config file if `NGINX_SERVER_NAME` is defined
 - [x] Testing with pre-packaged [uWSGI][uwsgi] versions on Debian Jessie (yes, it was painful)
 - [x] Support barebones binary deployments
 - [x] Complete installation instructions (see `INSTALL.md`, which also has a draft of Go installation steps)

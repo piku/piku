@@ -41,7 +41,7 @@ server {
   ssl                 on;
   ssl_certificate     $NGINX_ROOT/$APP.crt;
   ssl_certificate_key $NGINX_ROOT/$APP.key;
-  server_name         $SERVER_NAME;
+  server_name         $NGINX_SERVER_NAME;
 
   # These are not required under systemd - enable for debugging only
   # access_log        $LOG_ROOT/$APP/access.log;
@@ -320,15 +320,15 @@ def spawn_app(app, deltas={}):
 
     if 'web' in workers or 'wsgi' in workers:
         # Pick a port if none defined and we're not running under nginx
-        if 'PORT' not in env and 'SERVER_NAME' not in env:
+        if 'PORT' not in env and 'NGINX_SERVER_NAME' not in env:
             env['PORT'] = str(get_free_port())
 
         # Safe default for bind address            
         if 'BIND_ADDRESS' not in env:
             env['BIND_ADDRESS'] = '127.0.0.1'
                 
-        # Set up nginx if we have SERVER_NAME set
-        if 'SERVER_NAME' in env:
+        # Set up nginx if we have NGINX_SERVER_NAME set
+        if 'NGINX_SERVER_NAME' in env:
             nginx = command_output("nginx -V")
             nginx_ssl = "443 ssl"
             if "--with-http_v2_module" in nginx:
@@ -349,14 +349,14 @@ def spawn_app(app, deltas={}):
             else:
                 env['NGINX_SOCKET'] = "%(BIND_ADDRESS)s:%(PORT)s" % env 
         
-            domain = env['SERVER_NAME'].split()[0]       
+            domain = env['NGINX_SERVER_NAME'].split()[0]       
             key, crt = [join(NGINX_ROOT,'%s.%s' % (app,x)) for x in ['key','crt']]
             if not exists(key):
                 call('openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 -subj "/C=US/ST=NY/L=New York/O=Piku/OU=Self-Signed/CN=%(domain)s" -keyout %(key)s -out %(crt)s' % locals(), shell=True)
             
             # restrict access to server from CloudFlare IP addresses
             acl = []
-            if env.get('CLOUDFLARE_ACL', 'false').lower() == 'true':
+            if env.get('NGINX_CLOUDFLARE_ACL', 'false').lower() == 'true':
                 try:
                     cf = loads(urlopen('https://api.cloudflare.com/client/v4/ips').read())
                 except Exception, e:
@@ -376,7 +376,7 @@ def spawn_app(app, deltas={}):
             env['NGINX_ACL'] = "\n".join(acl)
             
             buffer = expandvars(NGINX_TEMPLATE, env)
-            echo("-----> Setting up nginx for '%s:%s'" % (app, env['SERVER_NAME']))
+            echo("-----> Setting up nginx for '%s:%s'" % (app, env['NGINX_SERVER_NAME']))
             with open(join(NGINX_ROOT,"%s.conf" % app), "w") as h:
                 h.write(buffer)            
 
@@ -444,9 +444,14 @@ def spawn_worker(app, kind, command, env, ordinal=1):
             ('threads',     '4'),
             ('plugin',      'python'),
         ])
+        if 'UWSGI_GEVENT' in env:
+            settings.extend([
+                ('plugin',      'gevent'),
+                ('gevent',      str(int(env['UWSGI_GEVENT']))),
+            ])
 
         # If running under nginx, don't expose a port at all
-        if 'SERVER_NAME' in env:
+        if 'NGINX_SERVER_NAME' in env:
             sock = join(NGINX_ROOT, "%s.sock" % app)
             echo("-----> Binding uWSGI to %s" % sock , fg='yellow')
             settings.extend([
