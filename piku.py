@@ -428,9 +428,9 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         ('chdir',           join(APP_ROOT, app)),
         ('master',          'true'),
         ('project',         app),
-        ('max-requests',    '1024'),
-        ('listen',          '4096'),
-        ('processes',       '2'),
+        ('max-requests',    env.get('UWSGI_MAX_REQUESTS', '1024'),
+        ('listen',          env.get('UWSGI_LISTEN', '4096'),
+        ('processes',       env.get('UWSGI_PROCESSES', '4'),
         ('procname-prefix', '%s:%s:' % (app, kind)),
         ('enable-threads',  'true'),
         ('log-maxsize',     UWSGI_LOG_MAXSIZE),
@@ -441,13 +441,13 @@ def spawn_worker(app, kind, command, env, ordinal=1):
     if kind == 'wsgi':
         settings.extend([
             ('module',      command),
-            ('threads',     '4'),
+            ('threads',     env.get('UWSGI_THREADS','4'),
             ('plugin',      'python'),
         ])
         if 'UWSGI_GEVENT' in env:
             settings.extend([
-                ('plugin',      'gevent'),
-                ('gevent',      str(int(env['UWSGI_GEVENT']))),
+                ('plugin',  'gevent'),
+                ('gevent',  env['UWSGI_GEVENT']),
             ])
 
         # If running under nginx, don't expose a port at all
