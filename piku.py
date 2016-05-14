@@ -476,6 +476,11 @@ def spawn_worker(app, kind, command, env, ordinal=1):
     if kind in ['wsgi','web']:
         settings.append(('log-format','%%(addr) - %%(user) [%%(ltime)] "%%(method) %%(uri) %%(proto)" %%(status) %%(size) "%%(referer)" "%%(uagent)" %%(msecs)ms'))
         
+    # remove unnecessary variables from the env in nginx.ini
+    for k in ['NGINX_ACL']:
+        if v in env:
+            del env[k]
+    
     for k, v in env.iteritems():
         settings.append(('env', '%s=%s' % (k,v)))
 
