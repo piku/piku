@@ -430,7 +430,7 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         ('project',         app),
         ('max-requests',    env.get('UWSGI_MAX_REQUESTS', '1024')),
         ('listen',          env.get('UWSGI_LISTEN', '4096')),
-        ('processes',       env.get('UWSGI_PROCESSES', '4')),
+        ('processes',       env.get('UWSGI_PROCESSES', '1')),
         ('procname-prefix', '%s:%s:' % (app, kind)),
         ('enable-threads',  'true'),
         ('log-maxsize',     UWSGI_LOG_MAXSIZE),
