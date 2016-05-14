@@ -22,6 +22,7 @@ From the bottom up:
 - [ ] Support Go deployments (in progress)
 - [ ] CLI command documentation
 - [ ] nginx SSL optimization/cypher suites, own certificates
+- [ ] saner uWSGI logging
 - [x] `gevent` activated when `UWSGI_GEVENT = <integer>` 
 - [x] enable CloudFlare ACL when `NGINX_CLOUDFLARE_ACL = True` 
 - [x] Autodetect SPDY/HTTPv2 support and activate it

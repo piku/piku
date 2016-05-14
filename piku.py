@@ -473,6 +473,9 @@ def spawn_worker(app, kind, command, env, ordinal=1):
     else:
         settings.append(('attach-daemon', command))
         
+    if kind in ['wsgi','web']:
+        settings.append(('log-format','%%(addr) - %%(user) [%%(ltime)] "%%(method) %%(uri) %%(proto)" %%(status) %%(size) "%%(referer)" "%%(uagent)" %%(msecs)ms'))
+        
     for k, v in env.iteritems():
         settings.append(('env', '%s=%s' % (k,v)))
 
