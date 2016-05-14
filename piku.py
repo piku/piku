@@ -446,7 +446,7 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         ])
         if 'UWSGI_GEVENT' in env:
             settings.extend([
-                ('plugin',  'gevent'),
+                ('plugin',  'gevent_python'),
                 ('gevent',  env['UWSGI_GEVENT']),
             ])
 
