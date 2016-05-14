@@ -478,7 +478,7 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         
     # remove unnecessary variables from the env in nginx.ini
     for k in ['NGINX_ACL']:
-        if v in env:
+        if k in env:
             del env[k]
     
     for k, v in env.iteritems():
