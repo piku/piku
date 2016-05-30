@@ -434,7 +434,7 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         ('procname-prefix',     '%s:%s:' % (app, kind)),
         ('enable-threads',      env.get('UWSGI_ENABLE_THREADS', 'true').lower()),
         ('log-x-forwarded-for', env.get('UWSGI_LOG_X_FORWARDED_FOR', 'false').lower()),
-        ('log-maxsize',         env.get('UWSGI_LOG_MAXSIZE', UWSGI_LOG_MAXSIZE),
+        ('log-maxsize',         env.get('UWSGI_LOG_MAXSIZE', UWSGI_LOG_MAXSIZE)),
         ('logto',               '%s.%d.log' % (join(LOG_ROOT, app, kind), ordinal)),
         ('log-backupname',      '%s.%d.log.old' % (join(LOG_ROOT, app, kind), ordinal)),
     ]
