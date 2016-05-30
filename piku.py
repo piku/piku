@@ -424,18 +424,19 @@ def spawn_worker(app, kind, command, env, ordinal=1):
     enabled = join(UWSGI_ENABLED, '%s_%s.%d.ini' % (app, kind, ordinal))
 
     settings = [
-        ('virtualenv',      join(ENV_ROOT, app)),
-        ('chdir',           join(APP_ROOT, app)),
-        ('master',          'true'),
-        ('project',         app),
-        ('max-requests',    env.get('UWSGI_MAX_REQUESTS', '1024')),
-        ('listen',          env.get('UWSGI_LISTEN', '4096')),
-        ('processes',       env.get('UWSGI_PROCESSES', '1')),
-        ('procname-prefix', '%s:%s:' % (app, kind)),
-        ('enable-threads',  'true'),
-        ('log-maxsize',     UWSGI_LOG_MAXSIZE),
-        ('logto',           '%s.%d.log' % (join(LOG_ROOT, app, kind), ordinal)),
-        ('log-backupname',  '%s.%d.log.old' % (join(LOG_ROOT, app, kind), ordinal)),
+        ('virtualenv',          join(ENV_ROOT, app)),
+        ('chdir',               join(APP_ROOT, app)),
+        ('master',              'true'),
+        ('project',             app),
+        ('max-requests',        env.get('UWSGI_MAX_REQUESTS', '1024')),
+        ('listen',              env.get('UWSGI_LISTEN', '4096')),
+        ('processes',           env.get('UWSGI_PROCESSES', '1')),
+        ('procname-prefix',     '%s:%s:' % (app, kind)),
+        ('enable-threads',      env.get('UWSGI_ENABLE_THREADS', 'true').lower()),
+        ('log-x-forwarded-for', env.get('UWSGI_LOG_X_FORWARDED_FOR', 'false').lower()),
+        ('log-maxsize',         env.get('UWSGI_LOG_MAXSIZE', UWSGI_LOG_MAXSIZE),
+        ('logto',               '%s.%d.log' % (join(LOG_ROOT, app, kind), ordinal)),
+        ('log-backupname',      '%s.%d.log.old' % (join(LOG_ROOT, app, kind), ordinal)),
     ]
         
     if kind == 'wsgi':
