@@ -267,7 +267,7 @@ Now perform the actual install:
 
 ```bash
 sudo apt-get update
-sudo apt-get install oracle-java8-installer
+sudo apt-get install oracle-java8-installer oracle-java8-set-default
 ```
 
 ## Go Installation (All Debian Linux variants, on Raspberry Pi)
