@@ -230,6 +230,46 @@ sudo systemctl restart incron
 sudo systemctl restart nginx
 ```
 
+## Java 8 Installation (All Debian Linux variants, on Raspberry Pi)
+
+To be able to deploy Java apps, we're going to need to install Java (and, since we're going to be doing so on ARM, it's best to use Oracle's runtime). To do that, we're going to use the `webupd8team` PPA, which has a (cross-platform) Java installer.
+
+First, get rid of OpenJDK and import the PPA key:
+
+```bash
+sudo apt-get remove openjdk*
+sudo apt-key adv --recv-key --keyserver keyserver.ubuntu.com EEA14886
+```
+
+### Raspbian Jessie
+
+For Jessie, we're going to use the `trusty` version of the installer:
+
+```bash
+sudo tee /etc/apt/sources.list.d/webupd8team.list
+deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main 
+deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main
+^D
+```
+
+### Ubuntu 16.04 for ARM
+
+For Xenial, we're going to use its own version:
+
+```bash
+sudo tee /etc/apt/sources.list.d/webupd8team.list
+deb http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main 
+deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main
+^D
+```
+
+Now perform the actual install:
+
+```bash
+sudo apt-get update
+sudo apt-get install oracle-java8-installer
+```
+
 ## Go Installation (All Debian Linux variants, on Raspberry Pi)
 
 > This is **EXPERIMENTAL** and may not work at all.
