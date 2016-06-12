@@ -34,7 +34,7 @@ cp /tmp/piku.py ~/piku.py
 
 Before running `piku` for the first time, you need to install the following Python packages at the system level:
 
-### Raspbian Jessie, Debian 8, Ubuntu
+### Raspbian Jessie, Debian 8, Ubuntu 16.04
 
 ```bash
 sudo apt-get install git python-virtualenv python-pip
