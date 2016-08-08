@@ -179,6 +179,8 @@ sudo systemctl status uwsgi-piku.service
 ```
 **Important Note:** Make sure you run `piku.py setup` as outlined above before starting the service.
 
+Also, please note that `uwsgi-piku.service`, as provided, creates a `/run/uwsgi-piku` directory for it to place socket files and sundry. This is not actually used at the moment, since the `uwsgi` socket file is placed inside the `piku` user directory for consistency across OS distributions. This will be cleaned up in a later release.
+
 ### Raspbian Wheezy
 
 Since Raspbian Wheezy is a fairly old distribution by now, its `uwsgi-*` packages are completely outdated (and depend on Python 2.6), so we have to compile and install our own version, as well as using an old-style `init` script to have it start automatically upon boot.
