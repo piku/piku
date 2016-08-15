@@ -6,7 +6,7 @@ Full installation sequence on a blank machine:
 sudo apt-get update
 sudo apt-get -y dist-upgrade
 sudo apt-get -y autoremove
-sudo apt-get install -y tmux vim htop fail2ban nginx incron libxml2-dev libxslt1-dev python-dev zlib1g-dev build-essential git python-virtualenv python-pip
+sudo apt-get install -y tmux vim htop fail2ban uwsgi uwsgi-plugin-python nginx incron libxml2-dev libxslt1-dev python-dev zlib1g-dev build-essential git python-virtualenv python-pip
 sudo pip install -U click pip
 sudo adduser --disabled-password --gecos 'PaaS access' --ingroup www-data piku
 
@@ -23,6 +23,10 @@ sudo cp /tmp/incron.dist /etc/incron.d/piku
 sudo systemctl restart incron
 sudo systemctl restart nginx
 sudo cp /tmp/uwsgi-piku.service /etc/systemd/system/
+# refer to our executable using a link, in case there are more versions installed
+sudo ln -s `which uwsgi` /usr/local/bin/uwsgi-piku
+# disable the standard uwsgi startup script
+sudo systemctl disable uwsgi
 sudo systemctl enable uwsgi-piku
 sudo systemctl start uwsgi-piku
 sudo su - piku
