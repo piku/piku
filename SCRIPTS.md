@@ -1,4 +1,6 @@
-Draft script for deployment in Ubuntu 16.04
+# Ubuntu 16.04
+
+Full installation sequence on a blank machine:
 
 ```bash
 sudo apt-get update
@@ -13,12 +15,16 @@ cd /tmp
 wget https://raw.githubusercontent.com/rcarmo/piku/master/piku.py
 wget https://raw.githubusercontent.com/rcarmo/piku/master/incron.dist
 wget https://raw.githubusercontent.com/rcarmo/piku/master/nginx.default.dist
+wget https://raw.githubusercontent.com/rcarmo/piku/master/uwsgi-piku.service
 # Set up nginx to pick up our config files
 sudo cp /tmp/nginx.default.dist /etc/nginx/sites-available/default
 # Set up incron to reload nginx upon config changes
 sudo cp /tmp/incron.dist /etc/incron.d/piku
 sudo systemctl restart incron
 sudo systemctl restart nginx
+sudo cp /tmp/uwsgi-piku.service /etc/systemd/system/
+sudo systemctl enable uwsgi-piku
+sudo systemctl start uwsgi-piku
 sudo su - piku
 mkdir ~/.ssh
 chmod 700 ~/.ssh
