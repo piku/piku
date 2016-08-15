@@ -429,7 +429,7 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         ('master',              'true'),
         ('project',             app),
         ('max-requests',        env.get('UWSGI_MAX_REQUESTS', '1024')),
-        ('listen',              env.get('UWSGI_LISTEN', '64')),
+        ('listen',              env.get('UWSGI_LISTEN', '16')),
         ('processes',           env.get('UWSGI_PROCESSES', '1')),
         ('procname-prefix',     '%s:%s:' % (app, kind)),
         ('enable-threads',      env.get('UWSGI_ENABLE_THREADS', 'true').lower()),
