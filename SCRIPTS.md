@@ -28,7 +28,6 @@ sudo ln -s `which uwsgi` /usr/local/bin/uwsgi-piku
 # disable the standard uwsgi startup script
 sudo systemctl disable uwsgi
 sudo systemctl enable uwsgi-piku
-sudo systemctl start uwsgi-piku
 sudo su - piku
 mkdir ~/.ssh
 chmod 700 ~/.ssh
@@ -36,4 +35,6 @@ chmod 700 ~/.ssh
 cp /tmp/piku.py ~/piku.py
 python piku.py setup
 # Now import your SSH key using setup:ssh
+
+sudo systemctl start uwsgi-piku
 ```
