@@ -292,6 +292,8 @@ def spawn_app(app, deltas={}):
     virtualenv_path = join(ENV_ROOT, app)
     # Settings shipped with the app
     env_file = join(APP_ROOT, app, 'ENV')
+    # Python version marker
+    python_version = join(APP_ROOT, app, '.python_version')
     # Custom overrides
     settings = join(ENV_ROOT, app, 'ENV')
     # Live settings
@@ -313,7 +315,14 @@ def spawn_app(app, deltas={}):
     # Load environment variables shipped with repo (if any)
     if exists(env_file):
         env.update(parse_settings(env_file, env))
-    
+        
+    # Set Python runtime
+    env['PYTHON_MAJOR_VERSION'] = '2'
+    if exists(python_version):
+        with open(python_version) as h:
+            if h.read().strip()[0] == '3'
+                env['PYTHON_MAJOR_VERSION'] = '3'
+
     # Override with custom settings (if any)
     if exists(settings):
         env.update(parse_settings(settings, env))
@@ -439,11 +448,21 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         ('log-backupname',      '%s.%d.log.old' % (join(LOG_ROOT, app, kind), ordinal)),
     ]
         
-    if kind == 'wsgi':
+    if kind == 'wsgi':    
+        if env['PYTHON_MAJOR_VERSION'] == '2':
+            if env.get('PYTHON_GEVENT','false').lower() == "true":
+                settings.extend([('plugin', 'gevent-python')])
+            else:
+                settings.extend([('plugin', 'python')])
+        else:
+            if env.get('PYTHON_ASYNCIO','false').lower() == "true":
+                settings.extend([('plugin', 'asyncio-python3')])
+            else:
+                settings.extend([('plugin', 'python3')])
+
         settings.extend([
             ('module',      command),
             ('threads',     env.get('UWSGI_THREADS','4')),
-            ('plugin',      'python'),
         ])
         if 'UWSGI_GEVENT' in env:
             settings.extend([
