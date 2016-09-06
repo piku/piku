@@ -747,6 +747,20 @@ def deploy_app(app, settings):
     do_deploy(app, deltas)
 
 
+@piku.command("run")
+@argument('app')
+@argument('cmd', nargs=-1)
+def deploy_app(app, cmd):
+    """Run a command inside the app environment"""
+    
+    app = exit_if_invalid(app)
+    
+    config_file = join(ENV_ROOT, app, 'ENV')
+    os.environ.update(parse_settings(config_file))
+    os.chdir(join(ENV_ROOT, app))
+    os.system(cmd)
+
+
 @piku.command("restart")
 @argument('app')
 def restart_app(app):
