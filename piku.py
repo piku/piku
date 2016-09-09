@@ -758,8 +758,7 @@ def deploy_app(app, cmd):
 
     config_file = join(ENV_ROOT, app, 'LIVE_ENV')
     os.environ.update(parse_settings(config_file))
-    os.chdir(join(APP_ROOT, app))
-    call(' '.join(cmd), env=os.environ, cwd=APP_ROOT, shell=True)
+    call(' '.join(cmd), env=os.environ, cwd=join(APP_ROOT,app), shell=True)
 
 
 @piku.command("restart")
