@@ -133,6 +133,7 @@ def setup_authorized_keys(ssh_fingerprint, script_path, pubkey):
     # Restrict features and force all SSH commands to go through our script 
     with open(authorized_keys, 'a') as h:
         h.write("""command="FINGERPRINT=%(ssh_fingerprint)s NAME=default %(script_path)s $SSH_ORIGINAL_COMMAND",no-agent-forwarding,no-user-rc,no-X11-forwarding,no-port-forwarding %(pubkey)s\n""" % locals())
+    os.chmod(dirname(authorized_keys), stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
     os.chmod(authorized_keys, stat.S_IRUSR | stat.S_IWUSR)
 
 
