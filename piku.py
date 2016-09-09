@@ -27,7 +27,7 @@ UWSGI_AVAILABLE = abspath(join(PIKU_ROOT, "uwsgi-available"))
 UWSGI_ENABLED = abspath(join(PIKU_ROOT, "uwsgi-enabled"))
 UWSGI_ROOT = abspath(join(PIKU_ROOT, "uwsgi"))
 UWSGI_LOG_MAXSIZE = '1048576'
-
+NGIN
 NGINX_TEMPLATE = """
 upstream $APP {
   server $NGINX_SOCKET;
@@ -374,7 +374,7 @@ def spawn_app(app, deltas={}):
                         echo("-----> Adding your IP (%s) to nginx ACL" % remote_ip)
                         acl.append("allow %s;" % remote_ip)
                     acl.extend(["allow 127.0.0.1;","deny all;"])
-            env['NGINX_ACL'] = "\n".join(acl)
+            env['NGINX_ACL'] = " ".join(acl)
             
             buffer = expandvars(NGINX_TEMPLATE, env)
             echo("-----> Setting up nginx for '%s:%s'" % (app, env['NGINX_SERVER_NAME']))
@@ -756,7 +756,7 @@ def deploy_app(app, cmd):
 
     app = exit_if_invalid(app)
 
-    config_file = join(ENV_ROOT, app, 'ENV')
+    config_file = join(ENV_ROOT, app, 'LIVE_ENV')
     os.environ.update(parse_settings(config_file))
     os.chdir(join(APP_ROOT, app))
     call(' '.join(cmd), env=os.environ, cwd=APP_ROOT, shell=True)
