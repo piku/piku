@@ -751,14 +751,14 @@ def deploy_app(app, settings):
 @argument('app')
 @argument('cmd', nargs=-1)
 def deploy_app(app, cmd):
-    """Run a command inside the app environment"""
-    
+    """Run a command inside the app, e.g.: ls -- -al"""
+
     app = exit_if_invalid(app)
-    
+
     config_file = join(ENV_ROOT, app, 'ENV')
     os.environ.update(parse_settings(config_file))
-    os.chdir(join(ENV_ROOT, app))
-    os.system(cmd)
+    os.chdir(join(APP_ROOT, app))
+    os.system(' '.join(cmd))
 
 
 @piku.command("restart")
