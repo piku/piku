@@ -27,7 +27,6 @@ UWSGI_AVAILABLE = abspath(join(PIKU_ROOT, "uwsgi-available"))
 UWSGI_ENABLED = abspath(join(PIKU_ROOT, "uwsgi-enabled"))
 UWSGI_ROOT = abspath(join(PIKU_ROOT, "uwsgi"))
 UWSGI_LOG_MAXSIZE = '1048576'
-NGIN
 NGINX_TEMPLATE = """
 upstream $APP {
   server $NGINX_SOCKET;
