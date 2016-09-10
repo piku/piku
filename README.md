@@ -20,8 +20,9 @@ From the bottom up:
 - [ ] Support Node deployments
 - [ ] Sample Go app
 - [ ] Support Go deployments (in progress)
-- [ ] CLI command documentation
 - [ ] nginx SSL optimization/cypher suites, own certificates
+- [ ] Review docs/CLI command documentation
+- [x] remote CLI (requires `ssh -t`)
 - [x] saner uWSGI logging
 - [x] `gevent` activated when `UWSGI_GEVENT = <integer>` 
 - [x] enable CloudFlare ACL when `NGINX_CLOUDFLARE_ACL = True` 
