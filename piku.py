@@ -1,22 +1,27 @@
 #!/usr/bin/env python
 
-import os, sys, stat, re, shutil, socket
 from click import argument, command, group, option, secho as echo
 from collections import defaultdict, deque
 from datetime import datetime
+from fcntl import fcntl, F_SETFL, F_GETFL
 from glob import glob
 from hashlib import md5
 from json import loads
 from multiprocessing import cpu_count
+from os import chmod, unlink, remove, stat, listdir, environ, makedirs, O_NONBLOCK
 from os.path import abspath, basename, dirname, exists, getmtime, join, realpath, splitext
-from subprocess import call, check_output, STDOUT
+from re import sub
+from shutil import copyfile, rmtree
+from socket import socket, AF_INET, SOCK_STREAM
+from sys import argv, stdin, stdout, stderr
+from stat import S_IRUSR, S_IWUSR, S_IXUSR
+from subprocess import call, check_output, Popen, STDOUT, PIPE 
 from time import sleep
 from urllib2 import urlopen
 
-
 # === Globals - all tweakable settings are here ===
 
-PIKU_ROOT = os.environ.get('PIKU_ROOT', join(os.environ['HOME'],'.piku'))
+PIKU_ROOT = environ.get('PIKU_ROOT', join(environ['HOME'],'.piku'))
 
 APP_ROOT = abspath(join(PIKU_ROOT, "apps"))
 ENV_ROOT = abspath(join(PIKU_ROOT, "envs"))
@@ -108,7 +113,7 @@ def exit_if_invalid(app):
 def get_free_port(address=""):
     """Find a free TCP port (entirely at random)"""
     
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s = socket(AF_INET, SOCK_STREAM)
     s.bind((address,0))
     port = s.getsockname()[1]
     s.close()
@@ -126,14 +131,14 @@ def write_config(filename, bag, separator='='):
 def setup_authorized_keys(ssh_fingerprint, script_path, pubkey):
     """Sets up an authorized_keys file to redirect SSH commands"""
     
-    authorized_keys = join(os.environ['HOME'],'.ssh','authorized_keys')
+    authorized_keys = join(environ['HOME'],'.ssh','authorized_keys')
     if not exists(dirname(authorized_keys)):
-        os.makedirs(dirname(authorized_keys))
+        makedirs(dirname(authorized_keys))
     # Restrict features and force all SSH commands to go through our script 
     with open(authorized_keys, 'a') as h:
         h.write("""command="FINGERPRINT=%(ssh_fingerprint)s NAME=default %(script_path)s $SSH_ORIGINAL_COMMAND",no-agent-forwarding,no-user-rc,no-X11-forwarding,no-port-forwarding %(pubkey)s\n""" % locals())
-    os.chmod(dirname(authorized_keys), stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
-    os.chmod(authorized_keys, stat.S_IRUSR | stat.S_IWUSR)
+    chmod(dirname(authorized_keys), S_IRUSR | S_IWUSR | S_IXUSR)
+    chmod(authorized_keys, S_IRUSR | S_IWUSR)
 
 
 def parse_procfile(filename):
@@ -166,13 +171,13 @@ def expandvars(buffer, env, default=None, skip_escaped=False):
         return env.get(match.group(2) or match.group(1), match.group(0) if default is None else default)
     
     pattern = (r'(?<!\\)' if skip_escaped else '') + r'\$(\w+|\{([^}]*)\})'
-    return re.sub(pattern, replace_var, buffer)
+    return sub(pattern, replace_var, buffer)
 
 
 def command_output(cmd):
     """executes a command and grabs its output, if any"""
     try:
-        env = os.environ
+        env = environ
         if 'sbin' not in env['PATH']:
             env['PATH'] = env['PATH'] + ":/usr/sbin:/usr/local/sbin"
         return check_output(cmd, stderr=STDOUT, env=env, shell=True)
@@ -212,7 +217,7 @@ def do_deploy(app, deltas={}):
         call('git pull --quiet', cwd=app_path, env=env, shell=True)
         call('git checkout -f', cwd=app_path, env=env, shell=True)
         if not exists(log_path):
-            os.makedirs(log_path)
+            makedirs(log_path)
         workers = parse_procfile(procfile)
         if len(workers):
             if exists(join(app_path, 'requirements.txt')):
@@ -239,7 +244,7 @@ def deploy_go(app, deltas={}):
     first_time = False
     if not exists(go_path):
         echo("-----> Creating GOPATH for '%s'" % app, fg='green')
-        os.makedirs(go_path)
+        makedirs(go_path)
         # copy across a pre-built GOPATH to save provisioning time 
         call('cp -a $HOME/gopath %s' % app, cwd=ENV_ROOT, shell=True)
         first_time = True
@@ -266,7 +271,7 @@ def deploy_python(app, deltas={}):
     first_time = False
     if not exists(virtualenv_path):
         echo("-----> Creating virtualenv for '%s'" % app, fg='green')
-        os.makedirs(virtualenv_path)
+        makedirs(virtualenv_path)
         call('virtualenv %s' % app, cwd=ENV_ROOT, shell=True)
         first_time = True
 
@@ -303,9 +308,9 @@ def spawn_app(app, deltas={}):
     env = {
         'APP': app,
         'LOG_ROOT': LOG_ROOT,
-        'HOME': os.environ['HOME'],
-        'USER': os.environ['USER'],
-        'PATH': os.environ['PATH'],
+        'HOME': environ['HOME'],
+        'USER': environ['USER'],
+        'PATH': environ['PATH'],
         'PWD': dirname(env_file),
         'VIRTUAL_ENV': virtualenv_path,
     }
@@ -368,8 +373,8 @@ def spawn_app(app, deltas={}):
                     for i in cf['result']['ipv6_cidrs']:
                         acl.append("allow %s;" % i)
                     # allow access from controlling machine
-                    if 'SSH_CLIENT' in os.environ:
-                        remote_ip = os.environ['SSH_CLIENT'].split()[0]
+                    if 'SSH_CLIENT' in environ:
+                        remote_ip = environ['SSH_CLIENT'].split()[0]
                         echo("-----> Adding your IP (%s) to nginx ACL" % remote_ip)
                         acl.append("allow %s;" % remote_ip)
                     acl.extend(["allow 127.0.0.1;","deny all;"])
@@ -412,7 +417,7 @@ def spawn_app(app, deltas={}):
             enabled = join(UWSGI_ENABLED, '%s_%s.%d.ini' % (app, k, w))
             if exists(enabled):
                 echo("-----> Terminating '%s:%s.%d'" % (app, k, w), fg='yellow')
-                os.unlink(enabled)
+                unlink(enabled)
     
 
 def spawn_worker(app, kind, command, env, ordinal=1):
@@ -490,7 +495,7 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         for k, v in settings:
             h.write("%s = %s\n" % (k, v))
     
-    shutil.copyfile(available, enabled)
+    copyfile(available, enabled)
 
 
 def multi_tail(app, filenames, catch_up=20):
@@ -513,7 +518,7 @@ def multi_tail(app, filenames, catch_up=20):
     for f in filenames:
         prefixes[f] = splitext(basename(f))[0]
         files[f] = open(f)
-        inodes[f] = os.stat(f).st_ino
+        inodes[f] = stat(f).st_ino
         files[f].seek(0, 2)
         
     longest = max(map(len, prefixes.values()))
@@ -539,9 +544,9 @@ def multi_tail(app, filenames, catch_up=20):
             # Check if logs rotated
             for f in filenames:
                 if exists(f):
-                    if os.stat(f).st_ino != inodes[f]:
+                    if stat(f).st_ino != inodes[f]:
                         files[f] = open(f)
-                        inodes[f] = os.stat(f).st_ino
+                        inodes[f] = stat(f).st_ino
                 else:
                     filenames.remove(f)
 
@@ -566,7 +571,7 @@ def cleanup(ctx):
 def list_apps():
     """List applications"""
     
-    for a in os.listdir(APP_ROOT):
+    for a in listdir(APP_ROOT):
         echo(a, fg='green')
 
 
@@ -674,20 +679,20 @@ def destroy_app(app):
     for p in [join(x, app) for x in [APP_ROOT, GIT_ROOT, ENV_ROOT, LOG_ROOT]]:
         if exists(p):
             echo("Removing folder '%s'" % p, fg='yellow')
-            shutil.rmtree(p)
+            rmtree(p)
 
     for p in [join(x, '%s*.ini' % app) for x in [UWSGI_AVAILABLE, UWSGI_ENABLED]]:
         g = glob(p)
         if len(g):
             for f in g:
                 echo("Removing file '%s'" % f, fg='yellow')
-                os.remove(f)
+                remove(f)
                 
     nginx_files = [join(NGINX_ROOT, "%s.%s" % (app,x)) for x in ['conf','sock','key','crt']]
     for f in nginx_files:
         if exists(f):
             echo("Removing file '%s'" % f, fg='yellow')
-            os.remove(f)
+            remove(f)
 
     
 @piku.command("logs")
@@ -756,9 +761,12 @@ def deploy_app(app, cmd):
     app = exit_if_invalid(app)
 
     config_file = join(ENV_ROOT, app, 'LIVE_ENV')
-    os.environ.update(parse_settings(config_file))
-    call(' '.join(cmd), env=os.environ, cwd=join(APP_ROOT,app), shell=True)
-
+    environ.update(parse_settings(config_file))
+    for f in [stdout, stderr]:
+        fl = fcntl(f, F_GETFL)
+        fcntl(f, F_SETFL, fl | O_NONBLOCK)
+    p = Popen(' '.join(cmd), stdin=stdin, stdout=stdout, stderr=stderr, env=environ, cwd=join(APP_ROOT,app), shell=True)
+    p.communicate() 
 
 @piku.command("restart")
 @argument('app')
@@ -772,7 +780,7 @@ def restart_app(app):
     if len(config):
         echo("Restarting app '%s'..." % app, fg='yellow')
         for c in config:
-            os.remove(c)
+            remove(c)
         do_deploy(app)
     else:
         echo("Error: app '%s' not deployed!" % app, fg='red')
@@ -786,7 +794,7 @@ def init_paths():
     for p in [APP_ROOT, GIT_ROOT, ENV_ROOT, UWSGI_ROOT, UWSGI_AVAILABLE, UWSGI_ENABLED, LOG_ROOT, NGINX_ROOT]:
         if not exists(p):
             echo("Creating '%s'." % p, fg='green')
-            os.makedirs(p)
+            makedirs(p)
     
     # Set up the uWSGI emperor config
     settings = [
@@ -806,9 +814,9 @@ def init_paths():
 
     # mark this script as executable (in case we were invoked via interpreter)
     this_script = realpath(__file__)
-    if not(os.stat(this_script).st_mode & stat.S_IXUSR):
+    if not(stat(this_script).st_mode & S_IXUSR):
         echo("Setting '%s' as executable." % this_script, fg='yellow')
-        os.chmod(this_script, os.stat(this_script).st_mode | stat.S_IXUSR)         
+        chmod(this_script, stat(this_script).st_mode | S_IXUSR)         
 
 
 @piku.command("setup:ssh")
@@ -840,7 +848,7 @@ def stop_app(app):
     if len(config):
         echo("Stopping app '%s'..." % app, fg='yellow')
         for c in config:
-            os.remove(c)
+            remove(c)
     else:
         echo("Error: app '%s' not deployed!" % app, fg='red')
         
@@ -856,14 +864,14 @@ def git_hook(app):
     repo_path = join(GIT_ROOT, app)
     app_path = join(APP_ROOT, app)
     
-    for line in sys.stdin:
+    for line in stdin:
         oldrev, newrev, refname = line.strip().split(" ")
         #print "refs:", oldrev, newrev, refname
         if refname == "refs/heads/master":
             # Handle pushes to master branch
             if not exists(app_path):
                 echo("-----> Creating app '%s'" % app, fg='green')
-                os.makedirs(app_path)
+                makedirs(app_path)
                 call('git clone --quiet %s %s' % (repo_path, app), cwd=APP_ROOT, shell=True)
             do_deploy(app)
         else:
@@ -880,7 +888,7 @@ def receive(app):
     hook_path = join(GIT_ROOT, app, 'hooks', 'post-receive')
     
     if not exists(hook_path):
-        os.makedirs(dirname(hook_path))
+        makedirs(dirname(hook_path))
         # Initialize the repository with a hook to this script
         call("git init --quiet --bare " + app, cwd=GIT_ROOT, shell=True)
         with open(hook_path,'w') as h:
@@ -888,9 +896,9 @@ def receive(app):
 set -e; set -o pipefail;
 cat | PIKU_ROOT="%s" %s git-hook %s""" % (PIKU_ROOT, realpath(__file__), app))
         # Make the hook executable by our user
-        os.chmod(hook_path, os.stat(hook_path).st_mode | stat.S_IXUSR)
+        chmod(hook_path, stat(hook_path).st_mode | S_IXUSR)
     # Handle the actual receive. We'll be called with 'git-hook' after it happens
-    call('git-shell -c "%s"' % " ".join(sys.argv[1:]), cwd=GIT_ROOT, shell=True)
+    call('git-shell -c "%s"' % " ".join(argv[1:]), cwd=GIT_ROOT, shell=True)
  
  
 if __name__ == '__main__':
