@@ -95,8 +95,11 @@ server {
 
 NGINX_STATIC_MAPPING = """
   location %(url)s {
-      sendfile           on;
+      sendfile on;
       sendfile_max_chunk 1m;
+      tcp_nopush on;
+      directio 8m;
+      aio threads;
       alias %(path)s;
   }
 """
