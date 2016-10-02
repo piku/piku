@@ -63,6 +63,8 @@ server {
   # set a custom header for requests
   add_header X-Deployed-By Piku;
 
+  $NGINX_STATIC_MAPPINGS
+
   location    / {
     uwsgi_pass $APP;
     uwsgi_param QUERY_STRING $query_string;
@@ -89,6 +91,14 @@ server {
     $NGINX_ACL
  }
 }
+"""
+
+NGINX_STATIC_MAPPING = """
+  location %(url)s {
+      sendfile           on;
+      sendfile_max_chunk 1m;
+      alias %(path)s;
+  }
 """
 
 # === Utility functions ===
@@ -379,7 +389,23 @@ def spawn_app(app, deltas={}):
                         acl.append("allow %s;" % remote_ip)
                     acl.extend(["allow 127.0.0.1;","deny all;"])
             env['NGINX_ACL'] = " ".join(acl)
+
+            env['NGINX_STATIC_MAPPINGS'] = ''
             
+            # Get a mapping of /url:path1,/url2:path2
+            static_paths = env.get('NGINX_STATIC_PATHS','')
+            if len(static_paths):
+                try:
+                    items = static_paths.split(',')
+                    for item in items:
+                        static_url, static_path = item.split(':')
+                        if static_path[0] != '/':
+                            static_path = join(app_path, static_path)
+                        env['NGINX_STATIC_MAPPINGS'] = env['NGINX_STATIC_MAPPINGS'] + NGINX_STATIC_MAPPING % {'url': static_url, 'path': static_path}
+                except Exception as e:
+                    print "Error %s in static path spec: should be /url1:path1[,/url2:path2], ignoring." % e
+                    env['NGINX_STATIC_MAPPINGS'] = ''
+
             buffer = expandvars(NGINX_TEMPLATE, env)
             echo("-----> Setting up nginx for '%s:%s'" % (app, env['NGINX_SERVER_NAME']))
             with open(join(NGINX_ROOT,"%s.conf" % app), "w") as h:
