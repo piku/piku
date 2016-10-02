@@ -22,7 +22,7 @@ From the bottom up:
 - [ ] Support Go deployments (in progress)
 - [ ] nginx SSL optimization/cypher suites, own certificates
 - [ ] Review docs/CLI command documentation
-- [x] static URL mapping to arbitrary path
+- [x] static URL mapping to arbitrary paths (hat tip to @carlosefr for nginx tuning)
 - [x] remote CLI (requires `ssh -t`)
 - [x] saner uWSGI logging
 - [x] `gevent` activated when `UWSGI_GEVENT = <integer>` 
