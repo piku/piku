@@ -280,12 +280,19 @@ def deploy_python(app, deltas={}):
     
     virtualenv_path = join(ENV_ROOT, app)
     requirements = join(APP_ROOT, app, 'requirements.txt')
+    env_file = join(APP_ROOT, app, 'ENV')
+    # Peek at environment variables shipped with repo (if any) to determine version
+    env = {}
+    if exists(env_file):
+        env.update(parse_settings(env_file, env))
+
+    version = int(env.get("PYTHON_VERSION", "2")) # implicit flooring of 3.6
 
     first_time = False
     if not exists(virtualenv_path):
         echo("-----> Creating virtualenv for '%s'" % app, fg='green')
         makedirs(virtualenv_path)
-        call('virtualenv %s' % app, cwd=ENV_ROOT, shell=True)
+        call('virtualenv --python=python%d %s' % (version, app), cwd=ENV_ROOT, shell=True)
         first_time = True
 
     activation_script = join(virtualenv_path,'bin','activate_this.py')
@@ -472,18 +479,36 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         ('logto',               '%s.%d.log' % (join(LOG_ROOT, app, kind), ordinal)),
         ('log-backupname',      '%s.%d.log.old' % (join(LOG_ROOT, app, kind), ordinal)),
     ]
-        
+
+    python_version = int(env.get('PYTHON_VERSION','2'))
+
     if kind == 'wsgi':
         settings.extend([
             ('module',      command),
             ('threads',     env.get('UWSGI_THREADS','4')),
-            ('plugin',      'python'),
         ])
-        if 'UWSGI_GEVENT' in env:
+        if python_version == 2:
             settings.extend([
-                ('plugin',  'gevent_python'),
-                ('gevent',  env['UWSGI_GEVENT']),
+                ('plugin',      'python'),
             ])
+            if 'UWSGI_GEVENT' in env:
+                settings.extend([
+                    ('plugin',  'gevent_python'),
+                    ('gevent',  env['UWSGI_GEVENT']),
+                ])
+            elif 'UWSGI_ASYNCIO' in env:
+                settings.extend([
+                    ('plugin',  'asyncio_python'),
+                ])
+        elif python_version == 3:
+            settings.extend([
+                ('plugin',      'python3'),
+            ])
+            if 'UWSGI_ASYNCIO' in env:
+                settings.extend([
+                    ('plugin',  'asyncio_python3'),
+                ])
+            
 
         # If running under nginx, don't expose a port at all
         if 'NGINX_SERVER_NAME' in env:
