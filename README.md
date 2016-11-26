@@ -59,6 +59,10 @@ From the bottom up:
 * It then looks at a `Procfile` and starts the relevant workers using [uWSGI][uwsgi] as a generic process manager
 * You can then remotely change application settings (`config:set`) or scale up/down worker processes (`ps:scale`) at will.
 
+## Internals
+
+This is an illustrated example of how `piku` works for a Python deployment:
+
 ![](img/piku.png)
 
 ## Supported Platforms
