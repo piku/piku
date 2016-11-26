@@ -59,7 +59,7 @@ From the bottom up:
 * It then looks at a `Procfile` and starts the relevant workers using [uWSGI][uwsgi] as a generic process manager
 * You can then remotely change application settings (`config:set`) or scale up/down worker processes (`ps:scale`) at will.
 
-Later on, I intend to do fancier `dokku`-like stuff like reconfiguring `nginx`, but a twist I'm planning on doing is having one `piku` machine act as a build box and deploy the finished product to another.
+![](img/piku.png)
 
 ## Supported Platforms
 
