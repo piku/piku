@@ -231,7 +231,7 @@ def do_deploy(app, deltas={}):
         if not exists(log_path):
             makedirs(log_path)
         workers = parse_procfile(procfile)
-        if len(workers):
+        if workers and len(workers):
             if exists(join(app_path, 'requirements.txt')):
                 echo("-----> Python app detected.", fg='green')
                 deploy_python(app, deltas)
