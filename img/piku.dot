@@ -1,5 +1,8 @@
 digraph G {
     pack=16;
+    graph [ dpi = 300 ]; 
+    bgcolor=transparent;
+    truecolor=true;
     {rank=same;sshd;uwsgie;nginx;incron;}
     //rankdir=LR;
     subgraph uwsgi_tree {
