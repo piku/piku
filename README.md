@@ -6,7 +6,7 @@ The tiniest Heroku/CloudFoundry-like PaaS you've ever seen, inspired by [dokku][
 
 I kept finding myself wanting an Heroku/CloudFoundry-like way to deploy stuff on a few remote ARM boards and [my Raspberry Pi cluster][raspi-cluster], but since [dokku][dokku] still doesn't work on ARM and even `docker` can be overkill sometimes, I decided to roll my own.
 
-## Project Status/ToDo:
+## Project Status/To Do:
 
 This is currently being used for production deployments of http://taoofmac.com and a few other projects of mine. Regardless, there is still room for improvement:
 
@@ -22,7 +22,8 @@ From the bottom up:
 - [ ] Support Go deployments (in progress)
 - [ ] nginx SSL optimization/cypher suites, own certificates
 - [ ] Review docs/CLI command documentation
-* [x] Python 3 support through `PYTHON_VERSION = 3`
+- [ ] Let's Encrypt support
+- [x] Python 3 support through `PYTHON_VERSION = 3`
 - [x] static URL mapping to arbitrary paths (hat tip to @carlosefr for `nginx` tuning)
 - [x] remote CLI (requires `ssh -t`)
 - [x] saner uWSGI logging
