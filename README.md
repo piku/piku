@@ -21,8 +21,8 @@ From the bottom up:
 - [ ] Sample Go app
 - [ ] Support Go deployments (in progress)
 - [ ] nginx SSL optimization/cypher suites, own certificates
-- [ ] Review docs/CLI command documentation
 - [ ] Let's Encrypt support
+- [ ] Review docs/CLI command documentation
 - [x] Python 3 support through `PYTHON_VERSION = 3`
 - [x] static URL mapping to arbitrary paths (hat tip to @carlosefr for `nginx` tuning)
 - [x] remote CLI (requires `ssh -t`)

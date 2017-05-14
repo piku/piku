@@ -4,7 +4,7 @@ You can configure deployment settings by placing special variables in an `ENV` f
 
 ## Runtime Settings
 
-* ``
+* `PYTHON_VERSION` (int): Forces Python 3
 
 ## Network Settings
 
