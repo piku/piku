@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+"Piku Micro-PaaS"
+
 from click import argument, command, group, option, secho as echo
 from collections import defaultdict, deque
 from datetime import datetime
@@ -13,11 +15,16 @@ from os.path import abspath, basename, dirname, exists, getmtime, join, realpath
 from re import sub
 from shutil import copyfile, rmtree
 from socket import socket, AF_INET, SOCK_STREAM
-from sys import argv, stdin, stdout, stderr
+from sys import argv, stdin, stdout, stderr, version_info
 from stat import S_IRUSR, S_IWUSR, S_IXUSR
 from subprocess import call, check_output, Popen, STDOUT, PIPE 
+from tempfile import NamedTemporaryFile
+from traceback import format_exc
 from time import sleep
-from urllib2 import urlopen
+if version_info[0] < 3:
+    from urllib2 import urlopen
+else:
+    from urllib.request import urlopen
 
 # === Globals - all tweakable settings are here ===
 
@@ -109,7 +116,7 @@ NGINX_STATIC_MAPPING = """
 def sanitize_app_name(app):
     """Sanitize the app name and build matching path"""
     
-    app = "".join(c for c in app if c.isalnum() or c in ('.','_')).rstrip()
+    app = "".join(c for c in app if c.isalnum() or c in ('.','_')).rstrip().lstrip('/')
     return app
 
 
@@ -192,7 +199,7 @@ def command_output(cmd):
         env = environ
         if 'sbin' not in env['PATH']:
             env['PATH'] = env['PATH'] + ":/usr/sbin:/usr/local/sbin"
-        return check_output(cmd, stderr=STDOUT, env=env, shell=True)
+        return str(check_output(cmd, stderr=STDOUT, env=env, shell=True))
     except:
         return ""
 
@@ -383,7 +390,7 @@ def spawn_app(app, deltas={}):
             if env.get('NGINX_CLOUDFLARE_ACL', 'false').lower() == 'true':
                 try:
                     cf = loads(urlopen('https://api.cloudflare.com/client/v4/ips').read())
-                except Exception, e:
+                except Exception as e:
                     cf = defaultdict()
                     echo("-----> Could not retrieve CloudFlare IP ranges: %s" % e.text, fg="red")
                 if cf['success'] == True:
@@ -412,7 +419,7 @@ def spawn_app(app, deltas={}):
                             static_path = join(app_path, static_path)
                         env['NGINX_STATIC_MAPPINGS'] = env['NGINX_STATIC_MAPPINGS'] + NGINX_STATIC_MAPPING % {'url': static_url, 'path': static_path}
                 except Exception as e:
-                    print "Error %s in static path spec: should be /url1:path1[,/url2:path2], ignoring." % e
+                    echo("Error %s in static path spec: should be /url1:path1[,/url2:path2], ignoring." % e)
                     env['NGINX_STATIC_MAPPINGS'] = ''
 
             buffer = expandvars(NGINX_TEMPLATE, env)
@@ -842,6 +849,8 @@ def restart_app(app):
 @piku.command("setup")
 def init_paths():
     """Initialize environment"""
+
+    echo("Running in Python %s" % ".".join(map(str,version_info)))
     
     # Create required paths
     for p in [APP_ROOT, GIT_ROOT, ENV_ROOT, UWSGI_ROOT, UWSGI_AVAILABLE, UWSGI_ENABLED, LOG_ROOT, NGINX_ROOT]:
@@ -869,33 +878,41 @@ def init_paths():
     this_script = realpath(__file__)
     if not(stat(this_script).st_mode & S_IXUSR):
         echo("Setting '%s' as executable." % this_script, fg='yellow')
-        chmod(this_script, stat(this_script).st_mode | S_IXUSR)         
+        chmod(this_script, stat(this_script).st_mode | S_IXUSR)
 
 
 @piku.command("setup:ssh")
 @argument('public_key_file')
 def add_key(public_key_file):
-    """Set up a new SSH key"""
-    
-    if exists(public_key_file):
-        try:
-            fingerprint = check_output('ssh-keygen -lf %s' % public_key_file, shell=True).split(' ',4)[1]
-            key = open(public_key_file).read().strip()
-            echo("Adding key '%s'." % fingerprint, fg='white')
-            setup_authorized_keys(fingerprint, realpath(__file__), key)
-        except:
-            echo("Error: invalid public key file '%s'" % public_key_file, fg='red')
-    else:
-        echo("Error: public key file '%s' not found." % public_key_file, fg='red')
+    """Set up a new SSH key (use - for stdin)"""
+
+    def add_helper(key_file):
+        if exists(key_file):
+            try:
+                fingerprint = str(check_output('ssh-keygen -lf ' + key_file, shell=True)).split(' ', 4)[1]
+                key = open(key_file, 'r').read().strip()
+                echo("Adding key '%s'." % fingerprint, fg='white')
+                setup_authorized_keys(fingerprint, realpath(__file__), key)
+            except Exception as e:
+                echo("Error: invalid public key file '%s': %s" % (key_file, format_exc()), fg='red')
+        elif '-' == public_key_file:
+            buffer = "".join(stdin.readlines())
+            with NamedTemporaryFile(mode="w") as f:
+                f.write(buffer)
+                f.flush()
+                add_helper(f.name)
+        else:
+            echo("Error: public key file '%s' not found." % key_file, fg='red')
+
+    add_helper(public_key_file)
 
 
 @piku.command("stop")
 @argument('app')
 def stop_app(app):
     """Stop an application"""
-    
+
     app = exit_if_invalid(app)
-    
     config = glob(join(UWSGI_ENABLED, '%s*.ini' % app))
 
     if len(config):
@@ -919,7 +936,7 @@ def git_hook(app):
     
     for line in stdin:
         oldrev, newrev, refname = line.strip().split(" ")
-        #print "refs:", oldrev, newrev, refname
+        #echo("refs:", oldrev, newrev, refname)
         if refname == "refs/heads/master":
             # Handle pushes to master branch
             if not exists(app_path):
@@ -951,7 +968,7 @@ cat | PIKU_ROOT="%s" %s git-hook %s""" % (PIKU_ROOT, realpath(__file__), app))
         # Make the hook executable by our user
         chmod(hook_path, stat(hook_path).st_mode | S_IXUSR)
     # Handle the actual receive. We'll be called with 'git-hook' after it happens
-    call('git-shell -c "%s"' % " ".join(argv[1:]), cwd=GIT_ROOT, shell=True)
+    call('git-shell -c "%s" ' % (argv[1] + " '%s'" % app), cwd=GIT_ROOT, shell=True)
  
  
 if __name__ == '__main__':
