@@ -25,4 +25,5 @@ You can configure deployment settings by placing special variables in an `ENV` f
 ## Nginx Settings
 
 * `NGINX_SERVER_NAME`: set the virtual host name associated with your app
-
+* `NGINX_CLOUDFLARE_ACL` (boolean): activate an ACL allowing access only from Cloudflare IPs
+* `NGINX_STATIC_PATHS`: set an array of `/url:path` values
