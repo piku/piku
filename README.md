@@ -23,7 +23,7 @@ From the bottom up:
 - [ ] nginx SSL optimization/cypher suites, own certificates
 - [ ] Let's Encrypt support
 - [ ] Review docs/CLI command documentation
-- [x] (experimental) REPL
+- [x] (experimental) REPL in `feature/repl`
 - [x] Python 3 support through `PYTHON_VERSION = 3`
 - [x] static URL mapping to arbitrary paths (hat tip to @carlosefr for `nginx` tuning)
 - [x] remote CLI (requires `ssh -t`)
