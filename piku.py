@@ -3,7 +3,7 @@
 "Piku Micro-PaaS"
 
 from click import argument, command, group, get_current_context, option, secho as echo
-from click_repl import repl
+#from click_repl import repl
 from collections import defaultdict, deque
 from datetime import datetime
 from fcntl import fcntl, F_SETFL, F_GETFL
@@ -973,12 +973,13 @@ cat | PIKU_ROOT="%s" %s git-hook %s""" % (PIKU_ROOT, realpath(__file__), app))
     call('git-shell -c "%s" ' % (argv[1] + " '%s'" % app), cwd=GIT_ROOT, shell=True)
 
 
-@piku.command()
-def prompt():
-    """Starts an interactive prompt"""
-    repl(get_current_context(),
-         prompt_kwargs={'history': FileHistory(join(dirname(realpath(__file__)), '.piku_history'))},
-         allow_system_commands=False)
+# TODO: test further and include better autocompletion
+#@piku.command()
+#def prompt():
+#    """Starts an interactive prompt"""
+#    repl(get_current_context(),
+#         prompt_kwargs={'history': FileHistory(join(dirname(realpath(__file__)), '.piku_history'))},
+#         allow_system_commands=False)
 
 if __name__ == '__main__':
     piku()
