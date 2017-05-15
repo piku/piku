@@ -2,7 +2,8 @@
 
 "Piku Micro-PaaS"
 
-from click import argument, command, group, option, secho as echo
+from click import argument, command, group, get_current_context, option, secho as echo
+from click_repl import repl
 from collections import defaultdict, deque
 from datetime import datetime
 from fcntl import fcntl, F_SETFL, F_GETFL
@@ -12,6 +13,7 @@ from json import loads
 from multiprocessing import cpu_count
 from os import chmod, unlink, remove, stat, listdir, environ, makedirs, O_NONBLOCK
 from os.path import abspath, basename, dirname, exists, getmtime, join, realpath, splitext
+from prompt_toolkit.history import FileHistory
 from re import sub
 from shutil import copyfile, rmtree
 from socket import socket, AF_INET, SOCK_STREAM
@@ -953,15 +955,15 @@ def git_hook(app):
 @argument('app')
 def receive(app):
     """INTERNAL: Handle git pushes for an app"""
-    
+
     app = sanitize_app_name(app)
     hook_path = join(GIT_ROOT, app, 'hooks', 'post-receive')
-    
+
     if not exists(hook_path):
         makedirs(dirname(hook_path))
         # Initialize the repository with a hook to this script
         call("git init --quiet --bare " + app, cwd=GIT_ROOT, shell=True)
-        with open(hook_path,'w') as h:
+        with open(hook_path, 'w') as h:
             h.write("""#!/usr/bin/env bash
 set -e; set -o pipefail;
 cat | PIKU_ROOT="%s" %s git-hook %s""" % (PIKU_ROOT, realpath(__file__), app))
@@ -969,7 +971,14 @@ cat | PIKU_ROOT="%s" %s git-hook %s""" % (PIKU_ROOT, realpath(__file__), app))
         chmod(hook_path, stat(hook_path).st_mode | S_IXUSR)
     # Handle the actual receive. We'll be called with 'git-hook' after it happens
     call('git-shell -c "%s" ' % (argv[1] + " '%s'" % app), cwd=GIT_ROOT, shell=True)
- 
- 
+
+
+@piku.command()
+def prompt():
+    """Starts an interactive prompt"""
+    repl(get_current_context(),
+         prompt_kwargs={'history': FileHistory(join(dirname(realpath(__file__)), '.piku_history'))},
+         allow_system_commands=False)
+
 if __name__ == '__main__':
     piku()

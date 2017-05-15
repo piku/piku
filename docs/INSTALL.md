@@ -38,7 +38,7 @@ Before running `piku` for the first time, you need to install the following Pyth
 
 ```bash
 sudo apt-get install git python-virtualenv python-pip
-sudo pip install -U click
+sudo pip install -U click click-repl
 ```
 
 ### Raspbian Wheezy
@@ -46,7 +46,7 @@ sudo pip install -U click
 ```bash
 sudo apt-get install git python2.7
 sudo easy_install -U pip
-sudo pip install -U click virtualenv
+sudo pip install -U click click-repl virtualenv
 ```
 
 These may or may not be installed already (`click` usually isn't). For Raspbian Wheezy this is the preferred approach, since current `apt` packages are fairly outdated.
