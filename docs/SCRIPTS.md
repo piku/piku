@@ -7,7 +7,7 @@ sudo apt-get update
 sudo apt-get -y dist-upgrade
 sudo apt-get -y autoremove
 sudo apt-get install -y tmux vim htop fail2ban uwsgi uwsgi-plugin-python uwsgi-plugin-python3 uwsgi-plugin-asyncio-python3 uwsgi-plugin-gevent-python uwsgi-plugin-tornado-python nginx incron libxml2-dev libxslt1-dev python-dev zlib1g-dev build-essential git python-virtualenv python-pip
-sudo pip install -U click click-repl pip
+sudo pip install -U click pip
 sudo adduser --disabled-password --gecos 'PaaS access' --ingroup www-data piku
 
 # move to /tmp and grab our distribution files
