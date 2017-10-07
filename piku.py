@@ -71,7 +71,7 @@ server {
   # set a custom header for requests
   add_header X-Deployed-By Piku;
 
-  $NGINX_STATIC_MAPPINGS
+  $INTERNAL_NGINX_STATIC_MAPPINGS
 
   location    / {
     uwsgi_pass $APP;
@@ -101,7 +101,7 @@ server {
 }
 """
 
-NGINX_STATIC_MAPPING = """
+INTERNAL_NGINX_STATIC_MAPPING = """
   location %(url)s {
       sendfile on;
       sendfile_max_chunk 1m;
@@ -407,7 +407,7 @@ def spawn_app(app, deltas={}):
                     acl.extend(["allow 127.0.0.1;","deny all;"])
             env['NGINX_ACL'] = " ".join(acl)
 
-            env['NGINX_STATIC_MAPPINGS'] = ''
+            env['INTERNAL_NGINX_STATIC_MAPPINGS'] = ''
             
             # Get a mapping of /url:path1,/url2:path2
             static_paths = env.get('NGINX_STATIC_PATHS','')
@@ -418,15 +418,15 @@ def spawn_app(app, deltas={}):
                         static_url, static_path = item.split(':')
                         if static_path[0] != '/':
                             static_path = join(app_path, static_path)
-                        env['NGINX_STATIC_MAPPINGS'] = env['NGINX_STATIC_MAPPINGS'] + NGINX_STATIC_MAPPING % {'url': static_url, 'path': static_path}
+                        env['INTERNAL_NGINX_STATIC_MAPPINGS'] = env['INTERNAL_NGINX_STATIC_MAPPINGS'] + INTERNAL_NGINX_STATIC_MAPPING % {'url': static_url, 'path': static_path}
                 except Exception as e:
                     echo("Error %s in static path spec: should be /url1:path1[,/url2:path2], ignoring." % e)
-                    env['NGINX_STATIC_MAPPINGS'] = ''
+                    env['INTERNAL_NGINX_STATIC_MAPPINGS'] = ''
 
             buffer = expandvars(NGINX_TEMPLATE, env)
             echo("-----> Setting up nginx for '%s:%s'" % (app, env['NGINX_SERVER_NAME']))
             with open(join(NGINX_ROOT,"%s.conf" % app), "w") as h:
-                h.write(buffer)            
+                h.write(buffer)
 
     # Configured worker count
     if exists(scaling):
@@ -441,6 +441,11 @@ def spawn_app(app, deltas={}):
             if deltas[k] < 0:
                 to_destroy[k] = range(worker_count[k], worker_count[k] + deltas[k], -1)
             worker_count[k] = worker_count[k]+deltas[k]
+
+    # Cleanup env
+    for k, v in env:
+        if k.startswith('INTERNAL_'):
+            del env[k]
 
     # Save current settings
     write_config(live, env)
