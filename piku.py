@@ -12,7 +12,6 @@ from json import loads
 from multiprocessing import cpu_count
 from os import chmod, unlink, remove, stat, listdir, environ, makedirs, O_NONBLOCK
 from os.path import abspath, basename, dirname, exists, getmtime, join, realpath, splitext
-from prompt_toolkit.history import FileHistory
 from re import sub
 from shutil import copyfile, rmtree
 from socket import socket, AF_INET, SOCK_STREAM
