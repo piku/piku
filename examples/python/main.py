@@ -6,12 +6,12 @@ from bottle import default_app, route, request, view, static_file, run
 def default():
     result = {}
     table = ['<table class="u-full-width"><tbody>']
-    for k, v in sorted(os.environ.iteritems()):
+    for k, v in sorted(os.environ.items()):
         table.append('<tr><th>%s</th><td>%s</td></tr>' % (k, v))
     table.append('</tbody></table>')
     result['sys_data'] = '\n'.join(table)
     table = ['<table class="u-full-width"><tbody>']
-    for k, v in sorted(dict(request.environ).iteritems()):
+    for k, v in sorted(dict(request.environ).items()):
         table.append('<tr><th>%s</th><td>%s</td></tr>' % (k, v))
     table.append('</tbody></table>')
     result['req_data'] = '\n'.join(table)
