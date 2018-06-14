@@ -25,8 +25,6 @@ if version_info[0] < 3:
     from urllib2 import urlopen
 else:
     from urllib.request import urlopen
-    def execfile(filename, ctx):
-        exec(open(filename).read(), ctx)
 
 # === Globals - all tweakable settings are here ===
 
@@ -146,7 +144,7 @@ def write_config(filename, bag, separator='='):
     """Helper for writing out config files"""
     
     with open(filename, 'w') as h:
-        for k, v in bag.iteritems():
+        for k, v in bag.items():
             h.write('%s%s%s\n' % (k,separator,str(v)))
 
 
@@ -304,7 +302,7 @@ def deploy_python(app, deltas={}):
         first_time = True
 
     activation_script = join(virtualenv_path,'bin','activate_this.py')
-    execfile(activation_script, dict(__file__=activation_script))
+    exec(open(activation_script).read(), dict(__file__=activation_script))
 
     if first_time or getmtime(requirements) > getmtime(virtualenv_path):
         echo("-----> Running pip for '%s'" % app, fg='green')
@@ -431,11 +429,11 @@ def spawn_app(app, deltas={}):
 
     # Configured worker count
     if exists(scaling):
-        worker_count.update({k: int(v) for k,v in parse_procfile(scaling).iteritems()})
+        worker_count.update({k: int(v) for k,v in parse_procfile(scaling).items()})
     
     to_create = {}
     to_destroy = {}    
-    for k, v in worker_count.iteritems():
+    for k, v in worker_count.items():
         to_create[k] = range(1,worker_count[k] + 1)
         if k in deltas and deltas[k]:
             to_create[k] = range(1, worker_count[k] + deltas[k] + 1)
@@ -453,7 +451,7 @@ def spawn_app(app, deltas={}):
     write_config(scaling, worker_count, ':')
     
     # Create new workers
-    for k, v in to_create.iteritems():
+    for k, v in to_create.items():
         for w in v:
             enabled = join(UWSGI_ENABLED, '%s_%s.%d.ini' % (app, k, w))
             if not exists(enabled):
@@ -461,7 +459,7 @@ def spawn_app(app, deltas={}):
                 spawn_worker(app, k, workers[k], env, w)
         
     # Remove unnecessary workers (leave logfiles)
-    for k, v in to_destroy.iteritems():
+    for k, v in to_destroy.items():
         for w in v:
             enabled = join(UWSGI_ENABLED, '%s_%s.%d.ini' % (app, k, w))
             if exists(enabled):
@@ -554,7 +552,7 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         if k in env:
             del env[k]
     
-    for k, v in env.iteritems():
+    for k, v in env.items():
         settings.append(('env', '%s=%s' % (k,v)))
 
     with open(available, 'w') as h:
@@ -800,7 +798,7 @@ def deploy_app(app, settings):
     app = exit_if_invalid(app)
 
     config_file = join(ENV_ROOT, app, 'SCALING')
-    worker_count = {k:int(v) for k, v in parse_procfile(config_file).iteritems()}
+    worker_count = {k:int(v) for k, v in parse_procfile(config_file).items()}
     deltas = {}
     for s in settings:
         try:
