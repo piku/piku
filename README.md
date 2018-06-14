@@ -23,6 +23,8 @@ From the bottom up:
 - [ ] nginx SSL optimization/cypher suites, own certificates
 - [ ] Let's Encrypt support
 - [ ] Review docs/CLI command documentation
+- [ ] Change to Python 3 runtime as default, with `PYTHON_VERSION = 2` as fallback
+- [x] Run in Python 3 only
 - [x] (experimental) REPL in `feature/repl`
 - [x] Python 3 support through `PYTHON_VERSION = 3`
 - [x] static URL mapping to arbitrary paths (hat tip to @carlosefr for `nginx` tuning)
