@@ -292,7 +292,7 @@ def deploy_python(app, deltas={}):
     if exists(env_file):
         env.update(parse_settings(env_file, env))
 
-    version = int(env.get("PYTHON_VERSION", "2")) # implicit flooring of 3.6
+    version = int(env.get("PYTHON_VERSION", "3"))
 
     first_time = False
     if not exists(virtualenv_path):
@@ -491,7 +491,7 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         ('log-backupname',      '%s.%d.log.old' % (join(LOG_ROOT, app, kind), ordinal)),
     ]
 
-    python_version = int(env.get('PYTHON_VERSION','2'))
+    python_version = int(env.get('PYTHON_VERSION','3'))
 
     if kind == 'wsgi':
         settings.extend([
