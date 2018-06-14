@@ -25,6 +25,8 @@ if version_info[0] < 3:
     from urllib2 import urlopen
 else:
     from urllib.request import urlopen
+    def execfile(filename, ctx):
+        exec(open(filename).read(), ctx)
 
 # === Globals - all tweakable settings are here ===
 
