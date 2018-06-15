@@ -7,11 +7,13 @@ from collections import defaultdict, deque
 from datetime import datetime
 from fcntl import fcntl, F_SETFL, F_GETFL
 from glob import glob
+from grp import getgrgid
 from hashlib import md5
 from json import loads
 from multiprocessing import cpu_count
-from os import chmod, unlink, remove, stat, listdir, environ, makedirs, O_NONBLOCK
+from os import chmod, getgid, getuid, unlink, remove, stat, listdir, environ, makedirs, O_NONBLOCK
 from os.path import abspath, basename, dirname, exists, getmtime, join, realpath, splitext
+from pwd import getpwuid
 from re import sub
 from shutil import copyfile, rmtree
 from socket import socket, AF_INET, SOCK_STREAM
@@ -871,6 +873,8 @@ def init_paths():
         ('logto',           join(UWSGI_ROOT, 'uwsgi.log')),
         ('log-backupname',  join(UWSGI_ROOT, 'uwsgi.old.log')),
         ('socket',          join(UWSGI_ROOT, 'uwsgi.sock')),
+        ('uid',             getpwuid(getuid()).pw_name),
+        ('gid',             getgrgid(getgid()).gr_name),
         ('enable-threads',  'true'),
         ('threads',         '%d' % (cpu_count() * 2)),
     ]
