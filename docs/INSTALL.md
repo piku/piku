@@ -1,5 +1,7 @@
 # Installation
 
+> As of June 2018, these documents are being split off into distribution-specific files in the same folder. If you are running `piku` on specific Linux versions, feel free to contribute your own instructions.
+
 These installation notes should cover most Debian Linux variants (on any architecture). Very minor changes should be required to deploy on RHEL variants like CentOS, and there is specific emphasis on Raspbian because that's the typical deployment target.
 
 You can, however, run `piku` on any POSIX-like environment where you have Python, [uWSGI][uwsgi] and SSH.
