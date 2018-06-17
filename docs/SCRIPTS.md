@@ -1,6 +1,6 @@
 # Ubuntu 16.04
 
-Full installation sequence on a blank machine:
+Full installation sequence on a blank Ubuntu 16.04 machine:
 
 ```bash
 sudo apt-get update
