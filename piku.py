@@ -28,7 +28,7 @@ from grp import getgrgid
 # === Make sure we can access all system binaries ===
 
 if 'sbin' not in environ['PATH']:
-    environ['PATH'] = environ['PATH'] + ":/usr/sbin:/usr/local/sbin"
+    environ['PATH'] = "/usr/local/sbin:/usr/sbin:/sbin:" + environ['PATH']
 
 # === Globals - all tweakable settings are here ===
 
@@ -256,7 +256,7 @@ def do_deploy(app, deltas={}):
             if exists(join(app_path, 'requirements.txt')):
                 echo("-----> Python app detected.", fg='green')
                 deploy_python(app, deltas)
-            elif exists(join(app_path, 'package.json')) and check_requirements(['nodeenv', 'node', 'npm']):
+            elif exists(join(app_path, 'package.json')) and check_requirements(['node', 'npm']):
                 echo("-----> Node app detected.", fg='green')
                 deploy_node(app, deltas)
             elif exists(join(app_path, 'pom.xml')) and check_requirements(['java', 'mvn']):
@@ -305,23 +305,24 @@ def deploy_node(app, deltas={}):
     """Deploy a Node  application"""
 
     node_path = join(ENV_ROOT, app)
-    deps = join(APP_ROOT, app, 'node_modules')
+    env_file = join(APP_ROOT, app, 'ENV')
+    deps = join(ENV_ROOT, app, 'lib', 'node_modules')
 
     first_time = False
     if not exists(deps):
-        echo("-----> Creating nodeenv for '%s'" % app, fg='green')
-        makedirs(node_path)
-        call('nodeenv --node=system %s' % app, cwd=ENV_ROOT, shell=True)
+        echo("-----> Creating node_modules for '%s'" % app, fg='green')
+        makedirs(deps)
         first_time = True
 
     if exists(deps):
-        if first_time or getmtime(deps) > getmtime(go_path):
+        if first_time or getmtime(deps) > getmtime(node_path):
             echo("-----> Running npm for '%s'" % app, fg='green')
             env = {
                 'NODE_PATH': '%s/lib/node_modules' % node_path,
                 'NPM_CONFIG_PREFIX': node_path,
-                'PATH': '%s:$PATH' % node_path
             }
+            if exists(env_file):
+                env.update(parse_settings(env_file, env))
             call('npm install', cwd=join(APP_ROOT, app), env=env, shell=True)
     spawn_app(app, deltas)
 
