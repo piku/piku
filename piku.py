@@ -7,15 +7,13 @@ from collections import defaultdict, deque
 from datetime import datetime
 from fcntl import fcntl, F_SETFL, F_GETFL
 from glob import glob
-from grp import getgrgid
 from hashlib import md5
 from json import loads
 from multiprocessing import cpu_count
 from os import chmod, getgid, getuid, unlink, remove, stat, listdir, environ, makedirs, O_NONBLOCK
 from os.path import abspath, basename, dirname, exists, getmtime, join, realpath, splitext
-from pwd import getpwuid
 from re import sub
-from shutil import copyfile, rmtree
+from shutil import copyfile, rmtree, which
 from socket import socket, AF_INET, SOCK_STREAM
 from sys import argv, stdin, stdout, stderr, version_info
 from stat import S_IRUSR, S_IWUSR, S_IXUSR
@@ -23,10 +21,14 @@ from subprocess import call, check_output, Popen, STDOUT, PIPE
 from tempfile import NamedTemporaryFile
 from traceback import format_exc
 from time import sleep
-if version_info[0] < 3:
-    from urllib2 import urlopen
-else:
-    from urllib.request import urlopen
+from urllib.request import urlopen
+from pwd import getpwuid
+from grp import getgrgid
+
+# === Make sure we can access all system binaries ===
+
+if 'sbin' not in environ['PATH']:
+    environ['PATH'] = environ['PATH'] + ":/usr/sbin:/usr/local/sbin"
 
 # === Globals - all tweakable settings are here ===
 
@@ -199,8 +201,6 @@ def command_output(cmd):
     """executes a command and grabs its output, if any"""
     try:
         env = environ
-        if 'sbin' not in env['PATH']:
-            env['PATH'] = env['PATH'] + ":/usr/sbin:/usr/local/sbin"
         return str(check_output(cmd, stderr=STDOUT, env=env, shell=True))
     except:
         return ""
@@ -223,6 +223,18 @@ def parse_settings(filename, env={}):
                 echo("Error: malformed setting '%s', ignoring file." % line, fg='red')
                 return {}
     return env
+
+
+def check_requirements(binaries):
+    """Checks if all the binaries exist and are executable"""
+
+    echo("-----> Checking requirements: %s" % str(binaries), fg='green')
+    requirements = list(map(which, binaries))
+    echo(str(requirements))
+
+    if None in requirements:
+        return False
+    return True
     
 
 def do_deploy(app, deltas={}):
@@ -244,7 +256,13 @@ def do_deploy(app, deltas={}):
             if exists(join(app_path, 'requirements.txt')):
                 echo("-----> Python app detected.", fg='green')
                 deploy_python(app, deltas)
-            elif exists(join(app_path, 'Godeps')) or len(glob(join(app_path,'*.go'))):
+            elif exists(join(app_path, 'package.json')) and check_requirements(['nodeenv', 'node', 'npm']):
+                echo("-----> Node app detected.", fg='green')
+                deploy_node(app, deltas)
+            elif exists(join(app_path, 'pom.xml')) and check_requirements(['java', 'mvn']):
+                echo("-----> Java app detected.", fg='green')
+                deploy_java(app, deltas)
+            elif (exists(join(app_path, 'Godeps')) or len(glob(join(app_path,'*.go')))) and check_requirements(['go']):
                 echo("-----> Go app detected.", fg='green')
                 deploy_go(app, deltas)
             else:
@@ -280,6 +298,31 @@ def deploy_go(app, deltas={}):
                 'GO15VENDOREXPERIMENT': '1'
             }
             call('godep update ...', cwd=join(APP_ROOT, app), env=env, shell=True)
+    spawn_app(app, deltas)
+
+
+def deploy_node(app, deltas={}):
+    """Deploy a Node  application"""
+
+    node_path = join(ENV_ROOT, app)
+    deps = join(APP_ROOT, app, 'node_modules')
+
+    first_time = False
+    if not exists(deps):
+        echo("-----> Creating nodeenv for '%s'" % app, fg='green')
+        makedirs(node_path)
+        call('nodeenv --node=system %s' % app, cwd=ENV_ROOT, shell=True)
+        first_time = True
+
+    if exists(deps):
+        if first_time or getmtime(deps) > getmtime(go_path):
+            echo("-----> Running npm for '%s'" % app, fg='green')
+            env = {
+                'NODE_PATH': '%s/lib/node_modules' % node_path,
+                'NPM_CONFIG_PREFIX': node_path,
+                'PATH': '%s:$PATH' % node_path
+            }
+            call('npm install', cwd=join(APP_ROOT, app), env=env, shell=True)
     spawn_app(app, deltas)
 
 
