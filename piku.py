@@ -256,7 +256,7 @@ def do_deploy(app, deltas={}):
             if exists(join(app_path, 'requirements.txt')):
                 echo("-----> Python app detected.", fg='green')
                 deploy_python(app, deltas)
-            elif exists(join(app_path, 'package.json')) and check_requirements(['node', 'npm']):
+            elif exists(join(app_path, 'package.json')) and check_requirements(['nodejs', 'npm']):
                 echo("-----> Node app detected.", fg='green')
                 deploy_node(app, deltas)
             elif exists(join(app_path, 'pom.xml')) and check_requirements(['java', 'mvn']):
