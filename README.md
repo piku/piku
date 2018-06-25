@@ -102,7 +102,7 @@ But there are already a few folk using `piku` on vanilla `x64` Linux without any
 
 **A:** I use `dokku` daily, and for most of my personal stuff. But the `dokku` stack relies on a number of `x64` containers that need to be completely rebuilt for ARM, and when I decided I needed something like this (March 2016) that was barely possible - `docker` itself is not fully baked for ARM yet, and people are still trying to get `herokuish` and `buildstep` to build on ARM.
 
-[click]: http://click.poocoo.org
+[click]: http://click.pocoo.org
 [pi]: http://www.raspberrypi.org
 [dokku]: https://github.com/dokku/dokku
 [raspi-cluster]: https://github.com/rcarmo/raspi-cluster
