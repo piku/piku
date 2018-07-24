@@ -1,8 +1,10 @@
 # Installation
 
-> As of June 2018, these documents are being split off into distribution-specific files in the same folder. If you are running `piku` on specific Linux versions, feel free to contribute your own instructions.
+As of June 2018, these documents are being split off into distribution-specific files in the same folder. If you are running `piku` on specific Linux versions, feel free to contribute your own instructions.
 
-These installation notes should cover most Debian Linux variants (on any architecture). Very minor changes should be required to deploy on RHEL variants like CentOS, and there is specific emphasis on Raspbian because that's the typical deployment target.
+> Please use distro-specific instructions whenever possible, since there have been recent improvements in `uwsgi` packaging that greatly simplify installation. Also, `piku` now **requires Python 3**
+
+These generic installation notes should cover most Debian Linux variants (on any architecture). Very minor changes should be required to deploy on RHEL variants like CentOS, and there is specific emphasis on Raspbian because that's the typical deployment target.
 
 You can, however, run `piku` on any POSIX-like environment where you have Python, [uWSGI][uwsgi] and SSH.
 
@@ -39,16 +41,16 @@ Before running `piku` for the first time, you need to install the following Pyth
 ### Raspbian Jessie, Debian 8, Ubuntu 16.04
 
 ```bash
-sudo apt-get install git python-virtualenv python-pip
-sudo pip install -U click
+sudo apt-get install git python3-virtualenv python3-pip
+sudo pip3 install -U click
 ```
 
 ### Raspbian Wheezy
 
 ```bash
-sudo apt-get install git python2.7
-sudo easy_install -U pip
-sudo pip install -U click virtualenv
+sudo apt-get install git python3
+sudo easy_install3 -U pip3
+sudo pip3 install -U click virtualenv
 ```
 
 These may or may not be installed already (`click` usually isn't). For Raspbian Wheezy this is the preferred approach, since current `apt` packages are fairly outdated.
@@ -59,7 +61,7 @@ To set everthing up, type `python piku.py setup`:
 
 ```bash
 sudo su - piku
-python piku.py setup
+python3 piku.py setup
 
 Creating '/home/piku/.piku/apps'.
 Creating '/home/piku/.piku/repos'.
@@ -101,7 +103,7 @@ Copy the resulting `id_rsa.pub` (or equivalent, just make sure it's the _public_
 
 ```bash
 sudo su - piku
-python piku.py setup:ssh /tmp/id_rsa.pub
+python3 piku.py setup:ssh /tmp/id_rsa.pub
 
 Adding key '85:29:07:cb:de:ad:be:ef:42:65:00:c8:d2:6b:9e:ff'.
 ```
@@ -165,7 +167,7 @@ In Raspbian Jessie, Debian 8 and other `systemd` distributions where [uWSGI][uws
 ```bash
 # At the time of this writing, this installs uwsgi 2.0.7 on Raspbian Jessie.
 # You can also install uwsgi-plugins-all if you want to get runtime support for other languages
-sudo apt-get install uwsgi uwsgi-plugin-python
+sudo apt-get install uwsgi uwsgi-plugin-python3
 # refer to our executable using a link, in case there are more versions installed
 sudo ln -s `which uwsgi` /usr/local/bin/uwsgi-piku
 # disable the standard uwsgi startup script
@@ -200,7 +202,7 @@ sudo chmod +x /etc/init.d/uwsgi-piku
 sudo update-rc.d uwsgi-piku defaults
 sudo service uwsgi-piku start
 ```
-**Important Note:** Make sure you run `piku.py setup` as outlined above before starting the service.
+**Important Note:** Make sure you run `python3 piku.py setup` as outlined above before starting the service.
 
 ### Ubuntu 14.04 LTS
 
@@ -209,7 +211,7 @@ This is a mix of both the above, and should change soon when we get 16.04. If yo
 ```bash
 # At the time of this writing, this installs uwsgi 1.9.17 on Ubuntu 14.04 LTS.
 # You can also install uwsgi-plugins-all if you want to get runtime support for other languages
-sudo apt-get install uwsgi uwsgi-plugin-python
+sudo apt-get install uwsgi uwsgi-plugin-python3
 # refer to our executable using a link, in case there are more versions installed
 sudo ln -s `which uwsgi` /usr/local/bin/uwsgi-piku
 
