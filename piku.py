@@ -2,6 +2,12 @@
 
 "Piku Micro-PaaS"
 
+try:
+    from sys import version_info
+    assert version_info >= (3,5)
+except AssertionError:
+    exit("Piku requires Python 3.5 or above")
+
 from click import argument, command, group, get_current_context, option, secho as echo
 from collections import defaultdict, deque
 from datetime import datetime
@@ -272,8 +278,13 @@ def do_deploy(app, deltas={}):
             echo("Error: Invalid Procfile for app '%s'." % app, fg='red')
     else:
         echo("Error: app '%s' not found." % app, fg='red')
-        
-        
+
+
+def deploy_java(app, deltas={}):
+    """Deploy a Java application"""
+    raise NotImplemented
+
+
 def deploy_go(app, deltas={}):
     """Deploy a Go application"""
 
