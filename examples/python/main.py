@@ -24,4 +24,8 @@ def static(path):
 app = default_app()
 
 if __name__ == '__main__':
-    run(port=int(os.environ.get("PORT",8080)))
+    log.debug("Beginning run.")
+    HTTP_PORT = int(environ.get('PORT', 8000))
+    BIND_ADDRESS = environ.get('BIND_ADDRESS', '127.0.0.1')
+    DEBUG = 'true' == environ.get('DEBUG', 'false').lower()
+    run(host=BIND_ADDRESS, port=HTTP_PORT, debug=DEBUG)
