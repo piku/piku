@@ -12,8 +12,8 @@ Before installing `piku`, you need to install the following packages:
 # this also installs python3-click as a dependency
 sudo apt-get install -y build-essential certbot git incron \
     libjpeg-dev libxml2-dev libxslt1-dev zlib1g-dev nginx \
-    python-certbot-nginx python-dev python-pip \
-    python-virtualenv python3-dev python3-pip python3-virtualenv \
+    python-certbot-nginx python-dev python-pip python-virtualenv \
+    python3-dev python3-pip python3-click python3-virtualenv \
     uwsgi uwsgi-plugin-asyncio-python3 uwsgi-plugin-gevent-python \
     uwsgi-plugin-python uwsgi-plugin-python3 uwsgi-plugin-tornado-python
 ```
@@ -87,6 +87,9 @@ To detect configuration changes and tell `nginx` to activate new `piku` sites, w
 # replace `PAAS_USERNAME` with the username you created.
 /home/PAAS_USERNAME/.piku/nginx IN_MODIFY,IN_NO_LOOP /bin/systemctl reload nginx
 ```
-> This file was last updated on June 2018
+
+## Notes
+
+> This file was last updated on July 2018
 
 [uwsgi]: https://github.com/unbit/uwsgi
