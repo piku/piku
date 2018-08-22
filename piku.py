@@ -189,6 +189,7 @@ def parse_procfile(filename):
     # WSGI trumps regular web workers
     if 'wsgi' in workers:
         if 'web' in workers:
+            echo("Warning: found both 'wsgi' and 'web' workers, disabling 'web'")
             del(workers['web'])
     return workers 
 
@@ -408,8 +409,9 @@ def spawn_app(app, deltas={}):
 
     if 'web' in workers or 'wsgi' in workers:
         # Pick a port if none defined and we're not running under nginx
-        if 'PORT' not in env and 'NGINX_SERVER_NAME' not in env:
+        if 'PORT' not in env:
             env['PORT'] = str(get_free_port())
+            echo("-----> picking free port %s" % env['PORT'])
 
         # Safe default for bind address            
         if 'BIND_ADDRESS' not in env:
@@ -436,6 +438,8 @@ def spawn_app(app, deltas={}):
                     del env['PORT']
             else:
                 env['NGINX_SOCKET'] = "%(BIND_ADDRESS)s:%(PORT)s" % env 
+                echo("-----> nginx will look for app '%s' on %s" % (app, env['NGINX_SOCKET']))
+
         
             domain = env['NGINX_SERVER_NAME'].split()[0]       
             key, crt = [join(NGINX_ROOT,'%s.%s' % (app,x)) for x in ['key','crt']]
@@ -480,7 +484,7 @@ def spawn_app(app, deltas={}):
                     env['INTERNAL_NGINX_STATIC_MAPPINGS'] = ''
 
             buffer = expandvars(NGINX_TEMPLATE, env)
-            echo("-----> Setting up nginx for '%s:%s'" % (app, env['NGINX_SERVER_NAME']))
+            echo("-----> nginx will map app '%s' to hostname '%s'" % (app, env['NGINX_SERVER_NAME']))
             with open(join(NGINX_ROOT,"%s.conf" % app), "w") as h:
                 h.write(buffer)
 
@@ -512,7 +516,7 @@ def spawn_app(app, deltas={}):
         for w in v:
             enabled = join(UWSGI_ENABLED, '%s_%s.%d.ini' % (app, k, w))
             if not exists(enabled):
-                echo("-----> Spawning '%s:%s.%d'" % (app, k, w), fg='green')
+                echo("-----> spawning '%s:%s.%d'" % (app, k, w), fg='green')
                 spawn_worker(app, k, workers[k], env, w)
         
     # Remove unnecessary workers (leave logfiles)
@@ -520,7 +524,7 @@ def spawn_app(app, deltas={}):
         for w in v:
             enabled = join(UWSGI_ENABLED, '%s_%s.%d.ini' % (app, k, w))
             if exists(enabled):
-                echo("-----> Terminating '%s:%s.%d'" % (app, k, w), fg='yellow')
+                echo("-----> terminating '%s:%s.%d'" % (app, k, w), fg='yellow')
                 unlink(enabled)
     
 
@@ -581,23 +585,20 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         # If running under nginx, don't expose a port at all
         if 'NGINX_SERVER_NAME' in env:
             sock = join(NGINX_ROOT, "%s.sock" % app)
-            echo("-----> Binding uWSGI to %s" % sock , fg='yellow')
+            echo("-----> nginx will talk to uWSGI via %s" % sock , fg='yellow')
             settings.extend([
                 ('socket', sock),
                 ('chmod-socket', '664'),
             ])
         else:
-            echo("-----> Setting HTTP to listen on %(BIND_ADDRESS)s:%(PORT)s" % env, fg='yellow')
+            echo("-----> nginx will talk to uWSGI via %(BIND_ADDRESS)s:%(PORT)s" % env, fg='yellow')
             settings.extend([
                 ('http',        '%(BIND_ADDRESS)s:%(PORT)s' % env),
                 ('http-socket', '%(BIND_ADDRESS)s:%(PORT)s' % env),
             ])
     elif kind == 'web':
-        echo("-----> Setting HTTP to listen on %(BIND_ADDRESS)s:%(PORT)s" % env, fg='yellow')
-        settings.extend([
-            ('http',        '%(BIND_ADDRESS)s:%(PORT)s' % env),
-            ('http-socket', '%(BIND_ADDRESS)s:%(PORT)s' % env),
-        ])
+        echo("-----> nginx will talk to the 'web' process via %(BIND_ADDRESS)s:%(PORT)s" % env, fg='yellow')
+        settings.append(('attach-daemon', command))
     else:
         settings.append(('attach-daemon', command))
         
