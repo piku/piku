@@ -83,20 +83,7 @@ server {
   $INTERNAL_NGINX_STATIC_MAPPINGS
 
   location    / {
-    uwsgi_pass $APP;
-    uwsgi_param QUERY_STRING $query_string;
-    uwsgi_param REQUEST_METHOD $request_method;
-    uwsgi_param CONTENT_TYPE $content_type;
-    uwsgi_param CONTENT_LENGTH $content_length;
-    uwsgi_param REQUEST_URI $request_uri;
-    uwsgi_param PATH_INFO $document_uri;
-    uwsgi_param DOCUMENT_ROOT $document_root;
-    uwsgi_param SERVER_PROTOCOL $server_protocol;
-    uwsgi_param REMOTE_ADDR $remote_addr;
-    uwsgi_param REMOTE_PORT $remote_port;
-    uwsgi_param SERVER_ADDR $server_addr;
-    uwsgi_param SERVER_PORT $server_port;
-    uwsgi_param SERVER_NAME $server_name;
+    $INTERNAL_NGINX_UWSGI_SETTINGS
     proxy_http_version 1.1;
     proxy_set_header Upgrade $http_upgrade;
     proxy_set_header Connection "upgrade";
@@ -119,6 +106,23 @@ INTERNAL_NGINX_STATIC_MAPPING = """
       aio threads;
       alias %(path)s;
   }
+"""
+
+INTERNAL_NGINX_UWSGI_SETTINGS = """
+    uwsgi_pass $APP;
+    uwsgi_param QUERY_STRING $query_string;
+    uwsgi_param REQUEST_METHOD $request_method;
+    uwsgi_param CONTENT_TYPE $content_type;
+    uwsgi_param CONTENT_LENGTH $content_length;
+    uwsgi_param REQUEST_URI $request_uri;
+    uwsgi_param PATH_INFO $document_uri;
+    uwsgi_param DOCUMENT_ROOT $document_root;
+    uwsgi_param SERVER_PROTOCOL $server_protocol;
+    uwsgi_param REMOTE_ADDR $remote_addr;
+    uwsgi_param REMOTE_PORT $remote_port;
+    uwsgi_param SERVER_ADDR $server_addr;
+    uwsgi_param SERVER_PORT $server_port;
+    uwsgi_param SERVER_NAME $server_name;
 """
 
 # === Utility functions ===
@@ -431,8 +435,10 @@ def spawn_app(app, deltas={}):
                 'NGINX_ROOT': NGINX_ROOT,
             })
             
+            env['INTERNAL_NGINX_UWSGI_SETTINGS'] = 'proxy_pass http://%(BIND_ADDRESS)s:%(PORT)s;' % env
             if 'wsgi' in workers:
                 sock = join(NGINX_ROOT, "%s.sock" % app)
+                env['INTERNAL_NGINX_UWSGI_SETTINGS'] = INTERNAL_NGINX_UWSGI_SETTINGS
                 env['NGINX_SOCKET'] = env['BIND_ADDRESS'] = "unix://" + sock
                 if 'PORT' in env:
                     del env['PORT']
