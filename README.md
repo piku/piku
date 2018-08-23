@@ -22,8 +22,9 @@ From the bottom up:
 - [ ] Support Go deployments (in progress)
 - [ ] nginx SSL optimization/cypher suites, own certificates
 - [ ] Let's Encrypt support
+- [ ] Review deployment messages
 - [ ] Review docs/CLI command documentation
-- [ ] Change to Python 3 runtime as default, with `PYTHON_VERSION = 2` as fallback
+- [x] Change to Python 3 runtime as default, with `PYTHON_VERSION = 2` as fallback
 - [x] Run in Python 3 only
 - [x] (experimental) REPL in `feature/repl`
 - [x] Python 3 support through `PYTHON_VERSION = 3`
