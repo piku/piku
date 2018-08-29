@@ -541,12 +541,12 @@ def spawn_app(app, deltas={}):
                     echo("Error %s in static path spec: should be /url1:path1[,/url2:path2], ignoring." % e)
                     env['INTERNAL_NGINX_STATIC_MAPPINGS'] = ''
 
+            echo("-----> nginx will map app '%s' to hostname '%s'" % (app, env['NGINX_SERVER_NAME']))
             if('HTTPS_ONLY' in env):
                 buffer = expandvars(NGINX_HTTPS_ONLY_TEMPLATE, env)
-                echo("-----> nginx will redirect all requests to hostname '%s' to HTTPS" % (app, env['NGINX_SERVER_NAME']))
+                echo("-----> nginx will redirect all requests to hostname '%s' to HTTPS" % (env['NGINX_SERVER_NAME']))
             else:
                 buffer = expandvars(NGINX_TEMPLATE, env)
-            echo("-----> nginx will map app '%s' to hostname '%s'" % (app, env['NGINX_SERVER_NAME']))
             with open(join(NGINX_ROOT,"%s.conf" % app), "w") as h:
                 h.write(buffer)
 
