@@ -4,6 +4,28 @@
 
 `piku` setup is simplified in modern Debian versions, since it can take advantage of some packaging improvements in [uWSGI][uwsgi] and does not require a custom `systemd` service. However, Stretch still ships with Python 3.5, which means it's not an ideal environment for new deployments on both Intel and ARM devices.
 
+## Setting up your Raspberry Pi
+
+Download and install [Raspbian Stretch](https://www.raspberrypi.org/downloads/raspbian/) onto an SD card.
+
+After you install it is recommended that you do the following to update your installation to the latest available software.
+
+```bash
+# update apt-get
+sudo apt-get update
+
+# upgrade all software
+sudo apt-get upgrade
+```
+
+Configure your installation.  It is recommended that `Change Password` from the default and setup `Locale Options` (Locale and Timezone) and `EXPAND FILESYSTEM`.  You will also want to `Enable SSH`.
+```bash
+# configure your installation
+sudo raspi-config
+```
+
+At this point it is a good idea to `sudo shutdown -h now` and make a backup image of the card.
+
 ## Dependencies
 
 Before installing `piku`, you need to install the following packages:
@@ -19,7 +41,9 @@ sudo apt-get install -y build-essential certbot git incron \
 ```
 ## Setting up the `piku` user
 
-`piku` requires a separate user account to run. To create a new user with the right group membership (we're using the built-in `www-data` group because it's generally thought of as a less-privileged group), enter the following commands:
+`piku` requires a separate user account to run. To create a new user with the right group membership (we're using the built-in `www-data` group because it's generally thought of as a less-privileged group).  This user (`piku`) _is not supposed to login to your system_. Instead, you'll interact with `piku` via SSH, and set things up by using `su`.
+
+To create the `piku` user account, enter the following commands:
 
 ```bash
 # pick a username
@@ -28,7 +52,7 @@ export PAAS_USERNAME=piku
 sudo adduser --disabled-password --gecos 'PaaS access' --ingroup www-data $PAAS_USERNAME
 ```
 
-This user _is not supposed to login to your system_. Instead, you'll interact with `piku` via SSH, and set things up by using `su`:
+You will have to copy your ssh public key to the raspberry pi from your main system.  If you already have `ssh`d into your newly installed pi you can do the following:
 
 ```bash
 # copy your public key to /tmp (I'm assuming it's the first entry in authorized_keys)
@@ -53,7 +77,7 @@ Setting '/home/piku/piku.py' as executable.
 
 ## uWSGI Configuration
 
-[uWSGI][uwsgi] in Bionic requires very little configuration, since it is already properly packaged. All you need to do is place a link to the `piku` configuration file in `/etc/uwsgi/apps-enabled`:
+[uWSGI][uwsgi] in Bionic requires very little configuration, since it is already properly packaged. All you need to do is create a symlink to the `piku` configuration file in `/etc/uwsgi/apps-enabled`:
 
 ```bash
 sudo ln /home/$PAAS_USERNAME/.piku/uwsgi/uwsgi.ini /etc/uwsgi/apps-enabled/piku.ini
@@ -90,6 +114,6 @@ To detect configuration changes and tell `nginx` to activate new `piku` sites, w
 
 ## Notes
 
-> This file was last updated on July 2018
+> This file was last updated on September 2018
 
 [uwsgi]: https://github.com/unbit/uwsgi
