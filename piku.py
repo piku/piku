@@ -490,7 +490,7 @@ def spawn_app(app, deltas={}):
             env['INTERNAL_NGINX_UWSGI_SETTINGS'] = 'proxy_pass http://%(BIND_ADDRESS)s:%(PORT)s;' % env
             if 'wsgi' in workers:
                 sock = join(NGINX_ROOT, "%s.sock" % app)
-                env['INTERNAL_NGINX_UWSGI_SETTINGS'] = INTERNAL_NGINX_UWSGI_SETTINGS
+                env['INTERNAL_NGINX_UWSGI_SETTINGS'] = expandvars(INTERNAL_NGINX_UWSGI_SETTINGS, env)
                 env['NGINX_SOCKET'] = env['BIND_ADDRESS'] = "unix://" + sock
                 if 'PORT' in env:
                     del env['PORT']
