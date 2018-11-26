@@ -31,7 +31,6 @@ At this point it is a good idea to `sudo shutdown -h now` and make a backup imag
 Before installing `piku`, you need to install the following packages:
 
 ```bash
-# this also installs python3-click as a dependency
 sudo apt-get install -y build-essential certbot git incron \
     libjpeg-dev libxml2-dev libxslt1-dev zlib1g-dev nginx \
     python-certbot-nginx python-dev python-pip python-virtualenv \
@@ -114,6 +113,6 @@ To detect configuration changes and tell `nginx` to activate new `piku` sites, w
 
 ## Notes
 
-> This file was last updated on September 2018
+> This file was last updated on November 2018
 
 [uwsgi]: https://github.com/unbit/uwsgi

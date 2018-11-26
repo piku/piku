@@ -2,7 +2,9 @@
 
 As of June 2018, these documents are being split off into distribution-specific files in the same folder. If you are running `piku` on specific Linux versions, feel free to contribute your own instructions.
 
-> Please use distro-specific instructions whenever possible, since there have been recent improvements in `uwsgi` packaging that greatly simplify installation. Also, `piku` now **requires Python 3**
+> Please use distro-specific instructions whenever possible, since there have been recent improvements in `uwsgi` packaging that greatly simplify installation. 
+
+Also, `piku` now **requires Python 3**.
 
 These generic installation notes should cover most Debian Linux variants (on any architecture). Very minor changes should be required to deploy on RHEL variants like CentOS, and there is specific emphasis on Raspbian because that's the typical deployment target.
 
