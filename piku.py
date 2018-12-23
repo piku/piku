@@ -39,7 +39,7 @@ if 'sbin' not in environ['PATH']:
 # === Globals - all tweakable settings are here ===
 
 PIKU_ROOT = environ.get('PIKU_ROOT', join(environ['HOME'],'.piku'))
-
+PIKU_SCRIPT = realpath(__file__)
 APP_ROOT = abspath(join(PIKU_ROOT, "apps"))
 ENV_ROOT = abspath(join(PIKU_ROOT, "envs"))
 GIT_ROOT = abspath(join(PIKU_ROOT, "repos"))
@@ -1012,9 +1012,8 @@ def cmd_setup():
             h.write("{k:s} = {v:s}\n".format(**locals()))
 
     # mark this script as executable (in case we were invoked via interpreter)
-    this_script = realpath(__file__)
     if not(stat(this_script).st_mode & S_IXUSR):
-        echo("Setting '{}' as executable.".format(this_script), fg='yellow')
+        echo("Setting '{}' as executable.".format(PIKU_SCRIPT), fg='yellow')
         chmod(this_script, stat(this_script).st_mode | S_IXUSR)
 
 
@@ -1029,7 +1028,7 @@ def cmd_setup_ssh(public_key_file):
                 fingerprint = str(check_output('ssh-keygen -lf ' + key_file, shell=True)).split(' ', 4)[1]
                 key = open(key_file, 'r').read().strip()
                 echo("Adding key '%s'." % fingerprint, fg='white')
-                setup_authorized_keys(fingerprint, realpath(__file__), key)
+                setup_authorized_keys(fingerprint, PIKU_SCRIPT, key)
             except Exception as e:
                 echo("Error: invalid public key file '%s': %s" % (key_file, format_exc()), fg='red')
         elif '-' == public_key_file:
@@ -1098,11 +1097,10 @@ def cmd_git_receive_pack(app):
         makedirs(dirname(hook_path))
         # Initialize the repository with a hook to this script
         call("git init --quiet --bare " + app, cwd=GIT_ROOT, shell=True)
-        this_script = real_path(__file__)
         with open(hook_path, 'w') as h:
             h.write("""#!/usr/bin/env bash
 set -e; set -o pipefail;
-cat | PIKU_ROOT="{PIKU_ROOT:s}" {this_script:s} git-hook {app:s}""".format(**locals()))
+cat | PIKU_ROOT="{PIKU_ROOT:s}" {PIKU_SCRIPT:s} git-hook {app:s}""".format(**locals()))
         # Make the hook executable by our user
         chmod(hook_path, stat(hook_path).st_mode | S_IXUSR)
     # Handle the actual receive. We'll be called with 'git-hook' after it happens
