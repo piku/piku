@@ -762,7 +762,7 @@ def list_apps():
 
 @piku.command("config")
 @argument('app')
-def deploy_app(app):
+def cmd_config(app):
     """Show application configuration"""
     
     app = exit_if_invalid(app)
@@ -777,7 +777,7 @@ def deploy_app(app):
 @piku.command("config:get")
 @argument('app')
 @argument('setting')
-def deploy_app(app, setting):
+def cmd_config_get(app, setting):
     """Retrieve a configuration setting"""
     
     app = exit_if_invalid(app)
@@ -794,7 +794,7 @@ def deploy_app(app, setting):
 @piku.command("config:set")
 @argument('app')
 @argument('settings', nargs=-1)
-def deploy_app(app, settings):
+def cmd_config_set(app, settings):
     """Set a configuration setting"""
     
     app = exit_if_invalid(app)
@@ -816,7 +816,7 @@ def deploy_app(app, settings):
 @piku.command("config:unset")
 @argument('app')
 @argument('settings', nargs=-1)
-def deploy_app(app, settings):
+def cmd_config_unset(app, settings):
     """Set a configuration setting"""
     
     app = exit_if_invalid(app)
@@ -833,7 +833,7 @@ def deploy_app(app, settings):
 
 @piku.command("config:live")
 @argument('app')
-def deploy_app(app):
+def cmd_config_live(app):
     """Show live configuration settings"""
     
     app = exit_if_invalid(app)
@@ -847,7 +847,7 @@ def deploy_app(app):
 
 @piku.command("deploy")
 @argument('app')
-def deploy_app(app):
+def cmd_deploy(app):
     """Deploy an application"""
     
     app = exit_if_invalid(app)
@@ -856,7 +856,7 @@ def deploy_app(app):
 
 @piku.command("destroy")
 @argument('app')
-def destroy_app(app):
+def cmd_destroy(app):
     """Destroy an application"""
     
     app = exit_if_invalid(app)
@@ -882,7 +882,7 @@ def destroy_app(app):
     
 @piku.command("logs")
 @argument('app')
-def tail_logs(app):
+def cmd_logs(app):
     """Tail an application log"""
     
     app = exit_if_invalid(app)
@@ -897,7 +897,7 @@ def tail_logs(app):
 
 @piku.command("ps")
 @argument('app')
-def deploy_app(app):
+def cmd_ps(app):
     """Show application worker count"""
     
     app = exit_if_invalid(app)
@@ -912,7 +912,7 @@ def deploy_app(app):
 @piku.command("ps:scale")
 @argument('app')
 @argument('settings', nargs=-1)
-def deploy_app(app, settings):
+def cmd_ps_scale(app, settings):
     """Show application configuration"""
     
     app = exit_if_invalid(app)
@@ -940,7 +940,7 @@ def deploy_app(app, settings):
 @piku.command("run")
 @argument('app')
 @argument('cmd', nargs=-1)
-def deploy_app(app, cmd):
+def cmd_run(app, cmd):
     """Run a command inside the app, e.g.: ls -- -al"""
 
     app = exit_if_invalid(app)
@@ -955,7 +955,7 @@ def deploy_app(app, cmd):
 
 @piku.command("restart")
 @argument('app')
-def restart_app(app):
+def cmd_restart(app):
     """Restart an application"""
     
     app = exit_if_invalid(app)
@@ -972,7 +972,7 @@ def restart_app(app):
 
 
 @piku.command("setup")
-def init_paths():
+def cmd_setup():
     """Initialize environment"""
 
     echo("Running in Python %s" % ".".join(map(str,version_info)))
@@ -1010,7 +1010,7 @@ def init_paths():
 
 @piku.command("setup:ssh")
 @argument('public_key_file')
-def add_key(public_key_file):
+def cmd_setup_ssh(public_key_file):
     """Set up a new SSH key (use - for stdin)"""
 
     def add_helper(key_file):
@@ -1036,7 +1036,7 @@ def add_key(public_key_file):
 
 @piku.command("stop")
 @argument('app')
-def stop_app(app):
+def cmd_stop(app):
     """Stop an application"""
 
     app = exit_if_invalid(app)
@@ -1054,7 +1054,7 @@ def stop_app(app):
 
 @piku.command("git-hook")
 @argument('app')
-def git_hook(app):
+def cmd_git_hook(app):
     """INTERNAL: Post-receive git hook"""
     
     app = sanitize_app_name(app)
@@ -1078,7 +1078,7 @@ def git_hook(app):
 
 @piku.command("git-receive-pack")
 @argument('app')
-def receive(app):
+def cmd_git_receive_pack(app):
     """INTERNAL: Handle git pushes for an app"""
 
     app = sanitize_app_name(app)
