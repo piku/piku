@@ -211,7 +211,7 @@ def write_config(filename, bag, separator='='):
     
     with open(filename, 'w') as h:
         for k, v in bag.items():
-            h.write('%s%s%s\n' % (k,separator,str(v)))
+            h.write('{k:s}{separator:s}{v:s}\n'.format(**locals()))
 
 
 def setup_authorized_keys(ssh_fingerprint, script_path, pubkey):
@@ -353,7 +353,7 @@ def deploy_go(app, deltas={}):
         echo("-----> Creating GOPATH for '{}'".format(app), fg='green')
         makedirs(go_path)
         # copy across a pre-built GOPATH to save provisioning time 
-        call('cp -a $HOME/gopath %s' % app, cwd=ENV_ROOT, shell=True)
+        call('cp -a $HOME/gopath {}'.format(app), cwd=ENV_ROOT, shell=True)
         first_time = True
 
     if exists(deps):
@@ -1027,10 +1027,10 @@ def cmd_setup_ssh(public_key_file):
             try:
                 fingerprint = str(check_output('ssh-keygen -lf ' + key_file, shell=True)).split(' ', 4)[1]
                 key = open(key_file, 'r').read().strip()
-                echo("Adding key '%s'." % fingerprint, fg='white')
+                echo("Adding key '{}'.".format(fingerprint), fg='white')
                 setup_authorized_keys(fingerprint, PIKU_SCRIPT, key)
             except Exception as e:
-                echo("Error: invalid public key file '%s': %s" % (key_file, format_exc()), fg='red')
+                echo("Error: invalid public key file '{}': {}".format(key_file, format_exc()), fg='red')
         elif '-' == public_key_file:
             buffer = "".join(stdin.readlines())
             with NamedTemporaryFile(mode="w") as f:
@@ -1038,7 +1038,7 @@ def cmd_setup_ssh(public_key_file):
                 f.flush()
                 add_helper(f.name)
         else:
-            echo("Error: public key file '%s' not found." % key_file, fg='red')
+            echo("Error: public key file '{}' not found.".format(key_file), fg='red')
 
     add_helper(public_key_file)
 
@@ -1049,14 +1049,14 @@ def cmd_stop(app):
     """Stop an application"""
 
     app = exit_if_invalid(app)
-    config = glob(join(UWSGI_ENABLED, '%s*.ini' % app))
+    config = glob(join(UWSGI_ENABLED, '{}*.ini'.format(app)))
 
     if len(config):
-        echo("Stopping app '%s'..." % app, fg='yellow')
+        echo("Stopping app '{}'...".format(app), fg='yellow')
         for c in config:
             remove(c)
     else:
-        echo("Error: app '%s' not deployed!" % app, fg='red')
+        echo("Error: app '{}' not deployed!".format(app), fg='red')
         
         
 # --- Internal commands ---
@@ -1076,19 +1076,20 @@ def cmd_git_hook(app):
         if refname == "refs/heads/master":
             # Handle pushes to master branch
             if not exists(app_path):
-                echo("-----> Creating app '%s'" % app, fg='green')
+                echo("-----> Creating app '{}'".format(app), fg='green')
                 makedirs(app_path)
-                call('git clone --quiet %s %s' % (repo_path, app), cwd=APP_ROOT, shell=True)
+                call('git clone --quiet {} {}'.format(repo_path, app), cwd=APP_ROOT, shell=True)
             do_deploy(app)
         else:
             # TODO: Handle pushes to another branch
-            echo("receive-branch '%s': %s, %s" % (app, newrev, refname))
+            echo("receive-branch '{}': {}, {}".format(app, newrev, refname))
 
 
 @piku.command("git-receive-pack")
 @argument('app')
 def cmd_git_receive_pack(app):
     """INTERNAL: Handle git pushes for an app"""
+    global PIKU_ROOT
 
     app = sanitize_app_name(app)
     hook_path = join(GIT_ROOT, app, 'hooks', 'post-receive')
