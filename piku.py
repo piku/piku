@@ -49,6 +49,8 @@ UWSGI_AVAILABLE = abspath(join(PIKU_ROOT, "uwsgi-available"))
 UWSGI_ENABLED = abspath(join(PIKU_ROOT, "uwsgi-enabled"))
 UWSGI_ROOT = abspath(join(PIKU_ROOT, "uwsgi"))
 UWSGI_LOG_MAXSIZE = '1048576'
+
+# pylint: disable=anomalous-backslash-in-string
 NGINX_TEMPLATE = """
 upstream $APP {
   server $NGINX_SOCKET;
@@ -210,6 +212,7 @@ def write_config(filename, bag, separator='='):
     """Helper for writing out config files"""
     
     with open(filename, 'w') as h:
+        # pylint: disable=unused-variable
         for k, v in bag.items():
             h.write('{k:s}{separator:s}{v}\n'.format(**locals()))
 
@@ -339,7 +342,7 @@ def do_deploy(app, deltas={}):
 
 def deploy_java(app, deltas={}):
     """Deploy a Java application"""
-    raise NotImplemented
+    raise NotImplementedError
 
 
 def deploy_go(app, deltas={}):
@@ -407,6 +410,7 @@ def deploy_python(app, deltas={}):
         env.update(parse_settings(env_file, env))
 
     # TODO: improve version parsing
+    # pylint: disable=unused-variable
     version = int(env.get("PYTHON_VERSION", "3"))
 
     first_time = False
@@ -428,6 +432,7 @@ def deploy_python(app, deltas={}):
 def spawn_app(app, deltas={}):
     """Create all workers for an app"""
     
+    # pylint: disable=unused-variable
     app_path = join(APP_ROOT, app)
     procfile = join(app_path, 'Procfile')
     workers = parse_procfile(procfile)
@@ -519,9 +524,9 @@ def spawn_app(app, deltas={}):
             if env.get('NGINX_CLOUDFLARE_ACL', 'false').lower() == 'true':
                 try:
                     cf = loads(urlopen('https://api.cloudflare.com/client/v4/ips').read())
-                except Exception as e:
+                except Exception:
                     cf = defaultdict()
-                    echo("-----> Could not retrieve CloudFlare IP ranges: {}".format(e.text), fg="red")
+                    echo("-----> Could not retrieve CloudFlare IP ranges: {}".format(format_exc()), fg="red")
                 if cf['success'] == True:
                     for i in cf['result']['ipv4_cidrs']:
                         acl.append("allow {};".format(i))
@@ -603,6 +608,7 @@ def spawn_app(app, deltas={}):
 def spawn_worker(app, kind, command, env, ordinal=1):
     """Set up and deploy a single worker of a given kind"""
     
+    # pylint: disable=unused-variable
     env['PROC_TYPE'] = kind
     env_path = join(ENV_ROOT, app)
     available = join(UWSGI_AVAILABLE, '{app:s}_{kind:s}.{ordinal:d}.ini'.format(**locals()))
@@ -1009,6 +1015,7 @@ def cmd_setup():
     ]
     with open(join(UWSGI_ROOT,'uwsgi.ini'), 'w') as h:
         h.write('[uwsgi]\n')
+        # pylint: disable=unused-variable
         for k, v in settings:
             h.write("{k:s} = {v}\n".format(**locals()))
 
@@ -1030,7 +1037,7 @@ def cmd_setup_ssh(public_key_file):
                 key = open(key_file, 'r').read().strip()
                 echo("Adding key '{}'.".format(fingerprint), fg='white')
                 setup_authorized_keys(fingerprint, PIKU_SCRIPT, key)
-            except Exception as e:
+            except Exception:
                 echo("Error: invalid public key file '{}': {}".format(key_file, format_exc()), fg='red')
         elif '-' == public_key_file:
             buffer = "".join(stdin.readlines())
@@ -1072,6 +1079,7 @@ def cmd_git_hook(app):
     app_path = join(APP_ROOT, app)
     
     for line in stdin:
+        # pylint: disable=unused-variable
         oldrev, newrev, refname = line.strip().split(" ")
         #echo("refs:", oldrev, newrev, refname)
         if refname == "refs/heads/master":
