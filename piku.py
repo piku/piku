@@ -211,7 +211,7 @@ def write_config(filename, bag, separator='='):
     
     with open(filename, 'w') as h:
         for k, v in bag.items():
-            h.write('{k:s}{separator:s}{v:s}\n'.format(**locals()))
+            h.write('{k:s}{separator:s}{v}\n'.format(**locals()))
 
 
 def setup_authorized_keys(ssh_fingerprint, script_path, pubkey):
@@ -451,7 +451,7 @@ def spawn_app(app, deltas={}):
         'LOG_ROOT': LOG_ROOT,
         'HOME': environ['HOME'],
         'USER': environ['USER'],
-        'PATH': environ['PATH'],
+        'PATH': ':'.join([join(virtualenv_path,'bin'),environ['PATH']]),
         'PWD': dirname(env_file),
         'VIRTUAL_ENV': virtualenv_path,
     }
@@ -471,15 +471,15 @@ def spawn_app(app, deltas={}):
         env.update(parse_settings(settings, env))
 
     if 'web' in workers or 'wsgi' in workers:
-        # Pick a port if none defined and we're not running under nginx
+        # Pick a port if none defined
         if 'PORT' not in env:
             env['PORT'] = str(get_free_port())
-            echo("-----> picking free port {PORT:s}".format(**env))
+            echo("-----> picking free port {PORT}".format(**env))
 
         # Safe defaults for addressing     
         for k, v in safe_defaults.items():
             if k not in env:
-                echo("-----> nginx {k:s} set to {v:s}".format(**locals()))
+                echo("-----> nginx {k:s} set to {v}".format(**locals()))
                 env[k] = v
                 
         # Set up nginx if we have NGINX_SERVER_NAME set
@@ -496,7 +496,8 @@ def spawn_app(app, deltas={}):
                 'NGINX_ROOT': NGINX_ROOT,
             })
             
-            env['INTERNAL_NGINX_UWSGI_SETTINGS'] = 'proxy_pass http://{BIND_ADDRESS:s}:}{PORT:s};'.format(**env)
+            # default to reverse proxying to the TCP port we picked
+            env['INTERNAL_NGINX_UWSGI_SETTINGS'] = 'proxy_pass http://{BIND_ADDRESS:s}:{PORT:s};'.format(**env)
             if 'wsgi' in workers:
                 sock = join(NGINX_ROOT, "{}.sock".format(app))
                 env['INTERNAL_NGINX_UWSGI_SETTINGS'] = expandvars(INTERNAL_NGINX_UWSGI_SETTINGS, env)
@@ -683,12 +684,12 @@ def spawn_worker(app, kind, command, env, ordinal=1):
             del env[k]
     
     for k, v in env.items():
-        settings.append(('env', '{k:s}={v:s}'.format(**locals())))
+        settings.append(('env', '{k:s}={v}'.format(**locals())))
 
     with open(available, 'w') as h:
         h.write('[uwsgi]\n')
         for k, v in settings:
-            h.write("{k:s} = {v:s}\n".format(**locals()))
+            h.write("{k:s} = {v}\n".format(**locals()))
     
     copyfile(available, enabled)
 
@@ -815,7 +816,7 @@ def cmd_config_set(app, settings):
         try:
             k, v = map(lambda x: x.strip(), s.split("=", 1))
             env[k] = v
-            echo("Setting {k:s}={v:s} for '{app:s}'".format(**locals()), fg='white')
+            echo("Setting {k:s}={v} for '{app:s}'".format(**locals()), fg='white')
         except:
             echo("Error: malformed setting '{}'".format(s), fg='red')
             return
@@ -1009,7 +1010,7 @@ def cmd_setup():
     with open(join(UWSGI_ROOT,'uwsgi.ini'), 'w') as h:
         h.write('[uwsgi]\n')
         for k, v in settings:
-            h.write("{k:s} = {v:s}\n".format(**locals()))
+            h.write("{k:s} = {v}\n".format(**locals()))
 
     # mark this script as executable (in case we were invoked via interpreter)
     if not(stat(PIKU_SCRIPT).st_mode & S_IXUSR):
@@ -1093,7 +1094,7 @@ def cmd_git_receive_pack(app):
     app = sanitize_app_name(app)
     hook_path = join(GIT_ROOT, app, 'hooks', 'post-receive')
     env = globals()
-    env.extend(locals())
+    env.update(locals())
 
     if not exists(hook_path):
         makedirs(dirname(hook_path))
@@ -1102,7 +1103,7 @@ def cmd_git_receive_pack(app):
         with open(hook_path, 'w') as h:
             h.write("""#!/usr/bin/env bash
 set -e; set -o pipefail;
-cat | PIKU_ROOT="{PIKU_ROOT:s}" {PIKU_SCRIPT:s} git-hook {app:s}""".format(**env)
+cat | PIKU_ROOT="{PIKU_ROOT:s}" {PIKU_SCRIPT:s} git-hook {app:s}""".format(**env))
         # Make the hook executable by our user
         chmod(hook_path, stat(hook_path).st_mode | S_IXUSR)
     # Handle the actual receive. We'll be called with 'git-hook' after it happens
