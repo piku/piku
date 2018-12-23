@@ -1012,9 +1012,9 @@ def cmd_setup():
             h.write("{k:s} = {v:s}\n".format(**locals()))
 
     # mark this script as executable (in case we were invoked via interpreter)
-    if not(stat(this_script).st_mode & S_IXUSR):
+    if not(stat(PIKU_SCRIPT).st_mode & S_IXUSR):
         echo("Setting '{}' as executable.".format(PIKU_SCRIPT), fg='yellow')
-        chmod(this_script, stat(this_script).st_mode | S_IXUSR)
+        chmod(PIKU_SCRIPT, stat(PIKU_SCRIPT).st_mode | S_IXUSR)
 
 
 @piku.command("setup:ssh")
