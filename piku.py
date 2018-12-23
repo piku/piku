@@ -150,6 +150,7 @@ server {
  }
 }
 """
+# pylint: enable=anomalous-backslash-in-string
 
 INTERNAL_NGINX_STATIC_MAPPING = """
   location {static_url:s} {
