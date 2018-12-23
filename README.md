@@ -24,7 +24,7 @@ From the bottom up:
 - [ ] Let's Encrypt support
 - [ ] Review deployment messages
 - [ ] Review docs/CLI command documentation
-- [x] Allow setting`nginx` IP bindings in `ENV` file (`NGINX_IPV4_ADDRESS` and `NGINX_IPV6_ADDRESS`)
+- [x] Allow setting `nginx` IP bindings in `ENV` file (`NGINX_IPV4_ADDRESS` and `NGINX_IPV6_ADDRESS`)
 - [x] Cleanups to remove 2.7 syntax internally
 - [x] Change to Python 3 runtime as default, with `PYTHON_VERSION = 2` as fallback
 - [x] Run in Python 3 only
