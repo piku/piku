@@ -1089,10 +1089,11 @@ def cmd_git_hook(app):
 @argument('app')
 def cmd_git_receive_pack(app):
     """INTERNAL: Handle git pushes for an app"""
-    global PIKU_ROOT
 
     app = sanitize_app_name(app)
     hook_path = join(GIT_ROOT, app, 'hooks', 'post-receive')
+    env = globals()
+    env.extend(locals())
 
     if not exists(hook_path):
         makedirs(dirname(hook_path))
@@ -1101,7 +1102,7 @@ def cmd_git_receive_pack(app):
         with open(hook_path, 'w') as h:
             h.write("""#!/usr/bin/env bash
 set -e; set -o pipefail;
-cat | PIKU_ROOT="{PIKU_ROOT:s}" {PIKU_SCRIPT:s} git-hook {app:s}""".format(**locals()))
+cat | PIKU_ROOT="{PIKU_ROOT:s}" {PIKU_SCRIPT:s} git-hook {app:s}""".format(**env)
         # Make the hook executable by our user
         chmod(hook_path, stat(hook_path).st_mode | S_IXUSR)
     # Handle the actual receive. We'll be called with 'git-hook' after it happens
