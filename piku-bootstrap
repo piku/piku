@@ -49,6 +49,13 @@ main() {
 ---
 - hosts: all
   user: root
+  gather_facts: no
+  pre_tasks:
+    - name: 'Install python2 required by Ansible'
+      raw: apt-get update && apt-get -y install python python-pip python-setuptools
+
+- hosts: all
+  user: root
   tasks:
     - name: Add piku user
       user:
