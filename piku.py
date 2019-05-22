@@ -1055,7 +1055,7 @@ def cmd_setup_ssh(public_key_file):
 @piku.command("stop")
 @argument('app')
 def cmd_stop(app):
-    """Stop an application"""
+    """Stop an app, e.g: piku stop <app>"""
 
     app = exit_if_invalid(app)
     config = glob(join(UWSGI_ENABLED, '{}*.ini'.format(app)))
