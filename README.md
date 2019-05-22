@@ -23,7 +23,7 @@ From the bottom up:
 - [ ] nginx SSL optimization/cypher suites, own certificates
 - [ ] Let's Encrypt support
 - [ ] Review deployment messages
-- [ ] Review docs/CLI command documentation
+- [ ] WIP: Review docs/CLI command documentation (short descriptions done, need `help <cmd>` and better descriptions)
 - [x] Allow setting `nginx` IP bindings in `ENV` file (`NGINX_IPV4_ADDRESS` and `NGINX_IPV6_ADDRESS`)
 - [x] Cleanups to remove 2.7 syntax internally
 - [x] Change to Python 3 runtime as default, with `PYTHON_VERSION = 2` as fallback
