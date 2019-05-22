@@ -116,6 +116,14 @@ main() {
         state: started
       when: packages_installed is changed
 
+    - name: Create piku ansible tmp dir
+      file:
+        path: ~piku/.ansible/tmp
+        mode: 0700
+        owner: piku
+        group: www-data
+        state: directory
+
 - hosts: all
   user: root
   become: yes
