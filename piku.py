@@ -931,7 +931,7 @@ def cmd_ps(app):
 @argument('app')
 @argument('settings', nargs=-1)
 def cmd_ps_scale(app, settings):
-    """e.g.: piku ps:scale <app> <process_name>=<number>"""
+    """e.g.: piku ps:scale <app> <proc>=<count>"""
     
     app = exit_if_invalid(app)
 
