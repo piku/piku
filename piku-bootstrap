@@ -10,6 +10,14 @@ VENV="${PBD}/virtualenv"
 VIRTUALENV_VERSION="16.0.0"
 
 main() {
+  # print a message if this is a first time run
+  if [ ! -d "${PBD}" ]; then
+    echo "piku-bootstrap - welcome!"
+    echo "Looks like this is your first time running this."
+    echo "This script will self-install dependencies into ${PBD} now."
+    echo
+  fi
+
   # ensure we have a dir
   mkdir -p "${PBD}"
 
@@ -31,6 +39,9 @@ main() {
   if [ "$1" = "" ]
   then
     echo "`basename $0` HOSTNAME"
+    echo "This will create a user 'piku' on the machine HOSTNAME"
+    echo "setup git, and install the piku script there."
+    echo "Requires root on HOSTNAME."
   else
     echo "Bootstrapping piku onto $1"
     ansible-playbook -i "$1", /dev/stdin << EOF
