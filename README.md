@@ -8,7 +8,7 @@ I kept finding myself wanting an Heroku/CloudFoundry-like way to deploy stuff on
 
 ## Project Status/To Do:
 
-This is currently being used for production deployments of http://taoofmac.com and a few other projects of mine. Regardless, there is still room for improvement:
+This is currently being used for production deployments of [my website](https://taoofmac.com) and a few other projects of mine that run on Azure and other IaaS providers. Regardless, there is still room for improvement:
 
 From the bottom up:
 
@@ -77,15 +77,15 @@ This is an illustrated example of how `piku` works for a Python deployment:
 `piku` is intended to work in any POSIX-like environment where you have Python, [uWSGI][uwsgi] and SSH, i.e.: 
 Linux, FreeBSD, [Cygwin][cygwin] and the [Windows Subsystem for Linux][wsl].
 
-As a baseline, this is currently being developed on an original, 256MB Rasbperry Pi Model B.
+As a baseline, it began its development on an original, 256MB Rasbperry Pi Model B, and still runs reliably on it.
 
-Since I have an ODROID-U2, [a bunch of Pi 2s][raspi-cluster] and a few more ARM boards on the way, it will be tested on a number of places where running `x64` binaries is unfeasible.
+Since I have an ODROID-U2, [a bunch of Pi 2s][raspi-cluster] and a few more ARM boards on the way, it is often tested on a number of places where running `x64` binaries is unfeasible.
 
 But there are already a few folk using `piku` on vanilla `x64` Linux without any issues whatsoever, so yes, you can use it as a micro-PaaS for 'real' stuff. Your mileage may vary.
 
 ## Supported Runtimes
 
-`piku` will support deploying apps written in Python, Go, Clojure (Java) and Node (see [above](#project-statustodo)).
+`piku` currently supports deploying apps (and dependencies) written in Python, with Go, Clojure (Java) and Node (see [above](#project-statustodo)) in the works. But if it can be invoked from a shell, it can be run inside `piku`.
 
 ## FAQ
 
@@ -97,13 +97,15 @@ But there are already a few folk using `piku` on vanilla `x64` Linux without any
 
 **A:** I actually thought about doing this in Go right off the bat, but [click][click] is so cool and I needed to have [uWSGI][uwsgi] running anyway, so I caved in. But I'm very likely to take something like [suture](https://github.com/thejerf/suture) and port this across, doing away with [uWSGI][uwsgi] altogether.
 
+Go also (at the time) did not have a way to vendor dependencies that I was comfortable with, and that is also why Go support fell behind. Hopefully that will change soon.
+
 **Q:** Does it run under Python 3?
 
-**A:** It should. `click` goes a long way towards abstracting the simpler stuff, and I tried to avoid most obvious incompatibilities (other than a few differences in `subprocess.call` and the like). However, this targets Python 2.7 first, since that's the default on Raspbian. Pull requests are welcome.
+**A:** Right now, it _only_ runs on Python 3, even though it can deploy apps written in both major versions. It began its development using 2.7 and using`click` for abstracting the simpler stuff, and I eventually switched over to 3.5 once it was supported in Debian Stretch and Raspbian since I wanted to make installing it on the Raspberry Pi as simple as possible.
 
 **Q:** Why not just use `dokku`?
 
-**A:** I use `dokku` daily, and for most of my personal stuff. But the `dokku` stack relies on a number of `x64` containers that need to be completely rebuilt for ARM, and when I decided I needed something like this (March 2016) that was barely possible - `docker` itself is not fully baked for ARM yet, and people are still trying to get `herokuish` and `buildstep` to build on ARM.
+**A:** I used `dokku` daily for most of my personal stuff for a good while. But it relied on a number of `x64` containers that needed to be completely rebuilt for ARM, and when I decided I needed something like this (March 2016) that was barely possible - `docker` itself was not fully baked for ARM yet, and people were at the time trying to get `herokuish` and `buildstep` to build on ARM.
 
 [click]: http://click.pocoo.org
 [pi]: http://www.raspberrypi.org
