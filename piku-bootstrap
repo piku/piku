@@ -44,6 +44,7 @@ main() {
     echo "Requires root on HOSTNAME."
   else
     echo "Bootstrapping piku onto $1"
+    # TODO: use pyenv + virtualenv on remote instead and install exact versions
     ansible-playbook -i "$1", /dev/stdin << EOF
 ---
 - hosts: all
@@ -56,27 +57,64 @@ main() {
         comment: PaaS access
         group: www-data
 
-    #- name: Add current user's SSH key
-    #  authorized_key:
-    #    user: piku
-    #    state: present
-    #    key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
-    #    # key_options: "command="FINGERPRINT=85:29:07:cb:de:ad:be:ef:42:65:00:c8:d2:6b:9e:ff NAME=default /home/piku/piku.py $SSH_ORIGINAL_COMMAND",no-agent-forwarding,no-user-rc,no-X11-forwarding,no-port-forwarding"
-
     - name: Install Debian Packages
       apt:
         pkg: ['git', 'build-essential', 'libpcre3-dev', 'zlib1g-dev', 'python', 'python3', 'python3-pip', 'python3-dev']  #, 'python-dev', 'python3', 'python3-virtualenv', 'python3-pip']
         update_cache: true
         state: present
-    
+
     - name: Install Python packages
       pip:
         executable: pip3
-        name: ['click', 'virtualenv']
+        name: ['click==7.0', 'virtualenv==15.1.0', 'uwsgi==2.0.15']
+      register: packages_installed
+
+    - shell: which uwsgi
+      register: uwsgi_location
+      when: packages_installed is changed
+
+    - name: Create uwsi symlink
+      file:
+        src: "{{uwsgi_location.stdout}}"
+        dest: /usr/local/bin/uwsgi-piku
+        owner: root
+        group: root
+        state: link
+      when: packages_installed is changed
+
+    - name: Install uwsgi dist script
+      get_url:
+        url: https://raw.githubusercontent.com/rcarmo/piku/master/uwsgi-piku.dist
+        dest: /etc/init.d/uwsgi-piku
+        mode: 0700
+      when: packages_installed is changed
+
+    - name: Setup uwsgi dist script
+      shell: update-rc.d uwsgi-piku defaults
+      args:
+        creates: /etc/rc2.d/S01uwsgi-piku
+      when: packages_installed is changed
+
+    - name: Install uwsgi systemd script
+      get_url:
+        url: https://raw.githubusercontent.com/rcarmo/piku/master/uwsgi-piku.service
+        dest: /etc/systemd/system/uwsgi-piku.service
+        mode: 0600
+      when: packages_installed is changed
+
+    - name: Start uwsgi service
+      service:
+        name: uwsgi-piku
+        state: started
+      when: packages_installed is changed
 
 - hosts: all
-  user: piku
+  user: root
+  become: yes
+  become_user: piku
   tasks:
+    ### TODO: use pyenv like this instead
+
     #- name: Download pyenv installer
     #  get_url:
     #    url: https://pyenv.run
@@ -109,7 +147,9 @@ main() {
       copy: src=~/.ssh/id_rsa.pub dest=/tmp/id_rsa.pub
 
     - name: Ask piku to use SSH key
-      shell: python3 piku.py setup:ssh /tmp/id_rsa.pub
+      shell: python3 ~/piku.py setup:ssh /tmp/id_rsa.pub
+      args:
+        creates: ~/.ssh/authorized_keys
 
 EOF
   fi
@@ -121,6 +161,7 @@ bail_install() {
 }
 
 ensure_virtualenv() {
+  # TODO: use local virtualenv instead if `command -v virtualenv` succeeds
   [ -d "${PBD}/virtualenv" ] || (\
       [ -f "./.virtualenv-source/virtualenv.py" ] || install_virtualenv;
       echo "Setting up the virtual environment." && \
