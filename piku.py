@@ -150,6 +150,7 @@ server {
  }
 }
 """
+# pylint: enable=anomalous-backslash-in-string
 
 INTERNAL_NGINX_STATIC_MAPPING = """
   location {static_url:s} {
@@ -771,7 +772,7 @@ def cleanup(ctx):
 
 @piku.command("apps")
 def list_apps():
-    """List applications"""
+    """List apps, e.g.: piku apps"""
     
     for a in listdir(APP_ROOT):
         echo(a, fg='green')
@@ -780,7 +781,7 @@ def list_apps():
 @piku.command("config")
 @argument('app')
 def cmd_config(app):
-    """Show application configuration"""
+    """Show config, e.g.: piku config <app>"""
     
     app = exit_if_invalid(app)
     
@@ -795,7 +796,7 @@ def cmd_config(app):
 @argument('app')
 @argument('setting')
 def cmd_config_get(app, setting):
-    """Retrieve a configuration setting"""
+    """e.g.: piku config:get <app> FOO"""
     
     app = exit_if_invalid(app)
     
@@ -812,7 +813,7 @@ def cmd_config_get(app, setting):
 @argument('app')
 @argument('settings', nargs=-1)
 def cmd_config_set(app, settings):
-    """Set a configuration setting"""
+    """e.g.: piku config:set <app> FOO=bar BAZ=quux"""
     
     app = exit_if_invalid(app)
     
@@ -834,7 +835,7 @@ def cmd_config_set(app, settings):
 @argument('app')
 @argument('settings', nargs=-1)
 def cmd_config_unset(app, settings):
-    """Set a configuration setting"""
+    """e.g.: piku config:unset <app> FOO"""
     
     app = exit_if_invalid(app)
     
@@ -851,7 +852,7 @@ def cmd_config_unset(app, settings):
 @piku.command("config:live")
 @argument('app')
 def cmd_config_live(app):
-    """Show live configuration settings"""
+    """e.g.: piku config:live <app>"""
     
     app = exit_if_invalid(app)
 
@@ -865,7 +866,7 @@ def cmd_config_live(app):
 @piku.command("deploy")
 @argument('app')
 def cmd_deploy(app):
-    """Deploy an application"""
+    """e.g.: piku deploy <app>"""
     
     app = exit_if_invalid(app)
     do_deploy(app)
@@ -874,7 +875,7 @@ def cmd_deploy(app):
 @piku.command("destroy")
 @argument('app')
 def cmd_destroy(app):
-    """Destroy an application"""
+    """e.g.: piku destroy <app>"""
     
     app = exit_if_invalid(app)
     
@@ -900,7 +901,7 @@ def cmd_destroy(app):
 @piku.command("logs")
 @argument('app')
 def cmd_logs(app):
-    """Tail an application log"""
+    """Tail running logs, e.g: piku logs <app>"""
     
     app = exit_if_invalid(app)
 
@@ -915,7 +916,7 @@ def cmd_logs(app):
 @piku.command("ps")
 @argument('app')
 def cmd_ps(app):
-    """Show application worker count"""
+    """Show process count, e.g: piku ps <app>"""
     
     app = exit_if_invalid(app)
 
@@ -930,7 +931,7 @@ def cmd_ps(app):
 @argument('app')
 @argument('settings', nargs=-1)
 def cmd_ps_scale(app, settings):
-    """Show application configuration"""
+    """e.g.: piku ps:scale <app> <proc>=<count>"""
     
     app = exit_if_invalid(app)
 
@@ -958,7 +959,7 @@ def cmd_ps_scale(app, settings):
 @argument('app')
 @argument('cmd', nargs=-1)
 def cmd_run(app, cmd):
-    """Run a command inside the app, e.g.: ls -- -al"""
+    """e.g.: piku run <app> ls -- -al"""
 
     app = exit_if_invalid(app)
 
@@ -973,7 +974,7 @@ def cmd_run(app, cmd):
 @piku.command("restart")
 @argument('app')
 def cmd_restart(app):
-    """Restart an application"""
+    """Restart an app: piku restart <app>"""
     
     app = exit_if_invalid(app)
     
@@ -1054,7 +1055,7 @@ def cmd_setup_ssh(public_key_file):
 @piku.command("stop")
 @argument('app')
 def cmd_stop(app):
-    """Stop an application"""
+    """Stop an app, e.g: piku stop <app>"""
 
     app = exit_if_invalid(app)
     config = glob(join(UWSGI_ENABLED, '{}*.ini'.format(app)))
