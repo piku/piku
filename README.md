@@ -2,7 +2,10 @@
 
 The tiniest Heroku/CloudFoundry-like PaaS you've ever seen, inspired by [dokku][dokku].
 
-[![asciicast](https://asciinema.org/a/Ar31IoTkzsZmWWvlJll6p7haS.svg)](https://asciinema.org/a/Ar31IoTkzsZmWWvlJll6p7haS)
+<p align="center">
+    <img src="https://github.com/rcarmo/piku/blob/master/img/demo.svg?raw=true">
+</p>
+
 
 ## Motivation
 
