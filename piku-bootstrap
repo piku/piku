@@ -1,0 +1,105 @@
+#!/bin/sh
+
+# Usage:
+# To bootstrap your machine called mybox.com with piku
+# 
+# ./piku-bootstrap mybox.com
+
+PBD=${PIKU_BOOTSTRAP_DIR:-~/.piku-bootstrap}
+VENV="${PBD}/virtualenv"
+VIRTUALENV_VERSION="16.0.0"
+
+main() {
+  # ensure we have a dir
+  mkdir -p "${PBD}"
+
+  if [ ! -d "$VENV" ]; then
+    echo "Virtualenv setup not found. Installing it into ${PBD}."
+    ensure_virtualenv
+  fi
+
+  # get into virtualenv
+  . "$VENV/bin/activate"
+
+  # ensure ansible
+  if [ "`command -v ansible-playbook`" = "" ]
+  then
+    echo "ansible-playbook binary not found. Installing it into ${PBD}."
+    pip install -q "ansible==2.7.10"
+  fi
+
+  if [ "$1" = "" ]
+  then
+    echo "`basename $0` HOSTNAME"
+  else
+    echo "Bootstrapping piku onto $1"
+    ansible-playbook -i "$1", /dev/stdin << EOF
+---
+- hosts: all
+  user: root
+  tasks:
+    - name: Add piku user
+      user:
+        name: piku
+        password: !
+        comment: PaaS access
+        group: www-data
+
+    - name: Fetch piku.py script
+      get_url:
+        url: https://raw.githubusercontent.com/rcarmo/piku/master/piku.py
+        dest: ~/piku.py
+        mode: 0700
+
+    - name: Add current user's SSH key
+      authorized_key:
+        user: piku
+        state: present
+        key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+
+    - name: Install Debian Packages
+      apt: pkg={{item}} state=installed
+      with_items:
+        - git
+        - python3
+        - build-essential
+        - python-dev
+        - libpcre3-dev
+
+#- hosts: all
+#  user: piku
+#  tasks:
+#    - name: Install pyenv
+#      shell: curl https://pyenv.run | bash
+
+EOF
+  fi
+}
+
+bail_install() {
+    error "Self-installation failed."
+    exit 1;
+}
+
+ensure_virtualenv() {
+  [ -f "${PBD}/virtualenv-source/virtualenv.py" ] || install_virtualenv;
+  [ -d "${PBD}/virtualenv" ] || (\
+      echo "Setting up the virtual environment." && \
+      ${PBD}/virtualenv-source/virtualenv.py -p python "${PBD}/virtualenv" || exit 1)
+}
+
+install_virtualenv() {
+  VIRTUALENV_URL="https://pypi.io/packages/source/v/virtualenv/virtualenv-${VIRTUALENV_VERSION}.tar.gz"
+  echo "Downloading & installing Virtualenv."
+  rm -rf "${PBD}/virtualenv-source"
+  mkdir -p "${PBD}/virtualenv-source"
+  [ -f "${PBD}/virtualenv.tar.gz" ] || curl -f -L -o "${PBD}/virtualenv.tar.gz" "${VIRTUALENV_URL}" || bail_install
+  tar -zxf $PBD/virtualenv.tar.gz -C "${PBD}/virtualenv-source/" --strip-components=1 && \
+  # mv "${PBD}/virtualenv-source/virtualenv-*/*" "${PBD}/virtualenv-source"
+  [ -d "${PBD}/virtualenv-source" ] && (\
+          cd "${PBD}/virtualenv-source" && \
+          /usr/bin/env python setup.py build ) \
+          || bail_install;
+}
+
+main "$1"
