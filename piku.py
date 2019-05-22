@@ -772,7 +772,7 @@ def cleanup(ctx):
 
 @piku.command("apps")
 def list_apps():
-    """List applications"""
+    """List applications, e.g.: piku apps"""
     
     for a in listdir(APP_ROOT):
         echo(a, fg='green')
@@ -781,7 +781,7 @@ def list_apps():
 @piku.command("config")
 @argument('app')
 def cmd_config(app):
-    """Show application configuration"""
+    """Show application configuration, e.g.: piku config <app>"""
     
     app = exit_if_invalid(app)
     
@@ -796,7 +796,7 @@ def cmd_config(app):
 @argument('app')
 @argument('setting')
 def cmd_config_get(app, setting):
-    """Retrieve a configuration setting"""
+    """Retrieve a configuration setting, e.g.: piku config:get <app> FOO"""
     
     app = exit_if_invalid(app)
     
@@ -813,7 +813,7 @@ def cmd_config_get(app, setting):
 @argument('app')
 @argument('settings', nargs=-1)
 def cmd_config_set(app, settings):
-    """Set a configuration setting"""
+    """Set a configuration setting, e.g.: piku config:set <app> FOO=bar BAZ=quux"""
     
     app = exit_if_invalid(app)
     
@@ -835,7 +835,7 @@ def cmd_config_set(app, settings):
 @argument('app')
 @argument('settings', nargs=-1)
 def cmd_config_unset(app, settings):
-    """Set a configuration setting"""
+    """Remove a configuration setting, e.g.: piku config:unset <app> FOO"""
     
     app = exit_if_invalid(app)
     
@@ -852,7 +852,7 @@ def cmd_config_unset(app, settings):
 @piku.command("config:live")
 @argument('app')
 def cmd_config_live(app):
-    """Show live configuration settings"""
+    """Show live configuration settings, e.g.: piku config:live <app>"""
     
     app = exit_if_invalid(app)
 
@@ -866,7 +866,7 @@ def cmd_config_live(app):
 @piku.command("deploy")
 @argument('app')
 def cmd_deploy(app):
-    """Deploy an application"""
+    """Deploy an application, e.g.: piku deploy <app>"""
     
     app = exit_if_invalid(app)
     do_deploy(app)
@@ -875,7 +875,7 @@ def cmd_deploy(app):
 @piku.command("destroy")
 @argument('app')
 def cmd_destroy(app):
-    """Destroy an application"""
+    """Destroy an application, e.g.: piku destroy <app>"""
     
     app = exit_if_invalid(app)
     
@@ -901,7 +901,7 @@ def cmd_destroy(app):
 @piku.command("logs")
 @argument('app')
 def cmd_logs(app):
-    """Tail an application log"""
+    """Tail application logs for all processes, e.g: piku logs <app>"""
     
     app = exit_if_invalid(app)
 
@@ -916,7 +916,7 @@ def cmd_logs(app):
 @piku.command("ps")
 @argument('app')
 def cmd_ps(app):
-    """Show application worker count"""
+    """Show application worker count, e.g: piku ps <app>"""
     
     app = exit_if_invalid(app)
 
@@ -931,7 +931,7 @@ def cmd_ps(app):
 @argument('app')
 @argument('settings', nargs=-1)
 def cmd_ps_scale(app, settings):
-    """Show application configuration"""
+    """Scale number of processes, e.g.: piku ps:scale <app> <process_name>=<number>"""
     
     app = exit_if_invalid(app)
 
@@ -959,7 +959,7 @@ def cmd_ps_scale(app, settings):
 @argument('app')
 @argument('cmd', nargs=-1)
 def cmd_run(app, cmd):
-    """Run a command inside the app, e.g.: ls -- -al"""
+    """Run a command inside the app, e.g.: piku run <app> ls -- -al"""
 
     app = exit_if_invalid(app)
 
@@ -974,7 +974,7 @@ def cmd_run(app, cmd):
 @piku.command("restart")
 @argument('app')
 def cmd_restart(app):
-    """Restart an application"""
+    """Restart an application: piku restart <app>"""
     
     app = exit_if_invalid(app)
     
