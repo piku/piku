@@ -179,6 +179,7 @@ bail_install() {
 ensure_virtualenv() {
   # TODO: use local virtualenv instead if `command -v virtualenv` succeeds
   [ -d "${PBD}/virtualenv" ] || (\
+      cd "${PBD}"
       [ -f "./.virtualenv-source/virtualenv.py" ] || install_virtualenv;
       echo "Setting up the virtual environment." && \
       ./.virtualenv-source/virtualenv.py -p `which python` "${PBD}/virtualenv" || exit 1)
