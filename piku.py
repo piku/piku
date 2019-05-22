@@ -781,7 +781,7 @@ def list_apps():
 @piku.command("config")
 @argument('app')
 def cmd_config(app):
-    """Show app config, e.g.: piku config <app>"""
+    """Show config, e.g.: piku config <app>"""
     
     app = exit_if_invalid(app)
     
@@ -796,7 +796,7 @@ def cmd_config(app):
 @argument('app')
 @argument('setting')
 def cmd_config_get(app, setting):
-    """Get config value, e.g.: piku config:get <app> FOO"""
+    """e.g.: piku config:get <app> FOO"""
     
     app = exit_if_invalid(app)
     
@@ -813,7 +813,7 @@ def cmd_config_get(app, setting):
 @argument('app')
 @argument('settings', nargs=-1)
 def cmd_config_set(app, settings):
-    """Set config value(s), e.g.: piku config:set <app> FOO=bar BAZ=quux"""
+    """e.g.: piku config:set <app> FOO=bar BAZ=quux"""
     
     app = exit_if_invalid(app)
     
@@ -835,7 +835,7 @@ def cmd_config_set(app, settings):
 @argument('app')
 @argument('settings', nargs=-1)
 def cmd_config_unset(app, settings):
-    """Remove a config, e.g.: piku config:unset <app> FOO"""
+    """e.g.: piku config:unset <app> FOO"""
     
     app = exit_if_invalid(app)
     
@@ -852,7 +852,7 @@ def cmd_config_unset(app, settings):
 @piku.command("config:live")
 @argument('app')
 def cmd_config_live(app):
-    """Show live config, e.g.: piku config:live <app>"""
+    """e.g.: piku config:live <app>"""
     
     app = exit_if_invalid(app)
 
@@ -866,7 +866,7 @@ def cmd_config_live(app):
 @piku.command("deploy")
 @argument('app')
 def cmd_deploy(app):
-    """Deploy an app, e.g.: piku deploy <app>"""
+    """e.g.: piku deploy <app>"""
     
     app = exit_if_invalid(app)
     do_deploy(app)
@@ -875,7 +875,7 @@ def cmd_deploy(app):
 @piku.command("destroy")
 @argument('app')
 def cmd_destroy(app):
-    """Destroy an app, e.g.: piku destroy <app>"""
+    """e.g.: piku destroy <app>"""
     
     app = exit_if_invalid(app)
     
@@ -931,7 +931,7 @@ def cmd_ps(app):
 @argument('app')
 @argument('settings', nargs=-1)
 def cmd_ps_scale(app, settings):
-    """Scale up/down, e.g.: piku ps:scale <app> <process_name>=<number>"""
+    """e.g.: piku ps:scale <app> <process_name>=<number>"""
     
     app = exit_if_invalid(app)
 
@@ -959,7 +959,7 @@ def cmd_ps_scale(app, settings):
 @argument('app')
 @argument('cmd', nargs=-1)
 def cmd_run(app, cmd):
-    """Run a command, e.g.: piku run <app> ls -- -al"""
+    """e.g.: piku run <app> ls -- -al"""
 
     app = exit_if_invalid(app)
 
