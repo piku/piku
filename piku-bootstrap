@@ -110,12 +110,6 @@ main() {
         mode: 0600
       when: packages_installed is changed
 
-    - name: Start uwsgi service
-      service:
-        name: uwsgi-piku
-        state: started
-      when: packages_installed is changed
-
     - name: Create piku ansible tmp dir
       file:
         path: ~piku/.ansible/tmp
@@ -166,6 +160,39 @@ main() {
       shell: python3 ~/piku.py setup:ssh /tmp/id_rsa.pub
       args:
         creates: ~/.ssh/authorized_keys
+
+- hosts: all
+  user: root
+  tasks:
+    - name: Start uwsgi service
+      service:
+        name: uwsgi-piku
+        state: started
+
+    - name: Get nginx default config
+      get_url:
+        url: https://raw.githubusercontent.com/rcarmo/piku/master/nginx.default.dist
+        dest: /etc/nginx/sites-available/default
+        force: yes
+      register: nginx_config_installed
+
+    - name: Restart nginx service
+      service:
+        name: nginx
+        state: restarted
+      when: nginx_config_installed is changed
+
+    - name: Get incron config
+      get_url:
+        url: https://raw.githubusercontent.com/rcarmo/piku/master/incron.dist
+        dest: /etc/incron.d/piku
+      register: incron_config_installed
+
+    - name: Restart incron service
+      service:
+        name: incron
+        state: restarted
+      when: incron_config_installed is changed
 
 EOF
   fi
