@@ -56,32 +56,60 @@ main() {
         comment: PaaS access
         group: www-data
 
+    #- name: Add current user's SSH key
+    #  authorized_key:
+    #    user: piku
+    #    state: present
+    #    key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+    #    # key_options: "command="FINGERPRINT=85:29:07:cb:de:ad:be:ef:42:65:00:c8:d2:6b:9e:ff NAME=default /home/piku/piku.py $SSH_ORIGINAL_COMMAND",no-agent-forwarding,no-user-rc,no-X11-forwarding,no-port-forwarding"
+
+    - name: Install Debian Packages
+      apt:
+        pkg: ['git', 'build-essential', 'libpcre3-dev', 'zlib1g-dev', 'python', 'python3', 'python3-pip', 'python3-dev']  #, 'python-dev', 'python3', 'python3-virtualenv', 'python3-pip']
+        update_cache: true
+        state: present
+    
+    - name: Install Python packages
+      pip:
+        executable: pip3
+        name: ['click', 'virtualenv']
+
+- hosts: all
+  user: piku
+  tasks:
+    #- name: Download pyenv installer
+    #  get_url:
+    #    url: https://pyenv.run
+    #    dest: ~/pyenv-installer
+    #    mode: 0755
+
+    #- name: Run pyenv installer
+    #  shell:
+    #    argv: ~/pyenv-installer
+    #    creates: ~/.pyenv
+
+    #- name: Install python3
+    #  shell: ~/.pyenv/bin/pyenv install 3.6.8
+
+    #- name: Use python3
+    #  shell: ~/.pyenv/bin/pyenv local 3.6.8
+
     - name: Fetch piku.py script
       get_url:
         url: https://raw.githubusercontent.com/rcarmo/piku/master/piku.py
         dest: ~/piku.py
         mode: 0700
 
-    - name: Add current user's SSH key
-      authorized_key:
-        user: piku
-        state: present
-        key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+    - name: Run piku setup
+      shell: python3 ~/piku.py setup
+      args:
+        creates: ~/.piku
 
-    - name: Install Debian Packages
-      apt: pkg={{item}} state=installed
-      with_items:
-        - git
-        - python3
-        - build-essential
-        - python-dev
-        - libpcre3-dev
+    - name: Copy up my SSH key for piku
+      copy: src=~/.ssh/id_rsa.pub dest=/tmp/id_rsa.pub
 
-#- hosts: all
-#  user: piku
-#  tasks:
-#    - name: Install pyenv
-#      shell: curl https://pyenv.run | bash
+    - name: Ask piku to use SSH key
+      shell: python3 piku.py setup:ssh /tmp/id_rsa.pub
 
 EOF
   fi
@@ -93,22 +121,22 @@ bail_install() {
 }
 
 ensure_virtualenv() {
-  [ -f "${PBD}/virtualenv-source/virtualenv.py" ] || install_virtualenv;
   [ -d "${PBD}/virtualenv" ] || (\
+      [ -f "./.virtualenv-source/virtualenv.py" ] || install_virtualenv;
       echo "Setting up the virtual environment." && \
-      ${PBD}/virtualenv-source/virtualenv.py -p python "${PBD}/virtualenv" || exit 1)
+      ./.virtualenv-source/virtualenv.py -p `which python` "${PBD}/virtualenv" || exit 1)
+      rm -rf ./.virtualenv-source
 }
 
 install_virtualenv() {
   VIRTUALENV_URL="https://pypi.io/packages/source/v/virtualenv/virtualenv-${VIRTUALENV_VERSION}.tar.gz"
   echo "Downloading & installing Virtualenv."
-  rm -rf "${PBD}/virtualenv-source"
-  mkdir -p "${PBD}/virtualenv-source"
-  [ -f "${PBD}/virtualenv.tar.gz" ] || curl -f -L -o "${PBD}/virtualenv.tar.gz" "${VIRTUALENV_URL}" || bail_install
-  tar -zxf $PBD/virtualenv.tar.gz -C "${PBD}/virtualenv-source/" --strip-components=1 && \
-  # mv "${PBD}/virtualenv-source/virtualenv-*/*" "${PBD}/virtualenv-source"
-  [ -d "${PBD}/virtualenv-source" ] && (\
-          cd "${PBD}/virtualenv-source" && \
+  rm -rf "./.virtualenv-source"
+  mkdir -p "./.virtualenv-source"
+  [ -f "./virtualenv.tar.gz" ] || curl -f -L -o "./virtualenv.tar.gz" "${VIRTUALENV_URL}" || bail_install
+  tar -zxf "./virtualenv.tar.gz" -C "./.virtualenv-source/" --strip-components=1 && \
+  [ -d "./.virtualenv-source" ] && (\
+          cd "./.virtualenv-source" && \
           /usr/bin/env python setup.py build ) \
           || bail_install;
 }
