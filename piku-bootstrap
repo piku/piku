@@ -13,9 +13,10 @@ LOG="${PBD}/install.log"
 main() {
   # print a message if this is a first time run
   if [ ! -d "${PBD}" ]; then
-    echo "piku-bootstrap - welcome!"
-    echo "Looks like this is your first time running this."
+    echo "Looks like this is your first time running piku-bootstrap."
     echo "This script will self-install dependencies into ${PBD} now."
+    echo "Hit enter to continue or ctrl-C to abort."
+    read discarded
     echo
   fi
 
@@ -39,10 +40,18 @@ main() {
 
   if [ "$1" = "" ]
   then
-    echo "`basename $0` HOSTNAME"
-    echo "This will create a user 'piku' on the machine HOSTNAME"
-    echo "setup git, and install the piku script there."
-    echo "Requires root on HOSTNAME."
+    echo
+    echo "Usage: `basename $0` HOST [--pi] [...YOUR_ANSIBLE_ARGS...]"
+    echo
+    echo " HOST\tCreates a user 'piku' on the machine 'HOST',"
+    echo "\tinstalls git, and install the piku script there."
+    echo
+    echo " --pi\tShortcut to SSH in as the user 'pi'."
+    echo "\tUse \`ssh-copy-id pi@HOSTNAME\` to upload SSH key first."
+    echo
+    echo "\tRequires root/sudo on HOSTNAME (--pi implies sudo)."
+    echo "\tRequires HOSTNAME to be a Debian based distribution."
+    echo
   else
     host="$1"; shift
     # check for raspberry pi user flag
