@@ -8,6 +8,7 @@
 PBD=${PIKU_BOOTSTRAP_DIR:-~/.piku-bootstrap}
 VENV="${PBD}/virtualenv"
 VIRTUALENV_VERSION="16.0.0"
+LOG="${PBD}/install.log"
 
 main() {
   # print a message if this is a first time run
@@ -22,7 +23,7 @@ main() {
   mkdir -p "${PBD}"
 
   if [ ! -d "$VENV" ]; then
-    echo "Virtualenv setup not found. Installing it into ${PBD}."
+    echo " #> Virtualenv setup not found. Installing it into ${PBD}."
     ensure_virtualenv
   fi
 
@@ -32,8 +33,8 @@ main() {
   # ensure ansible
   if [ "`command -v ansible-playbook`" = "" ]
   then
-    echo "ansible-playbook binary not found. Installing it into ${PBD}."
-    pip install -q "ansible==2.7.10"
+    echo " #> ansible-playbook binary not found. Installing it into ${PBD}."
+    pip install -q "ansible==2.7.10" >"${LOG}" 2>&1
   fi
 
   if [ "$1" = "" ]
@@ -199,7 +200,8 @@ EOF
 }
 
 bail_install() {
-    error "Self-installation failed."
+    echo " #> Self-installation failed."
+    echo " #> Check ${LOG} for details."
     exit 1;
 }
 
@@ -208,21 +210,21 @@ ensure_virtualenv() {
   [ -d "${PBD}/virtualenv" ] || (\
       cd "${PBD}"
       [ -f "./.virtualenv-source/virtualenv.py" ] || install_virtualenv;
-      echo "Setting up the virtual environment." && \
-      ./.virtualenv-source/virtualenv.py -p `which python` "${PBD}/virtualenv" || exit 1)
+      echo " #> Setting up the virtual environment." && \
+      ./.virtualenv-source/virtualenv.py -q "${PBD}/virtualenv" || bail_install)
       rm -rf ./.virtualenv-source
 }
 
 install_virtualenv() {
   VIRTUALENV_URL="https://pypi.io/packages/source/v/virtualenv/virtualenv-${VIRTUALENV_VERSION}.tar.gz"
-  echo "Downloading & installing Virtualenv."
+  echo " #> Downloading & installing Virtualenv."
   rm -rf "./.virtualenv-source"
   mkdir -p "./.virtualenv-source"
-  [ -f "./virtualenv.tar.gz" ] || curl -f -L -o "./virtualenv.tar.gz" "${VIRTUALENV_URL}" || bail_install
+  [ -f "./virtualenv.tar.gz" ] || curl -s -f -L -o "./virtualenv.tar.gz" "${VIRTUALENV_URL}" || bail_install
   tar -zxf "./virtualenv.tar.gz" -C "./.virtualenv-source/" --strip-components=1 && \
   [ -d "./.virtualenv-source" ] && (\
           cd "./.virtualenv-source" && \
-          /usr/bin/env python setup.py build ) \
+          /usr/bin/env python setup.py build > ${LOG} 2>&1 ) \
           || bail_install;
 }
 
