@@ -44,19 +44,27 @@ main() {
     echo "setup git, and install the piku script there."
     echo "Requires root on HOSTNAME."
   else
-    echo "Bootstrapping piku onto $1"
+    host="$1"; shift
+    # check for raspberry pi user flag
+    if [ "$1" = "--pi" ]; then PIKU_SSH=pi; shift; else PIKU_SSH=root; fi;
+    echo "Bootstrapping piku onto ${host}"
     # TODO: use pyenv + virtualenv on remote instead and install exact versions
-    ansible-playbook -i "$1", /dev/stdin << EOF
+    PIKU_SSH="${PIKU_SSH}" PYTHONWARNINGS="ignore" ansible-playbook -i "${host}", "$@" /dev/stdin << EOF
 ---
 - hosts: all
-  user: root
+  become: yes
   gather_facts: no
+  vars:
+    default_user: "{{ lookup('env', 'PIKU_SSH') }}"
   pre_tasks:
-    - name: 'Install python2 required by Ansible'
-      raw: apt-get update && apt-get -y install python python-pip python-setuptools
+    - name: Set default SSH user
+      set_fact: ansible_ssh_user="{{default_user}}"
+
+    - name: Install python2 required by Ansible
+      raw: "( /usr/bin/python --version 2>&1 | grep -c 'Python' > /dev/null ) || apt-get update && apt-get -y install python"
 
 - hosts: all
-  user: root
+  become: yes
   tasks:
     - name: Add piku user
       user:
@@ -67,7 +75,7 @@ main() {
 
     - name: Install Debian Packages
       apt:
-        pkg: ['bc', 'git', 'build-essential', 'libpcre3-dev', 'zlib1g-dev', 'python', 'python3', 'python3-pip', 'python3-dev', 'python3-setuptools', 'nginx', 'incron']
+        pkg: ['bc', 'git', 'build-essential', 'libpcre3-dev', 'zlib1g-dev', 'python', 'python3', 'python3-pip', 'python3-dev', 'python-pip', 'python-setuptools', 'python3-setuptools', 'nginx', 'incron', 'acl']
         #, 'python-dev', 'python3', 'python3-virtualenv', 'python3-pip']
         update_cache: true
         state: present
@@ -120,7 +128,6 @@ main() {
         state: directory
 
 - hosts: all
-  user: root
   become: yes
   become_user: piku
   tasks:
@@ -163,7 +170,7 @@ main() {
         creates: ~/.ssh/authorized_keys
 
 - hosts: all
-  user: root
+  become: yes
   tasks:
     - name: Start uwsgi service
       service:
@@ -228,4 +235,4 @@ install_virtualenv() {
           || bail_install;
 }
 
-main "$1"
+main "$@"
