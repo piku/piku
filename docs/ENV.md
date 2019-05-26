@@ -1,4 +1,4 @@
-## Configuriing Piku via ENV
+## Configuring Piku via ENV
 
 You can configure deployment settings by placing special variables in an `ENV` file deployed with your app.
 
