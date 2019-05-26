@@ -558,7 +558,7 @@ def spawn_app(app, deltas={}):
                     env['INTERNAL_NGINX_STATIC_MAPPINGS'] = ''
 
             echo("-----> nginx will map app '{}' to hostname '{}'".format(app, env['NGINX_SERVER_NAME']))
-            if('HTTPS_ONLY' in env):
+            if('NGINX_HTTPS_ONLY' in env) or ('HTTPS_ONLY' in env):
                 buffer = expandvars(NGINX_HTTPS_ONLY_TEMPLATE, env)
                 echo("-----> nginx will redirect all requests to hostname '{}' to HTTPS".format(env['NGINX_SERVER_NAME']))
             else:
