@@ -314,8 +314,8 @@ def do_deploy(app, deltas={}):
     env = {'GIT_WORK_DIR': app_path}
     if exists(app_path):
         echo("-----> Deploying app '{}'".format(app), fg='green')
-        call('git pull --quiet', cwd=app_path, env=env, shell=True)
-        call('git checkout -f', cwd=app_path, env=env, shell=True)
+        call('git fetch --quiet', cwd=app_path, env=env, shell=True)
+        call('git reset --hard origin/master', cwd=app_path, env=env, shell=True)
         call('git submodule init', cwd=app_path, env=env, shell=True)
         call('git submodule update', cwd=app_path, env=env, shell=True)
         if not exists(log_path):
