@@ -310,6 +310,7 @@ def do_deploy(app, deltas={}):
     app_path = join(APP_ROOT, app)
     procfile = join(app_path, 'Procfile')
     log_path = join(LOG_ROOT, app)
+    env_file = join(APP_ROOT, app, 'ENV')
 
     env = {'GIT_WORK_DIR': app_path}
     if exists(app_path):
@@ -335,6 +336,10 @@ def do_deploy(app, deltas={}):
             else:
                 echo("-----> Could not detect runtime!", fg='red')
             # TODO: detect other runtimes
+            settings = parse_settings(env_file, {})
+            if settings.get("AUTO_RESTART", False):
+                echo("-----> Auto-restarting.", fg='green')
+                do_restart(app)
         else:
             echo("Error: Invalid Procfile for app '{}'.".format(app), fg='red')
     else:
@@ -700,6 +705,17 @@ def spawn_worker(app, kind, command, env, ordinal=1):
     
     copyfile(available, enabled)
 
+def do_restart(app):
+    config = glob(join(UWSGI_ENABLED, '{}*.ini'.format(app)))
+
+    if len(config):
+        echo("Restarting app '{}'...".format(app), fg='yellow')
+        for c in config:
+            remove(c)
+        spawn_app(app)
+    else:
+        echo("Error: app '{}' not deployed!".format(app), fg='red')
+
 
 def multi_tail(app, filenames, catch_up=20):
     """Tails multiple log files"""
@@ -977,16 +993,8 @@ def cmd_restart(app):
     """Restart an app: piku restart <app>"""
     
     app = exit_if_invalid(app)
-    
-    config = glob(join(UWSGI_ENABLED, '{}*.ini'.format(app)))
 
-    if len(config):
-        echo("Restarting app '{}'...".format(app), fg='yellow')
-        for c in config:
-            remove(c)
-        spawn_app(app)
-    else:
-        echo("Error: app '{}' not deployed!".format(app), fg='red')
+    do_restart(app)
 
 
 @piku.command("setup")
