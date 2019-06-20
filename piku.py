@@ -316,6 +316,8 @@ def do_deploy(app, deltas={}):
         echo("-----> Deploying app '{}'".format(app), fg='green')
         call('git pull --quiet', cwd=app_path, env=env, shell=True)
         call('git checkout -f', cwd=app_path, env=env, shell=True)
+        call('git submodule init', cwd=app_path, env=env, shell=True)
+        call('git submodule update', cwd=app_path, env=env, shell=True)
         if not exists(log_path):
             makedirs(log_path)
         workers = parse_procfile(procfile)
