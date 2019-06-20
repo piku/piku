@@ -1,0 +1,247 @@
+#!/bin/sh
+
+# Usage:
+# To bootstrap your machine called mybox.com with piku
+# 
+# ./piku-bootstrap mybox.com
+
+PBD=${PIKU_BOOTSTRAP_DIR:-~/.piku-bootstrap}
+VENV="${PBD}/virtualenv"
+VIRTUALENV_VERSION="16.0.0"
+LOG="${PBD}/install.log"
+
+main() {
+  # print a message if this is a first time run
+  if [ ! -d "${PBD}" ]; then
+    echo "Looks like this is your first time running piku-bootstrap."
+    echo "This script will self-install dependencies into ${PBD} now."
+    echo "Hit enter to continue or ctrl-C to abort."
+    read discarded
+    echo
+  fi
+
+  # ensure we have a dir
+  mkdir -p "${PBD}"
+
+  if [ ! -d "$VENV" ]; then
+    echo " #> Virtualenv setup not found. Installing it into ${PBD}."
+    ensure_virtualenv
+  fi
+
+  # get into virtualenv
+  . "$VENV/bin/activate"
+
+  # ensure ansible
+  if [ "`command -v ansible-playbook`" = "" ]
+  then
+    echo " #> ansible-playbook binary not found. Installing it into ${PBD}."
+    pip install -q "ansible==2.7.10" >"${LOG}" 2>&1
+  fi
+
+  if [ "$1" = "" ]
+  then
+    echo
+    echo "Usage: `basename $0` HOST [--pi] [...YOUR_ANSIBLE_ARGS...]"
+    echo
+    echo " HOST\tCreates a user 'piku' on the machine 'HOST',"
+    echo "\tinstalls git, and install the piku script there."
+    echo
+    echo " --pi\tShortcut to SSH in as the user 'pi'."
+    echo "\tUse \`ssh-copy-id pi@HOSTNAME\` to upload SSH key first."
+    echo
+    echo "\tRequires root/sudo on HOSTNAME (--pi implies sudo)."
+    echo "\tRequires HOSTNAME to be a Debian based distribution."
+    echo
+  else
+    host="$1"; shift
+    # check for raspberry pi user flag
+    if [ "$1" = "--pi" ]; then PIKU_SSH=pi; shift; else PIKU_SSH=root; fi;
+    echo "Bootstrapping piku onto ${host}"
+    # TODO: use pyenv + virtualenv on remote instead and install exact versions
+    PIKU_SSH="${PIKU_SSH}" PYTHONWARNINGS="ignore" ansible-playbook -i "${host}", "$@" /dev/stdin << EOF
+---
+- hosts: all
+  become: yes
+  gather_facts: no
+  vars:
+    default_user: "{{ lookup('env', 'PIKU_SSH') }}"
+  pre_tasks:
+    - name: Set default SSH user
+      set_fact: ansible_ssh_user="{{default_user}}"
+
+    - name: Install python2 required by Ansible
+      raw: "( /usr/bin/python --version 2>&1 | grep -c 'Python' > /dev/null ) || apt-get update && apt-get -y install python"
+
+- hosts: all
+  become: yes
+  tasks:
+    - name: Add piku user
+      user:
+        name: piku
+        password: !
+        comment: PaaS access
+        group: www-data
+
+    - name: Install Debian Packages
+      apt:
+        pkg: ['bc', 'git', 'build-essential', 'libpcre3-dev', 'zlib1g-dev', 'python', 'python3', 'python3-pip', 'python3-dev', 'python-pip', 'python-setuptools', 'python3-setuptools', 'nginx', 'incron', 'acl']
+        #, 'python-dev', 'python3', 'python3-virtualenv', 'python3-pip']
+        update_cache: true
+        state: present
+
+    - name: Install Python packages
+      pip:
+        executable: pip3
+        name: ['setuptools', 'click==7.0', 'virtualenv==15.1.0', 'uwsgi==2.0.15']
+      register: packages_installed
+
+    - shell: which uwsgi
+      register: uwsgi_location
+      when: packages_installed is changed
+
+    - name: Create uwsi symlink
+      file:
+        src: "{{uwsgi_location.stdout}}"
+        dest: /usr/local/bin/uwsgi-piku
+        owner: root
+        group: root
+        state: link
+      when: packages_installed is changed
+
+    - name: Install uwsgi dist script
+      get_url:
+        url: https://raw.githubusercontent.com/rcarmo/piku/master/uwsgi-piku.dist
+        dest: /etc/init.d/uwsgi-piku
+        mode: 0700
+      when: packages_installed is changed
+
+    - name: Setup uwsgi dist script
+      shell: update-rc.d uwsgi-piku defaults
+      args:
+        creates: /etc/rc2.d/S01uwsgi-piku
+      when: packages_installed is changed
+
+    - name: Install uwsgi systemd script
+      get_url:
+        url: https://raw.githubusercontent.com/rcarmo/piku/master/uwsgi-piku.service
+        dest: /etc/systemd/system/uwsgi-piku.service
+        mode: 0600
+      when: packages_installed is changed
+
+    - name: Create piku ansible tmp dir
+      file:
+        path: ~piku/.ansible/tmp
+        mode: 0700
+        owner: piku
+        group: www-data
+        state: directory
+
+- hosts: all
+  become: yes
+  become_user: piku
+  tasks:
+    ### TODO: use pyenv like this instead
+
+    #- name: Download pyenv installer
+    #  get_url:
+    #    url: https://pyenv.run
+    #    dest: ~/pyenv-installer
+    #    mode: 0755
+
+    #- name: Run pyenv installer
+    #  shell:
+    #    argv: ~/pyenv-installer
+    #    creates: ~/.pyenv
+
+    #- name: Install python3
+    #  shell: ~/.pyenv/bin/pyenv install 3.6.8
+
+    #- name: Use python3
+    #  shell: ~/.pyenv/bin/pyenv local 3.6.8
+
+    - name: Fetch piku.py script
+      get_url:
+        url: https://raw.githubusercontent.com/rcarmo/piku/master/piku.py
+        dest: ~/piku.py
+        mode: 0700
+
+    - name: Run piku setup
+      shell: python3 ~/piku.py setup
+      args:
+        creates: ~/.piku
+
+    - name: Copy up my SSH key for piku
+      copy: src=~/.ssh/id_rsa.pub dest=/tmp/id_rsa.pub
+
+    - name: Ask piku to use SSH key
+      shell: python3 ~/piku.py setup:ssh /tmp/id_rsa.pub
+      args:
+        creates: ~/.ssh/authorized_keys
+
+- hosts: all
+  become: yes
+  tasks:
+    - name: Start uwsgi service
+      service:
+        name: uwsgi-piku
+        state: started
+
+    - name: Get nginx default config
+      get_url:
+        url: https://raw.githubusercontent.com/rcarmo/piku/master/nginx.default.dist
+        dest: /etc/nginx/sites-available/default
+        force: yes
+      register: nginx_config_installed
+
+    - name: Restart nginx service
+      service:
+        name: nginx
+        state: restarted
+      when: nginx_config_installed is changed
+
+    - name: Get incron config
+      get_url:
+        url: https://raw.githubusercontent.com/rcarmo/piku/master/incron.dist
+        dest: /etc/incron.d/piku
+      register: incron_config_installed
+
+    - name: Restart incron service
+      service:
+        name: incron
+        state: restarted
+      when: incron_config_installed is changed
+
+EOF
+  fi
+}
+
+bail_install() {
+    echo " #> Self-installation failed."
+    echo " #> Check ${LOG} for details."
+    exit 1;
+}
+
+ensure_virtualenv() {
+  # TODO: use local virtualenv instead if `command -v virtualenv` succeeds
+  [ -d "${PBD}/virtualenv" ] || (\
+      cd "${PBD}"
+      [ -f "./.virtualenv-source/virtualenv.py" ] || install_virtualenv;
+      echo " #> Setting up the virtual environment." && \
+      ./.virtualenv-source/virtualenv.py -q "${PBD}/virtualenv" || bail_install)
+      rm -rf ./.virtualenv-source
+}
+
+install_virtualenv() {
+  VIRTUALENV_URL="https://pypi.io/packages/source/v/virtualenv/virtualenv-${VIRTUALENV_VERSION}.tar.gz"
+  echo " #> Downloading & installing Virtualenv."
+  rm -rf "./.virtualenv-source"
+  mkdir -p "./.virtualenv-source"
+  [ -f "./virtualenv.tar.gz" ] || curl -s -f -L -o "./virtualenv.tar.gz" "${VIRTUALENV_URL}" || bail_install
+  tar -zxf "./virtualenv.tar.gz" -C "./.virtualenv-source/" --strip-components=1 && \
+  [ -d "./.virtualenv-source" ] && (\
+          cd "./.virtualenv-source" && \
+          /usr/bin/env python setup.py build > ${LOG} 2>&1 ) \
+          || bail_install;
+}
+
+main "$@"
