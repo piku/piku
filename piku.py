@@ -49,6 +49,8 @@ UWSGI_AVAILABLE = abspath(join(PIKU_ROOT, "uwsgi-available"))
 UWSGI_ENABLED = abspath(join(PIKU_ROOT, "uwsgi-enabled"))
 UWSGI_ROOT = abspath(join(PIKU_ROOT, "uwsgi"))
 UWSGI_LOG_MAXSIZE = '1048576'
+ACME_ROOT = environ.get('ACME_ROOT', join(environ['HOME'],'.acme.sh'))
+ACME_WWW = abspath(join(PIKU_ROOT, "acme"))
 
 # pylint: disable=anomalous-backslash-in-string
 NGINX_TEMPLATE = """
@@ -84,6 +86,11 @@ server {
 
   $INTERNAL_NGINX_STATIC_MAPPINGS
 
+  location ^~ /.well-known/acme-challenge {
+    allow all;
+    root ${ACME_WWW};
+  }
+
   location    / {
     $INTERNAL_NGINX_UWSGI_SETTINGS
     proxy_http_version 1.1;
@@ -96,6 +103,7 @@ server {
     proxy_set_header X-Request-Start $msec;
     $NGINX_ACL
  }
+
 }
 """
 
@@ -107,6 +115,12 @@ server {
   listen              $NGINX_IPV6_ADDRESS:80;
   listen              $NGINX_IPV4_ADDRESS:80;
   server_name         $NGINX_SERVER_NAME;
+
+  location ^~ /.well-known/acme-challenge {
+    allow all;
+    root ${ACME_WWW};
+  }
+
   return 301 https://$server_name$request_uri;
 }
 
@@ -151,6 +165,18 @@ server {
 }
 """
 # pylint: enable=anomalous-backslash-in-string
+
+NGINX_ACME_FIRSTRUN_TEMPLATE = """
+server {
+  listen              $NGINX_IPV6_ADDRESS:80;
+  listen              $NGINX_IPV4_ADDRESS:80;
+  server_name         $NGINX_SERVER_NAME;
+  location ^~ /.well-known/acme-challenge {
+    allow all;
+    root ${ACME_WWW};
+  }
+}
+"""
 
 INTERNAL_NGINX_STATIC_MAPPING = """
   location {static_url:s} {
@@ -506,10 +532,12 @@ def spawn_app(app, deltas={}):
                 nginx_ssl += " http2"
             elif "--with-http_spdy_module" in nginx and "nginx/1.6.2" not in nginx: # avoid Raspbian bug
                 nginx_ssl += " spdy"
+            nginx_conf = join(NGINX_ROOT,"{}.conf".format(app))
         
             env.update({ 
                 'NGINX_SSL': nginx_ssl,
                 'NGINX_ROOT': NGINX_ROOT,
+                'ACME_WWW': ACME_WWW,
             })
             
             # default to reverse proxying to the TCP port we picked
@@ -527,7 +555,26 @@ def spawn_app(app, deltas={}):
         
             domain = env['NGINX_SERVER_NAME'].split()[0]       
             key, crt = [join(NGINX_ROOT, "{}.{}".format(app,x)) for x in ['key','crt']]
+            if exists(join(ACME_ROOT, "acme.sh")):
+                acme = ACME_ROOT
+                www = ACME_WWW
+                # if this is the first run there will be no nginx conf yet
+                # create a basic conf stub just to serve the acme auth
+                if not exists(nginx_conf):
+                    echo("-----> writing temporary nginx conf")
+                    buffer = expandvars(NGINX_ACME_FIRSTRUN_TEMPLATE, env)
+                    with open(nginx_conf, "w") as h:
+                        h.write(buffer)
+                if not exists(key) or not exists(join(ACME_ROOT, domain, domain + ".key")):
+                    echo("-----> getting letsencrypt certificate")
+                    call('{acme:s}/acme.sh --issue -d {domain:s} -w {www:s}'.format(**locals()), shell=True)
+                    call('{acme:s}/acme.sh --install-cert -d {domain:s} --key-file {key:s} --fullchain-file {crt:s}'.format(**locals()), shell=True)
+                else:
+                    echo("-----> letsencrypt certificate already installed")
+
+            # fall back to creating self-signed certificate if acme failed
             if not exists(key):
+                echo("-----> generating self-signed certificate")
                 call('openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 -subj "/C=US/ST=NY/L=New York/O=Piku/OU=Self-Signed/CN={domain:s}" -keyout {key:s} -out {crt:s}'.format(**locals()), shell=True)
             
             # restrict access to server from CloudFlare IP addresses
@@ -573,7 +620,7 @@ def spawn_app(app, deltas={}):
                 echo("-----> nginx will redirect all requests to hostname '{}' to HTTPS".format(env['NGINX_SERVER_NAME']))
             else:
                 buffer = expandvars(NGINX_TEMPLATE, env)
-            with open(join(NGINX_ROOT,"{}.conf".format(app)), "w") as h:
+            with open(nginx_conf, "w") as h:
                 h.write(buffer)
 
     # Configured worker count
