@@ -178,6 +178,32 @@ main() {
       args:
         creates: ~/.ssh/authorized_keys
 
+    - name: Check if acme.sh is already installed
+      stat:
+        path: ~/.acme.sh/acme.sh
+      register: acme_stat_result
+
+    - name: Download acme.sh
+      get_url:
+        url: https://raw.githubusercontent.com/Neilpang/acme.sh/6ff3f5d/acme.sh
+        dest: ~/acme.sh
+        mode: 0755
+      when: acme_stat_result.stat.exists == False
+      register: acme_installer
+
+    - name: Execute acme.sh installer
+      shell: ./acme.sh --install
+      args:
+        chdir: ~/
+        creates: ~/.acme.sh/acme.sh
+        executable: /bin/bash
+      when: acme_installer is defined
+
+    - name: Remove acme.sh installer
+      file: path=~/acme.sh state=absent
+      when: acme_installer is defined
+
+
 - hosts: all
   become: yes
   tasks:
