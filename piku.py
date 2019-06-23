@@ -328,6 +328,7 @@ def do_deploy(app, deltas={}):
             settings = parse_settings(config_file, settings)
             if "release" in workers:
                 echo("-----> Releasing", fg='green')
+                settings["ENV_ROOT"] = join(ENV_ROOT, app)
                 retval = call(workers["release"], cwd=app_path, env=settings, shell=True)
                 if retval:
                     exit(retval)
