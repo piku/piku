@@ -153,13 +153,13 @@ server {
 # pylint: enable=anomalous-backslash-in-string
 
 INTERNAL_NGINX_STATIC_MAPPING = """
-  location {static_url:s} {
+  location $static_url {
       sendfile on;
       sendfile_max_chunk 1m;
       tcp_nopush on;
       directio 8m;
       aio threads;
-      alias {static_path:s};
+      alias $static_path;
   }
 """
 
@@ -562,7 +562,7 @@ def spawn_app(app, deltas={}):
                         static_url, static_path = item.split(':')
                         if static_path[0] != '/':
                             static_path = join(app_path, static_path)
-                        env['INTERNAL_NGINX_STATIC_MAPPINGS'] = env['INTERNAL_NGINX_STATIC_MAPPINGS'] + INTERNAL_NGINX_STATIC_MAPPING.format(**locals())
+                        env['INTERNAL_NGINX_STATIC_MAPPINGS'] = env['INTERNAL_NGINX_STATIC_MAPPINGS'] + expandvars(INTERNAL_NGINX_STATIC_MAPPING, locals())
                 except Exception as e:
                     echo("Error {} in static path spec: should be /url1:path1[,/url2:path2], ignoring.".format(e))
                     env['INTERNAL_NGINX_STATIC_MAPPINGS'] = ''
