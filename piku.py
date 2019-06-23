@@ -21,7 +21,7 @@ from os.path import abspath, basename, dirname, exists, getmtime, join, realpath
 from re import sub
 from shutil import copyfile, rmtree, which
 from socket import socket, AF_INET, SOCK_STREAM
-from sys import argv, stdin, stdout, stderr, version_info
+from sys import argv, stdin, stdout, stderr, version_info, exit
 from stat import S_IRUSR, S_IWUSR, S_IXUSR
 from subprocess import call, check_output, Popen, STDOUT, PIPE 
 from tempfile import NamedTemporaryFile
@@ -311,6 +311,7 @@ def do_deploy(app, deltas={}):
     procfile = join(app_path, 'Procfile')
     log_path = join(LOG_ROOT, app)
     env_file = join(APP_ROOT, app, 'ENV')
+    config_file = join(ENV_ROOT, app, 'ENV')
 
     env = {'GIT_WORK_DIR': app_path}
     if exists(app_path):
@@ -323,9 +324,14 @@ def do_deploy(app, deltas={}):
             makedirs(log_path)
         workers = parse_procfile(procfile)
         if workers and len(workers):
+            settings = parse_settings(env_file, env)
+            settings = parse_settings(config_file, settings)
             if "release" in workers:
                 echo("-----> Releasing", fg='green')
-                call(workers["release"], cwd=app_path, env=env, shell=True)
+                retval = call(workers["release"], cwd=app_path, env=settings, shell=True)
+                if retval:
+                    exit(retval)
+                workers.pop("release", None)
             if exists(join(app_path, 'requirements.txt')):
                 echo("-----> Python app detected.", fg='green')
                 deploy_python(app, deltas)
@@ -341,7 +347,6 @@ def do_deploy(app, deltas={}):
             else:
                 echo("-----> Could not detect runtime!", fg='red')
             # TODO: detect other runtimes
-            settings = parse_settings(env_file, {})
             if settings.get("AUTO_RESTART", False):
                 echo("-----> Auto-restarting.", fg='green')
                 do_restart(app)
@@ -447,6 +452,7 @@ def spawn_app(app, deltas={}):
     app_path = join(APP_ROOT, app)
     procfile = join(app_path, 'Procfile')
     workers = parse_procfile(procfile)
+    workers.pop("release", None)
     ordinals = defaultdict(lambda:1)
     worker_count = {k:1 for k in workers.keys()}
 
