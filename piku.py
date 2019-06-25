@@ -588,21 +588,21 @@ def spawn_app(app, deltas={}):
             acl = []
             if env.get('NGINX_CLOUDFLARE_ACL', 'false').lower() == 'true':
                 try:
-                    cf = loads(urlopen('https://api.cloudflare.com/client/v4/ips').read())
+                    cf = loads(urlopen('https://api.cloudflare.com/client/v4/ips').read().decode("utf-8"))
+                    if cf['success'] == True:
+                        for i in cf['result']['ipv4_cidrs']:
+                            acl.append("allow {};".format(i))
+                        for i in cf['result']['ipv6_cidrs']:
+                            acl.append("allow {};".format(i))
+                        # allow access from controlling machine
+                        if 'SSH_CLIENT' in environ:
+                            remote_ip = environ['SSH_CLIENT'].split()[0]
+                            echo("-----> Adding your IP ({}) to nginx ACL".format(remote_ip))
+                            acl.append("allow {};".format(remote_ip))
+                        acl.extend(["allow 127.0.0.1;","deny all;"])
                 except Exception:
                     cf = defaultdict()
                     echo("-----> Could not retrieve CloudFlare IP ranges: {}".format(format_exc()), fg="red")
-                if cf['success'] == True:
-                    for i in cf['result']['ipv4_cidrs']:
-                        acl.append("allow {};".format(i))
-                    for i in cf['result']['ipv6_cidrs']:
-                        acl.append("allow {};".format(i))
-                    # allow access from controlling machine
-                    if 'SSH_CLIENT' in environ:
-                        remote_ip = environ['SSH_CLIENT'].split()[0]
-                        echo("-----> Adding your IP ({}) to nginx ACL".format(remote_ip))
-                        acl.append("allow {};".format(remote_ip))
-                    acl.extend(["allow 127.0.0.1;","deny all;"])
             env['NGINX_ACL'] = " ".join(acl)
 
             env['INTERNAL_NGINX_STATIC_MAPPINGS'] = ''
