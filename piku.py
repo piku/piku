@@ -16,7 +16,7 @@ from glob import glob
 from hashlib import md5
 from json import loads
 from multiprocessing import cpu_count
-from os import chmod, getgid, getuid, unlink, remove, stat, listdir, environ, makedirs, O_NONBLOCK
+from os import chmod, getgid, getuid, symlink, unlink, remove, stat, listdir, environ, makedirs, O_NONBLOCK
 from os.path import abspath, basename, dirname, exists, getmtime, join, realpath, splitext
 from re import sub
 from shutil import copyfile, rmtree, which
@@ -418,26 +418,29 @@ def deploy_go(app, deltas={}):
 def deploy_node(app, deltas={}):
     """Deploy a Node  application"""
 
-    node_path = join(ENV_ROOT, app)
+    node_path = join(ENV_ROOT, app, "node_modules")
+    node_path_tmp = join(APP_ROOT, app, "node_modules")
     env_file = join(APP_ROOT, app, 'ENV')
-    deps = join(ENV_ROOT, app, 'lib', 'node_modules')
+    deps = join(APP_ROOT, app, 'package.json')
 
     first_time = False
-    if not exists(deps):
+    if not exists(node_path):
         echo("-----> Creating node_modules for '{}'".format(app), fg='green')
-        makedirs(deps)
+        makedirs(node_path)
         first_time = True
 
     if exists(deps):
         if first_time or getmtime(deps) > getmtime(node_path):
             echo("-----> Running npm for '{}'".format(app), fg='green')
             env = {
-                'NODE_PATH': '{}/lib/node_modules'.format(node_path),
-                'NPM_CONFIG_PREFIX': node_path,
+                'NODE_PATH': node_path,
+                'NPM_CONFIG_PREFIX': abspath(join(node_path, "..")),
             }
             if exists(env_file):
                 env.update(parse_settings(env_file, env))
+            symlink(node_path, node_path_tmp)
             call('npm install', cwd=join(APP_ROOT, app), env=env, shell=True)
+            unlink(node_path_tmp)
     spawn_app(app, deltas)
 
 
