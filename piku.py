@@ -629,7 +629,7 @@ def spawn_app(app, deltas={}):
 
     # Configured worker count
     if exists(scaling):
-        worker_count.update({k: int(v) for k,v in parse_procfile(scaling).items()})
+        worker_count.update({k: int(v) for k,v in parse_procfile(scaling).items() if k in workers})
     
     to_create = {}
     to_destroy = {}    
