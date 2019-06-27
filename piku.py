@@ -681,7 +681,6 @@ def spawn_worker(app, kind, command, env, ordinal=1):
     log_file = join(LOG_ROOT, app, kind)
 
     settings = [
-        ('virtualenv',          join(ENV_ROOT, app)),
         ('chdir',               join(APP_ROOT, app)),
         ('master',              'true'),
         ('project',             app),
@@ -695,6 +694,10 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         ('logto',               '{log_file:s}.{ordinal:d}.log'.format(**locals())),
         ('log-backupname',      '{log_file:s}.{ordinal:d}.log.old'.format(**locals())),
     ]
+
+    # only add virtualenv to uwsgi if it's a real virtualenv
+    if exists(join(env_path, "bin", "activate")):
+        settings.append(('virtualenv', env_path))
 
     python_version = int(env.get('PYTHON_VERSION','3'))
 
