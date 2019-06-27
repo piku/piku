@@ -580,7 +580,7 @@ def spawn_app(app, deltas={}):
                     echo("-----> letsencrypt certificate already installed")
 
             # fall back to creating self-signed certificate if acme failed
-            if not exists(key):
+            if not exists(key) or stat(crt).st_size == 0:
                 echo("-----> generating self-signed certificate")
                 call('openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 -subj "/C=US/ST=NY/L=New York/O=Piku/OU=Self-Signed/CN={domain:s}" -keyout {key:s} -out {crt:s}'.format(**locals()), shell=True)
             
