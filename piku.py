@@ -374,9 +374,6 @@ def do_deploy(app, deltas={}):
             else:
                 echo("-----> Could not detect runtime!", fg='red')
             # TODO: detect other runtimes
-            if settings.get("AUTO_RESTART", False):
-                echo("-----> Auto-restarting.", fg='green')
-                do_restart(app)
         else:
             echo("Error: Invalid Procfile for app '{}'.".format(app), fg='red')
     else:
@@ -653,6 +650,13 @@ def spawn_app(app, deltas={}):
     write_config(live, env)
     write_config(scaling, worker_count, ':')
     
+    if env.get("AUTO_RESTART", False):
+        config = glob(join(UWSGI_ENABLED, '{}*.ini'.format(app)))
+        if len(config):
+            echo("-----> Removing uwsgi configs to trigger auto-restart.")
+            for c in config:
+                remove(c)
+
     # Create new workers
     for k, v in to_create.items():
         for w in v:
