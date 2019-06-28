@@ -350,30 +350,28 @@ def do_deploy(app, deltas={}):
             makedirs(log_path)
         workers = parse_procfile(procfile)
         if workers and len(workers):
-            settings = parse_settings(env_file, env)
-            settings = parse_settings(config_file, settings)
+            settings = {}
+            if exists(join(app_path, 'requirements.txt')):
+                echo("-----> Python app detected.", fg='green')
+                settings.update(deploy_python(app, deltas))
+            elif exists(join(app_path, 'package.json')) and check_requirements(['nodejs', 'npm']):
+                echo("-----> Node app detected.", fg='green')
+                settings.update(deploy_node(app, deltas))
+            elif exists(join(app_path, 'pom.xml')) and check_requirements(['java', 'mvn']):
+                echo("-----> Java app detected.", fg='green')
+                settings.update(deploy_java(app, deltas))
+            elif (exists(join(app_path, 'Godeps')) or len(glob(join(app_path,'*.go')))) and check_requirements(['go']):
+                echo("-----> Go app detected.", fg='green')
+                settings.update(deploy_go(app, deltas))
+            else:
+                echo("-----> Could not detect runtime!", fg='red')
+            # TODO: detect other runtimes
             if "release" in workers:
                 echo("-----> Releasing", fg='green')
-                settings["ENV_ROOT"] = join(ENV_ROOT, app)
                 retval = call(workers["release"], cwd=app_path, env=settings, shell=True)
                 if retval:
                     exit(retval)
                 workers.pop("release", None)
-            if exists(join(app_path, 'requirements.txt')):
-                echo("-----> Python app detected.", fg='green')
-                deploy_python(app, deltas)
-            elif exists(join(app_path, 'package.json')) and check_requirements(['nodejs', 'npm']):
-                echo("-----> Node app detected.", fg='green')
-                deploy_node(app, deltas)
-            elif exists(join(app_path, 'pom.xml')) and check_requirements(['java', 'mvn']):
-                echo("-----> Java app detected.", fg='green')
-                deploy_java(app, deltas)
-            elif (exists(join(app_path, 'Godeps')) or len(glob(join(app_path,'*.go')))) and check_requirements(['go']):
-                echo("-----> Go app detected.", fg='green')
-                deploy_go(app, deltas)
-            else:
-                echo("-----> Could not detect runtime!", fg='red')
-            # TODO: detect other runtimes
         else:
             echo("Error: Invalid Procfile for app '{}'.".format(app), fg='red')
     else:
@@ -409,7 +407,7 @@ def deploy_go(app, deltas={}):
                 'GO15VENDOREXPERIMENT': '1'
             }
             call('godep update ...', cwd=join(APP_ROOT, app), env=env, shell=True)
-    spawn_app(app, deltas)
+    return spawn_app(app, deltas)
 
 
 def deploy_node(app, deltas={}):
@@ -438,7 +436,7 @@ def deploy_node(app, deltas={}):
             symlink(node_path, node_path_tmp)
             call('npm install', cwd=join(APP_ROOT, app), env=env, shell=True)
             unlink(node_path_tmp)
-    spawn_app(app, deltas)
+    return spawn_app(app, deltas)
 
 
 def deploy_python(app, deltas={}):
@@ -469,7 +467,7 @@ def deploy_python(app, deltas={}):
     if first_time or getmtime(requirements) > getmtime(virtualenv_path):
         echo("-----> Running pip for '{}'".format(app), fg='green')
         call('pip install -r {}'.format(requirements), cwd=virtualenv_path, shell=True)
-    spawn_app(app, deltas)
+    return spawn_app(app, deltas)
 
  
 def spawn_app(app, deltas={}):
@@ -682,6 +680,8 @@ def spawn_app(app, deltas={}):
             if exists(enabled):
                 echo("-----> terminating '{app:s}:{k:s}.{w:d}'".format(**locals()), fg='yellow')
                 unlink(enabled)
+
+    return env
     
 
 def spawn_worker(app, kind, command, env, ordinal=1):
