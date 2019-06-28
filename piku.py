@@ -16,7 +16,7 @@ from glob import glob
 from hashlib import md5
 from json import loads
 from multiprocessing import cpu_count
-from os import chmod, getgid, getuid, unlink, remove, stat, listdir, environ, makedirs, O_NONBLOCK
+from os import chmod, getgid, getuid, symlink, unlink, remove, stat, listdir, environ, makedirs, O_NONBLOCK
 from os.path import abspath, basename, dirname, exists, getmtime, join, realpath, splitext
 from re import sub
 from shutil import copyfile, rmtree, which
@@ -573,6 +573,8 @@ def spawn_app(app, deltas={}):
                     echo("-----> getting letsencrypt certificate")
                     call('{acme:s}/acme.sh --issue -d {domain:s} -w {www:s}'.format(**locals()), shell=True)
                     call('{acme:s}/acme.sh --install-cert -d {domain:s} --key-file {key:s} --fullchain-file {crt:s}'.format(**locals()), shell=True)
+                    if exists(join(ACME_ROOT, domain)) and not exists(join(ACME_WWW, app)):
+                        symlink(join(ACME_ROOT, domain), join(ACME_WWW, app))
                 else:
                     echo("-----> letsencrypt certificate already installed")
 
@@ -978,6 +980,14 @@ def cmd_destroy(app):
         if exists(f):
             echo("Removing file '{}'".format(f), fg='yellow')
             remove(f)
+
+    acme_link = join(ACME_WWW, app)
+    acme_certs = realpath(acme_link)
+    if exists(acme_certs):
+        echo("Removing folder '{}'".format(acme_certs), fg='yellow')
+        rmtree(acme_certs)
+        echo("Removing file '{}'".format(acme_link), fg='yellow')
+        unlink(acme_link)
 
     
 @piku.command("logs")
