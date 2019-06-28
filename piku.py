@@ -513,7 +513,12 @@ def spawn_app(app, deltas={}):
         'NGINX_IPV6_ADDRESS': '[::]',
         'BIND_ADDRESS': '127.0.0.1',
     }
-    
+
+    # add node path if present
+    node_path = join(virtualenv_path, "node_modules")
+    if exists(node_path):
+        env["NODE_PATH"] = node_path
+
     # Load environment variables shipped with repo (if any)
     if exists(env_file):
         env.update(parse_settings(env_file, env))
