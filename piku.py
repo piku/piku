@@ -16,7 +16,7 @@ from glob import glob
 from hashlib import md5
 from json import loads
 from multiprocessing import cpu_count
-from os import chmod, getgid, getuid, unlink, remove, stat, listdir, environ, makedirs, O_NONBLOCK
+from os import chmod, getgid, getuid, symlink, unlink, remove, stat, listdir, environ, makedirs, O_NONBLOCK
 from os.path import abspath, basename, dirname, exists, getmtime, join, realpath, splitext
 from re import sub
 from shutil import copyfile, rmtree, which
@@ -413,26 +413,29 @@ def deploy_go(app, deltas={}):
 def deploy_node(app, deltas={}):
     """Deploy a Node  application"""
 
-    node_path = join(ENV_ROOT, app)
+    node_path = join(ENV_ROOT, app, "node_modules")
+    node_path_tmp = join(APP_ROOT, app, "node_modules")
     env_file = join(APP_ROOT, app, 'ENV')
-    deps = join(ENV_ROOT, app, 'lib', 'node_modules')
+    deps = join(APP_ROOT, app, 'package.json')
 
     first_time = False
-    if not exists(deps):
+    if not exists(node_path):
         echo("-----> Creating node_modules for '{}'".format(app), fg='green')
-        makedirs(deps)
+        makedirs(node_path)
         first_time = True
 
     if exists(deps):
         if first_time or getmtime(deps) > getmtime(node_path):
             echo("-----> Running npm for '{}'".format(app), fg='green')
             env = {
-                'NODE_PATH': '{}/lib/node_modules'.format(node_path),
-                'NPM_CONFIG_PREFIX': node_path,
+                'NODE_PATH': node_path,
+                'NPM_CONFIG_PREFIX': abspath(join(node_path, "..")),
             }
             if exists(env_file):
                 env.update(parse_settings(env_file, env))
+            symlink(node_path, node_path_tmp)
             call('npm install', cwd=join(APP_ROOT, app), env=env, shell=True)
+            unlink(node_path_tmp)
     return spawn_app(app, deltas)
 
 
@@ -505,7 +508,12 @@ def spawn_app(app, deltas={}):
         'NGINX_IPV6_ADDRESS': '[::]',
         'BIND_ADDRESS': '127.0.0.1',
     }
-    
+
+    # add node path if present
+    node_path = join(virtualenv_path, "node_modules")
+    if exists(node_path):
+        env["NODE_PATH"] = node_path
+
     # Load environment variables shipped with repo (if any)
     if exists(env_file):
         env.update(parse_settings(env_file, env))
@@ -571,6 +579,8 @@ def spawn_app(app, deltas={}):
                     echo("-----> getting letsencrypt certificate")
                     call('{acme:s}/acme.sh --issue -d {domain:s} -w {www:s}'.format(**locals()), shell=True)
                     call('{acme:s}/acme.sh --install-cert -d {domain:s} --key-file {key:s} --fullchain-file {crt:s}'.format(**locals()), shell=True)
+                    if exists(join(ACME_ROOT, domain)) and not exists(join(ACME_WWW, app)):
+                        symlink(join(ACME_ROOT, domain), join(ACME_WWW, app))
                 else:
                     echo("-----> letsencrypt certificate already installed")
 
@@ -978,6 +988,14 @@ def cmd_destroy(app):
         if exists(f):
             echo("Removing file '{}'".format(f), fg='yellow')
             remove(f)
+
+    acme_link = join(ACME_WWW, app)
+    acme_certs = realpath(acme_link)
+    if exists(acme_certs):
+        echo("Removing folder '{}'".format(acme_certs), fg='yellow')
+        rmtree(acme_certs)
+        echo("Removing file '{}'".format(acme_link), fg='yellow')
+        unlink(acme_link)
 
     
 @piku.command("logs")
