@@ -352,13 +352,6 @@ def do_deploy(app, deltas={}):
         if workers and len(workers):
             settings = parse_settings(env_file, env)
             settings = parse_settings(config_file, settings)
-            if "release" in workers:
-                echo("-----> Releasing", fg='green')
-                settings["ENV_ROOT"] = join(ENV_ROOT, app)
-                retval = call(workers["release"], cwd=app_path, env=settings, shell=True)
-                if retval:
-                    exit(retval)
-                workers.pop("release", None)
             if exists(join(app_path, 'requirements.txt')):
                 echo("-----> Python app detected.", fg='green')
                 deploy_python(app, deltas)
@@ -374,6 +367,13 @@ def do_deploy(app, deltas={}):
             else:
                 echo("-----> Could not detect runtime!", fg='red')
             # TODO: detect other runtimes
+            if "release" in workers:
+                echo("-----> Releasing", fg='green')
+                settings.update(environ)
+                retval = call(workers["release"], cwd=app_path, env=settings, shell=True)
+                if retval:
+                    exit(retval)
+                workers.pop("release", None)
         else:
             echo("Error: Invalid Procfile for app '{}'.".format(app), fg='red')
     else:
