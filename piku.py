@@ -430,6 +430,7 @@ def deploy_node(app, deltas={}):
             env = {
                 'NODE_PATH': node_path,
                 'NPM_CONFIG_PREFIX': abspath(join(node_path, "..")),
+                "PATH": ':'.join([join(node_path, ".bin"),environ['PATH']])
             }
             if exists(env_file):
                 env.update(parse_settings(env_file, env))
@@ -513,6 +514,7 @@ def spawn_app(app, deltas={}):
     node_path = join(virtualenv_path, "node_modules")
     if exists(node_path):
         env["NODE_PATH"] = node_path
+        env["PATH"] = ':'.join([join(node_path, ".bin"),environ['PATH']])
 
     # Load environment variables shipped with repo (if any)
     if exists(env_file):
