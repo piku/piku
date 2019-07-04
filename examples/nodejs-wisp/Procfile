@@ -1,0 +1,2 @@
+web: wisp -r ./index.wisp 2>&1 | cat
+release: wisp -r ./hello.wisp
