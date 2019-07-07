@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>HTML5 Minimal template</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="minimal.css" >
+    <link rel="stylesheet" type="text/css" href="minimal-inputs.css" >
+  </head>
+  <body>
+    <p id="connecting">Connecting...</p>
+    <div id="interface">
+      <input type="text" id="nickname" class="quarter" placeholder="Nick name..."/>
+      <input type="text" id="message" class="half" placeholder="Message text..."/>
+      <button id="send" class="quarter">Send</button>
+      <pre id="output"></pre>
+    </div>
+  </body>
+  <script>
+  var el = function(id) { return document.getElementById(id) };
+
+  var ws = new WebSocket(document.location.href.replace("http", "ws") + "ws/");
+
+  ws.onopen = function() {
+    console.log("websocket opened", arguments);
+    el("connecting").style.display = "none";
+    el("interface").style.display = "block";
+  };
+
+  ws.onmessage = function(message) { el("output").textContent += message.data + "\n"; };
+
+  ws.onclose = function() { console.log("close"); };
+
+  var send = function(ev) {
+    ws.send(JSON.stringify({
+      "name": el("nickname").value,
+      "message": el("message").value,
+    }));
+    el("message").value = "";
+    el("message").focus();
+  }
+
+  el("send").onclick = send;
+  el("message").onkeyup = function(ev) {
+    if (ev.keyCode == 13) {
+      send(ev);
+    }
+  }
+  </script>
+  <style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  color: #555;
+  margin: 0 auto;
+  max-width: 50em;
+  font-family: "Helvetica", "Arial", sans-serif;
+  line-height: 1.5;
+  padding: 2em 1em;
+}
+
+pre {
+  border-left: 2px solid #bbb;
+  padding: 1em;
+}
+
+a {
+  color: #f56a6a;
+}
+
+input[type="submit"], input[type="reset"], input[type="button"], button, .button {
+    box-shadow: inset 0 0 0 2px #f56a6a;
+    color: #f56a6a;
+    font-weight: 700;
+    letter-spacing: 0.075em;
+    text-transform: uppercase;
+    text-align: center;
+    font-size: 0.8em;
+}
+
+input[type="submit"], input[type="reset"], input[type="button"], button, .button, input[type="text"], input[type="password"], input[type="email"], input[type="tel"], select, textarea {
+    border-radius: 0.375em;
+    background-color: transparent;
+    border: 0;
+    cursor: pointer;
+    display: inline-block;
+    min-height: 3.5em;
+    line-height: 3.5em;
+    padding: 0 2.25em;
+    text-decoration: none;
+    margin: 0.25em 0.25em;
+    font-size: 0.8em;
+}
+
+input[type="text"], input[type="password"], input[type="email"], input[type="tel"], select, textarea {
+    background-color: #eee;
+    color: #555;
+    outline: none;
+    padding: 0 0.75em;
+    font-weight: bold;
+}
+
+.half {
+    width: calc(50% - 0.7em);
+}
+
+.quarter {
+    width: calc(25% - 0.75em);
+}
+
+#interface {
+  display: none;
+}
+  </style>
+</html>

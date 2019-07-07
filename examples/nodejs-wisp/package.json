@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "express": "^4.17.1",
+    "express-ws": "^2.0.0",
+    "wisp": "^0.11.2"
+  },
+  "description": "Piku wisp example.",
+  "name": "piku-wisp-example"
+}
