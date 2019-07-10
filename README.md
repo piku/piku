@@ -10,12 +10,12 @@ The tiniest Heroku/CloudFoundry-like PaaS you've ever seen.
 
 To use `piku` you need a VPS, Raspberry Pi, or other server bootstrapped with `piku`'s requirements. You can use a single server to run multiple `piku` apps.
 
-**Warning**: You should use a fresh server or VPS instance without anything important running on it already, as `piku` will make changes to configuration files etc.
+**Warning**: You should use a fresh server or VPS instance without anything important running on it already, as `piku` will make changes to configuration files, running services, etc.
 
 Once you've got a fresh server, download the [piku-bootstrap](./piku-bootstrap) shell script onto your local machine and run it:
 
 ```shell
-https://raw.githubusercontent.com/rcarmo/piku/master/piku-bootstrap > piku-bootstrap && chmod 755 piku-bootstrap
+curl https://raw.githubusercontent.com/rcarmo/piku/master/piku-bootstrap > piku-bootstrap && chmod 755 piku-bootstrap
 ./piku-bootstrap
 ```
 
@@ -48,7 +48,7 @@ If you put the `piku-bootstrap` script on your `PATH` somewhere, you can use it 
 To make life easier you can also download the [piku](./piku) helper shell script and install it on your local.
 
 ```shell
-https://raw.githubusercontent.com/rcarmo/piku/master/piku > piku && chmod 755 piku
+curl https://raw.githubusercontent.com/rcarmo/piku/master/piku > piku && chmod 755 piku
 ```
 
 This shell script makes working with `piku` remotes a bit simpler. If you have a git remote called `piku` in the current folder it will infer the remote server and app name and insert those into the remote piku commands. This allows you do execute commands like the following on your running remote app:
