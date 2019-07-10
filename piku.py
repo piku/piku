@@ -712,7 +712,7 @@ def spawn_worker(app, kind, command, env, ordinal=1):
     ]
 
     # only add virtualenv to uwsgi if it's a real virtualenv
-    if exists(join(env_path, "bin", "activate")):
+    if exists(join(env_path, "bin", "activate_this.py")):
         settings.append(('virtualenv', env_path))
 
     python_version = int(env.get('PYTHON_VERSION','3'))
