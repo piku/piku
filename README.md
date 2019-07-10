@@ -4,6 +4,64 @@ The tiniest Heroku/CloudFoundry-like PaaS you've ever seen, inspired by [dokku][
 
 [![asciicast](https://asciinema.org/a/Ar31IoTkzsZmWWvlJll6p7haS.svg)](https://asciinema.org/a/Ar31IoTkzsZmWWvlJll6p7haS)
 
+## Install
+
+To use `piku` you need a VPS, Raspberry Pi, or other server bootstrapped with `piku`'s requirements. You can use a single server to run multiple `piku` apps.
+
+**Warning**: You should use a fresh server or VPS instance without anything important running on it already, as `piku` will make changes to configuration files etc.
+
+Once you've got a fresh server, download the [piku-bootstrap](./piku-bootstrap) shell script onto your local machine and run it:
+
+```shell
+https://raw.githubusercontent.com/rcarmo/piku/master/piku-bootstrap > piku-bootstrap && chmod 755 piku-bootstrap
+./piku-bootstrap
+```
+
+The first time it is run `piku-bootstrap` will install itself into `~/.piku-bootstrap` on your local machine and set up a virtualenv there with the dependencies it requires. It will only need to do this once.
+
+The script will display a usage message and you can then bootstrap your server:
+
+```shell
+./piku-bootstrap yourserver.net
+```
+
+If you put the `piku-bootstrap` script on your `PATH` somewhere, you can use it again to provision other servers in the future.
+
+## Using `piku`
+
+`piku` supports a Heroku-like workflow, like so:
+
+* Create a `git` SSH remote pointing to `piku` with the app name as repo name (e.g. `git remote add piku piku@yourserver:appname`).
+* `git push piku master` your code.
+* `piku` determines the runtime and installs the dependencies for your app (building whatever's required).
+    * For Python, it segregates each app's dependencies into a `virtualenv`.
+    * For Go, it defines a separate `GOPATH` for each app.
+    * For Node, it installs whatever is in `package.json` into `node_modules`.
+* It then looks at a `Procfile` and starts the relevant workers using [uWSGI][uwsgi] as a generic process manager.
+* You can then remotely change application settings (`config:set`) or scale up/down worker processes (`ps:scale`) at will.
+* You can also bake application settings into a file called [`ENV` which is documented here](./docs/ENV.md).
+
+### `piku` client
+
+To make life easier you can also download the [piku](./piku) helper shell script and install it on your local.
+
+```shell
+https://raw.githubusercontent.com/rcarmo/piku/master/piku > piku && chmod 755 piku
+```
+
+This shell script makes working with `piku` remotes a bit simpler. If you have a git remote called `piku` in the current folder it will infer the remote server and app name and insert those into the remote piku commands. This allows you do execute commands like the following on your running remote app:
+
+```shell
+$ piku logs
+$ piku config:set MYVAR=12
+$ piku stop
+$ piku deploy
+$ piku destroy
+$ piku # <- will show help for the remote app
+```
+
+If you put this `piku` script on your `PATH` you can use the `piku` command across multiple apps on your local.
+
 ## Motivation
 
 I kept finding myself wanting an Heroku/CloudFoundry-like way to deploy stuff on a few remote ARM boards and [my Raspberry Pi cluster][raspi-cluster], but since [dokku][dokku] didn't work on ARM at the time and even `docker` can be overkill sometimes, I decided to roll my own.
@@ -17,15 +75,15 @@ From the bottom up:
 - [ ] Prebuilt Raspbian image with everything baked in
 - [ ] `chroot`/namespace isolation (tentative)
 - [ ] Relay commands to other nodes
-- [ ] Proxy deployments to other nodes (build on one box, deploy to many) 
-- [ ] Support Clojure/Java deployments through `boot` or `lein` 
-- [ ] Support Node deployments
+- [ ] Proxy deployments to other nodes (build on one box, deploy to many)
+- [ ] Support Clojure/Java deployments through `boot` or `lein`
 - [ ] Sample Go app
 - [ ] Support Go deployments (in progress)
 - [ ] nginx SSL optimization/cypher suites, own certificates
-- [ ] Let's Encrypt support
 - [ ] Review deployment messages
 - [ ] WIP: Review docs/CLI command documentation (short descriptions done, need `help <cmd>` and better descriptions)
+- [x] Support Node deployments
+- [x] Let's Encrypt support
 - [x] Allow setting `nginx` IP bindings in `ENV` file (`NGINX_IPV4_ADDRESS` and `NGINX_IPV6_ADDRESS`)
 - [x] Cleanups to remove 2.7 syntax internally
 - [x] Change to Python 3 runtime as default, with `PYTHON_VERSION = 2` as fallback
@@ -35,8 +93,8 @@ From the bottom up:
 - [x] static URL mapping to arbitrary paths (hat tip to @carlosefr for `nginx` tuning)
 - [x] remote CLI (requires `ssh -t`)
 - [x] saner uWSGI logging
-- [x] `gevent` activated when `UWSGI_GEVENT = <integer>` 
-- [x] enable CloudFlare ACL when `NGINX_CLOUDFLARE_ACL = True` 
+- [x] `gevent` activated when `UWSGI_GEVENT = <integer>`
+- [x] enable CloudFlare ACL when `NGINX_CLOUDFLARE_ACL = True`
 - [x] Autodetect SPDY/HTTPv2 support and activate it
 - [x] Basic nginx SSL config with self-signed certificates and UNIX domain socket connection
 - [x] nginx support - creates an nginx config file if `NGINX_SERVER_NAME` is defined
@@ -44,7 +102,7 @@ From the bottom up:
 - [x] Support barebones binary deployments
 - [x] Complete installation instructions (see `INSTALL.md`, which also has a draft of Go installation steps)
 - [x] Installation helper/SSH key setup
-- [x] Worker scaling 
+- [x] Worker scaling
 - [x] Remote CLI commands for changing/viewing applied/live settings
 - [x] Remote tailing of all logfiles for a single application
 - [x] HTTP port selection (and per-app environment variables)
@@ -55,18 +113,6 @@ From the bottom up:
 - [x] Support Python deployments
 - [x] Repo creation upon first push
 - [x] Basic understanding of [how `dokku` works](http://off-the-stack.moorman.nu/2013-11-23-how-dokku-works.html)
-
-## Using `piku`
-
-`piku` supports a Heroku-like workflow, like so:
-
-* Create a `git` SSH remote pointing to `piku` with the app name as repo name (`git remote add paas piku@server:app1`) 
-* `git push paas master` your code
-* `piku` determines the runtime and installs the dependencies for your app (building whatever's required)
-    * For Python, it segregates each app's dependencies into a `virtualenv`
-    * For Go, it defines a separate `GOPATH` for each app
-* It then looks at a `Procfile` and starts the relevant workers using [uWSGI][uwsgi] as a generic process manager
-* You can then remotely change application settings (`config:set`) or scale up/down worker processes (`ps:scale`) at will.
 
 ## Internals
 
