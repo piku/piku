@@ -64,6 +64,10 @@ $ piku # <- will show help for the remote app
 
 If you put this `piku` script on your `PATH` you can use the `piku` command across multiple apps on your local.
 
+### Examples
+
+You can find examples for deploying various kinds of apps into a `piku` server in the [Examples folder](./examples).
+
 ## Motivation
 
 I kept finding myself wanting an Heroku/CloudFoundry-like way to deploy stuff on a few remote ARM boards and [my Raspberry Pi cluster][raspi-cluster], but since [dokku][dokku] didn't work on ARM at the time and even `docker` can be overkill sometimes, I decided to roll my own.
