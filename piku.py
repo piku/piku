@@ -514,7 +514,7 @@ def spawn_app(app, deltas={}):
     node_path = join(virtualenv_path, "node_modules")
     if exists(node_path):
         env["NODE_PATH"] = node_path
-        env["PATH"] = ':'.join([join(node_path, ".bin"),environ['PATH']])
+        env["PATH"] = ':'.join([join(node_path, ".bin"),env['PATH']])
 
     # Load environment variables shipped with repo (if any)
     if exists(env_file):
