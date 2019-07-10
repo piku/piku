@@ -1,4 +1,4 @@
-# piku
+![piku logo](./img/logo.png)
 
 The tiniest Heroku/CloudFoundry-like PaaS you've ever seen, inspired by [dokku][dokku].
 
