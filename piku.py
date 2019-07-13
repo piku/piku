@@ -68,10 +68,8 @@ server {
   ssl_certificate_key $NGINX_ROOT/$APP.key;
   server_name         $NGINX_SERVER_NAME;
 
-  # These are not required under systemd - enable for debugging only
-  # access_log        $LOG_ROOT/$APP/access.log;
-  # error_log         $LOG_ROOT/$APP/error.log;
-  
+  $NGINX_LOGS
+
   # Enable gzip compression
   gzip on;
   gzip_proxied any;
@@ -132,9 +130,7 @@ server {
   ssl_certificate_key $NGINX_ROOT/$APP.key;
   server_name         $NGINX_SERVER_NAME;
 
-  # These are not required under systemd - enable for debugging only
-  # access_log        $LOG_ROOT/$APP/access.log;
-  # error_log         $LOG_ROOT/$APP/error.log;
+  $NGINX_LOGS
   
   # Enable gzip compression
   gzip on;
@@ -176,6 +172,11 @@ server {
     root ${ACME_WWW};
   }
 }
+"""
+
+NGINX_LOGS_TEMPLATE = """
+  access_log      {LOG_ROOT:s}/{APP:s}/access.log;
+  error_log       {LOG_ROOT:s}/{APP:s}/error.log;
 """
 
 INTERNAL_NGINX_STATIC_MAPPING = """
@@ -627,6 +628,8 @@ def spawn_app(app, deltas={}):
                 except Exception as e:
                     echo("Error {} in static path spec: should be /url1:path1[,/url2:path2], ignoring.".format(e))
                     env['INTERNAL_NGINX_STATIC_MAPPINGS'] = ''
+
+            env["NGINX_LOGS"] = NGINX_LOGS_TEMPLATE.format(**env) if env.get("NGINX_ENABLE_LOGS") else ""
 
             echo("-----> nginx will map app '{}' to hostname '{}'".format(app, env['NGINX_SERVER_NAME']))
             if('NGINX_HTTPS_ONLY' in env) or ('HTTPS_ONLY' in env):
