@@ -413,6 +413,7 @@ def deploy_go(app, deltas={}):
 def deploy_node(app, deltas={}):
     """Deploy a Node  application"""
 
+    virtualenv_path = join(ENV_ROOT, app)
     node_path = join(ENV_ROOT, app, "node_modules")
     node_path_tmp = join(APP_ROOT, app, "node_modules")
     env_file = join(APP_ROOT, app, 'ENV')
@@ -426,14 +427,18 @@ def deploy_node(app, deltas={}):
 
     if exists(deps):
         if first_time or getmtime(deps) > getmtime(node_path):
-            echo("-----> Running npm for '{}'".format(app), fg='green')
             env = {
+                'VIRTUAL_ENV': virtualenv_path,
                 'NODE_PATH': node_path,
                 'NPM_CONFIG_PREFIX': abspath(join(node_path, "..")),
-                "PATH": ':'.join([join(node_path, ".bin"),environ['PATH']])
+                "PATH": ':'.join([join(virtualenv_path, "bin"), join(node_path, ".bin"),environ['PATH']])
             }
             if exists(env_file):
                 env.update(parse_settings(env_file, env))
+            if env.get("NODE_VERSION") and check_requirements(['nodeenv']):
+                echo("-----> Installing node version '{NODE_VERSION:s}' using nodeenv".format(**env), fg='green')
+                call("nodeenv --prebuilt --node={NODE_VERSION:s} --force {VIRTUAL_ENV:s}".format(**env), cwd=virtualenv_path, env=env, shell=True)
+            echo("-----> Running npm for '{}'".format(app), fg='green')
             symlink(node_path, node_path_tmp)
             call('npm install', cwd=join(APP_ROOT, app), env=env, shell=True)
             unlink(node_path_tmp)
@@ -514,7 +519,7 @@ def spawn_app(app, deltas={}):
     node_path = join(virtualenv_path, "node_modules")
     if exists(node_path):
         env["NODE_PATH"] = node_path
-        env["PATH"] = ':'.join([join(node_path, ".bin"),environ['PATH']])
+        env["PATH"] = ':'.join([join(node_path, ".bin"),env['PATH']])
 
     # Load environment variables shipped with repo (if any)
     if exists(env_file):
@@ -712,7 +717,7 @@ def spawn_worker(app, kind, command, env, ordinal=1):
     ]
 
     # only add virtualenv to uwsgi if it's a real virtualenv
-    if exists(join(env_path, "bin", "activate")):
+    if exists(join(env_path, "bin", "activate_this.py")):
         settings.append(('virtualenv', env_path))
 
     python_version = int(env.get('PYTHON_VERSION','3'))

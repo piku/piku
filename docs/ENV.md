@@ -4,7 +4,13 @@ You can configure deployment settings by placing special variables in an `ENV` f
 
 ## Runtime Settings
 
+### Python
+
 * `PYTHON_VERSION` (int): Forces Python 3
+
+### Node
+
+* `NODE_VERSION`: installs a particular version of node for your app if `nodeenv` is found on the path
 
 ## Network Settings
 
