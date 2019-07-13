@@ -2,7 +2,7 @@
 
 The tiniest Heroku/CloudFoundry-like PaaS you've ever seen.
 
-`piku` helps you do `git push` deployments to your own servers. Inspired by [dokku][dokku].
+`piku`, inspired by [dokku][dokku], allows you do `git push` deployments to your own servers.
 
 [![asciicast](https://asciinema.org/a/Ar31IoTkzsZmWWvlJll6p7haS.svg)](https://asciinema.org/a/Ar31IoTkzsZmWWvlJll6p7haS)
 
