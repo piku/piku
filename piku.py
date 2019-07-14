@@ -636,6 +636,15 @@ def spawn_app(app, deltas={}):
                 buffer = expandvars(NGINX_TEMPLATE, env)
             with open(nginx_conf, "w") as h:
                 h.write(buffer)
+            # prevent broken config from breaking other deploys
+            try:
+                nginx_config_test = str(check_output("nginx -t 2>&1 | grep {}".format(app), env=environ, shell=True))
+            except:
+                nginx_config_test = None
+            if nginx_config_test:
+                echo("Error: [nginx config] {}".format(nginx_config_test), fg='red')
+                echo("Warning: removing broken nginx config.", fg='yellow')
+                unlink(nginx_conf)
 
     # Configured worker count
     if exists(scaling):
