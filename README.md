@@ -88,8 +88,11 @@ From the bottom up:
 - [ ] nginx SSL optimization/cypher suites, own certificates
 - [ ] Review deployment messages
 - [ ] WIP: Review docs/CLI command documentation (short descriptions done, need `help <cmd>` and better descriptions)
-- [x] Support Node deployments
-- [x] Let's Encrypt support
+- [x] Django and Wisp examples (by @chr15m)
+- [x] Project logo (by @chr15m)
+- [x] Various release/deployment improvements (by @chr15m)
+- [x] Support Node deployments (by @chr15m)
+- [x] Let's Encrypt support (by @chr15m)
 - [x] Allow setting `nginx` IP bindings in `ENV` file (`NGINX_IPV4_ADDRESS` and `NGINX_IPV6_ADDRESS`)
 - [x] Cleanups to remove 2.7 syntax internally
 - [x] Change to Python 3 runtime as default, with `PYTHON_VERSION = 2` as fallback
