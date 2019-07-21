@@ -88,6 +88,7 @@ From the bottom up:
 - [ ] nginx SSL optimization/cypher suites, own certificates
 - [ ] Review deployment messages
 - [ ] WIP: Review docs/CLI command documentation (short descriptions done, need `help <cmd>` and better descriptions)
+- [ ] Lua/WSAPI support
 - [x] Django and Wisp examples (by @chr15m)
 - [x] Project logo (by @chr15m)
 - [x] Various release/deployment improvements (by @chr15m)
