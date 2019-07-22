@@ -8,21 +8,23 @@
 
 remote=`git config --get remote.piku.url`
 
-echo "Piku remote operator."
+out() { printf "%s\n" "$*" >&2; }
+
+out "Piku remote operator."
 
 if [ "$remote" = "" ]
 then
-  echo
-  echo "Error: no piku server configured."
-  echo "Use PIKU_SERVER=piku@MYSERVER.NET or configure a git remote called 'piku'."
-  echo
+  out
+  out "Error: no piku server configured."
+  out "Use PIKU_SERVER=piku@MYSERVER.NET or configure a git remote called 'piku'."
+  out
 else
   server=${PIKU_SERVER:-`echo $remote | cut -f1 -d":" 2>/dev/null`}
   app=${PIKU_APP:-`echo $remote | cut -f2 -d":" 2>/dev/null`}
   cmd="$1"
-  echo "Server: $server"
-  echo "App: $app"
-  echo
+  out "Server: $server"
+  out "App: $app"
+  out
   case "$cmd" in
     apps|setup|setup:ssh|"")
       ssh -A "$server" "$@"
