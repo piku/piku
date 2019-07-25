@@ -307,7 +307,7 @@ def parse_settings(filename, env={}):
         
     with open(filename, 'r') as settings:
         for line in settings:
-            if '#' == line[0]: # allow for comments
+            if '#' == line[0] or len(line.strip()) == 0: # ignore comments and newlines
                 continue
             try:
                 k, v = map(lambda x: x.strip(), line.split("=", 1))

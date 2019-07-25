@@ -1,6 +1,13 @@
+# variables are global and can be replaced
 SETTING1=True
 SETTING2=${SETTING1}/Maybe
+
+# addr:port
 PORT=9080
 BIND_ADDRESS=0.0.0.0
+
+# the max number the worker will process
 RANGE=10
+
+# worker sleep interval between prints
 INTERVAL=1
