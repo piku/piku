@@ -370,6 +370,7 @@ def do_deploy(app, deltas={}):
                 echo("-----> Releasing", fg='green')
                 retval = call(workers["release"], cwd=app_path, env=settings, shell=True)
                 if retval:
+                    echo("-----> Exiting due to release command error value: {}".format(retval))
                     exit(retval)
                 workers.pop("release", None)
         else:
@@ -425,19 +426,32 @@ def deploy_node(app, deltas={}):
         makedirs(node_path)
         first_time = True
 
-    if exists(deps):
-        if first_time or getmtime(deps) > getmtime(node_path):
-            env = {
-                'VIRTUAL_ENV': virtualenv_path,
-                'NODE_PATH': node_path,
-                'NPM_CONFIG_PREFIX': abspath(join(node_path, "..")),
-                "PATH": ':'.join([join(virtualenv_path, "bin"), join(node_path, ".bin"),environ['PATH']])
-            }
-            if exists(env_file):
-                env.update(parse_settings(env_file, env))
-            if env.get("NODE_VERSION") and check_requirements(['nodeenv']):
+    env = {
+        'VIRTUAL_ENV': virtualenv_path,
+        'NODE_PATH': node_path,
+        'NPM_CONFIG_PREFIX': abspath(join(node_path, "..")),
+        "PATH": ':'.join([join(virtualenv_path, "bin"), join(node_path, ".bin"),environ['PATH']])
+    }
+    if exists(env_file):
+        env.update(parse_settings(env_file, env))
+
+    version = env.get("NODE_VERSION")
+    node_binary = join(virtualenv_path, "bin", "node")
+    installed = check_output("{} -v".format(node_binary), cwd=join(APP_ROOT, app), env=env, shell=True).decode("utf8").rstrip("\n") if exists(node_binary) else ""
+
+    if version and check_requirements(['nodeenv']):
+        if not installed.endswith(version):
+            started = glob(join(UWSGI_ENABLED, '{}*.ini'.format(app)))
+            if installed and len(started):
+                echo("Warning: Can't update node with app running. Stop the app & retry.", fg='yellow')
+            else:
                 echo("-----> Installing node version '{NODE_VERSION:s}' using nodeenv".format(**env), fg='green')
-                call("nodeenv --prebuilt --node={NODE_VERSION:s} --force {VIRTUAL_ENV:s}".format(**env), cwd=virtualenv_path, env=env, shell=True)
+                call("nodeenv --prebuilt --node={NODE_VERSION:s} --clean-src --force {VIRTUAL_ENV:s}".format(**env), cwd=virtualenv_path, env=env, shell=True)
+        else:
+            echo("-----> Node is installed at {}.".format(version))
+
+    if exists(deps) and check_requirements(['npm']):
+        if first_time or getmtime(deps) > getmtime(node_path):
             echo("-----> Running npm for '{}'".format(app), fg='green')
             symlink(node_path, node_path_tmp)
             call('npm install', cwd=join(APP_ROOT, app), env=env, shell=True)

@@ -1,4 +1,4 @@
-## Configuring Piku via ENV
+# Configuring Piku via ENV
 
 You can configure deployment settings by placing special variables in an `ENV` file deployed with your app.
 
@@ -10,7 +10,9 @@ You can configure deployment settings by placing special variables in an `ENV` f
 
 ### Node
 
-* `NODE_VERSION`: installs a particular version of node for your app if `nodeenv` is found on the path
+* `NODE_VERSION`: installs a particular version of node for your app if `nodeenv` is found on the path.
+
+**Note**: you will need to stop and re-deploy the app to change the node version in a running app.
 
 ## Network Settings
 
