@@ -330,7 +330,7 @@ def check_requirements(binaries):
     return True
     
 
-def do_deploy(app, deltas={}):
+def do_deploy(app, deltas={}, newrev=None):
     """Deploy an app by resetting the work directory"""
     
     app_path = join(APP_ROOT, app)
@@ -343,7 +343,8 @@ def do_deploy(app, deltas={}):
     if exists(app_path):
         echo("-----> Deploying app '{}'".format(app), fg='green')
         call('git fetch --quiet', cwd=app_path, env=env, shell=True)
-        call('git reset --hard origin/master', cwd=app_path, env=env, shell=True)
+        if newrev:
+            call('git reset --hard {}'.format(newrev), cwd=app_path, env=env, shell=True)
         call('git submodule init', cwd=app_path, env=env, shell=True)
         call('git submodule update', cwd=app_path, env=env, shell=True)
         if not exists(log_path):
@@ -1190,17 +1191,12 @@ def cmd_git_hook(app):
     for line in stdin:
         # pylint: disable=unused-variable
         oldrev, newrev, refname = line.strip().split(" ")
-        #echo("refs:", oldrev, newrev, refname)
-        if refname == "refs/heads/master":
-            # Handle pushes to master branch
-            if not exists(app_path):
-                echo("-----> Creating app '{}'".format(app), fg='green')
-                makedirs(app_path)
-                call('git clone --quiet {} {}'.format(repo_path, app), cwd=APP_ROOT, shell=True)
-            do_deploy(app)
-        else:
-            # TODO: Handle pushes to another branch
-            echo("receive-branch '{}': {}, {}".format(app, newrev, refname))
+        # Handle pushes
+        if not exists(app_path):
+            echo("-----> Creating app '{}'".format(app), fg='green')
+            makedirs(app_path)
+            call('git clone --quiet {} {}'.format(repo_path, app), cwd=APP_ROOT, shell=True)
+        do_deploy(app, newrev=newrev)
 
 
 @piku.command("git-receive-pack")
