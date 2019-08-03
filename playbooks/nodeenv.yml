@@ -1,0 +1,7 @@
+---
+- hosts: all
+  tasks:
+    - name: Install nodeenv
+      apt:
+        name: ["nodeenv"]
+
