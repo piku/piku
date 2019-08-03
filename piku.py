@@ -1227,5 +1227,16 @@ cat | PIKU_ROOT="{PIKU_ROOT:s}" {PIKU_SCRIPT:s} git-hook {app:s}""".format(**env
     call('git-shell -c "{}" '.format(argv[1] + " '{}'".format(app)), cwd=GIT_ROOT, shell=True)
 
 
+@piku.command("git-upload-pack")
+@argument('app')
+def cmd_git_receive_pack(app):
+    """INTERNAL: Handle git upload pack for an app"""
+    app = sanitize_app_name(app)
+    env = globals()
+    env.update(locals())
+    # Handle the actual receive. We'll be called with 'git-hook' after it happens
+    call('git-shell -c "{}" '.format(argv[1] + " '{}'".format(app)), cwd=GIT_ROOT, shell=True)
+
+
 if __name__ == '__main__':
     piku()
