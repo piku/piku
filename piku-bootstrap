@@ -71,14 +71,14 @@ main() {
     echo "\t`basename $0` pi@raspberrypi.local"
     echo
   else
-    cd "${REPO}"
     case "$1" in
       update)
         echo "Updating piku repo."
+        cd "${REPO}"
         git pull
         ;;
       list-playbooks)
-        ls playbooks
+        ls "${REPO}/playbooks"
         ;;
       *)
         host="$1"; shift
@@ -90,7 +90,12 @@ main() {
         if [ -z "${playbook##*.yml*}" ] ;then
           shift;
           echo "Bootstrapping piku onto ${host}"
-          PYTHONWARNINGS="ignore" ansible-playbook -i "${host}", "$@" playbooks/${playbook}
+          builtin="${REPO}/playbooks/${playbook}"
+          if [ ! -f "${playbook}" -a -f "${builtin}" ]; then
+            echo "Using built-in playbook."
+            playbook="${builtin}"
+          fi
+          PYTHONWARNINGS="ignore" ansible-playbook -i "${host}", "${playbook}" "$@"
         else
           echo "${playbook} is not a valid playbook name."
         fi
