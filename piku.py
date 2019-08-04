@@ -117,6 +117,8 @@ NGINX_COMMON_FRAGMENT = """
   # set a custom header for requests
   add_header X-Deployed-By Piku;
 
+  $NGINX_CUSTOM_CLAUSES
+
   $INTERNAL_NGINX_STATIC_MAPPINGS
 
   location    / {
@@ -599,6 +601,8 @@ def spawn_app(app, deltas={}):
                 except Exception as e:
                     echo("Error {} in static path spec: should be /url1:path1[,/url2:path2], ignoring.".format(e))
                     env['INTERNAL_NGINX_STATIC_MAPPINGS'] = ''
+
+            env['NGINX_CUSTOM_CLAUSES'] = expandvars(open(join(app_path, env["NGINX_INCLUDE_FILE"])).read(), env) if env.get("NGINX_INCLUDE_FILE") else ""
 
             env['NGINX_COMMON'] = expandvars(NGINX_COMMON_FRAGMENT, env)
 
