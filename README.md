@@ -6,11 +6,25 @@ The tiniest Heroku/CloudFoundry-like PaaS you've ever seen.
 
 [![asciicast](https://asciinema.org/a/Ar31IoTkzsZmWWvlJll6p7haS.svg)](https://asciinema.org/a/Ar31IoTkzsZmWWvlJll6p7haS)
 
+## Using `piku`
+
+`piku` supports a Heroku-like workflow, like so:
+
+* Create a `git` SSH remote pointing to `piku` with the app name as repo name (e.g. `git remote add piku piku@yourserver:appname`).
+* `git push piku master` your code.
+* `piku` determines the runtime and installs the dependencies for your app (building whatever's required).
+    * For Python, it segregates each app's dependencies into a `virtualenv`.
+    * For Go, it defines a separate `GOPATH` for each app.
+    * For Node, it installs whatever is in `package.json` into `node_modules`.
+* It then looks at a `Procfile` and starts the relevant workers using [uWSGI][uwsgi] as a generic process manager.
+* You can then remotely change application settings (`config:set`) or scale up/down worker processes (`ps:scale`) at will.
+* You can also bake application settings into a file called [`ENV` which is documented here](./docs/ENV.md).
+
 ## Install
 
 To use `piku` you need a VPS, Raspberry Pi, or other server bootstrapped with `piku`'s requirements. You can use a single server to run multiple `piku` apps.
 
-**Warning**: You should use a fresh server or VPS instance without anything important running on it already, as `piku` will make changes to configuration files, running services, etc.
+**Warning**: You should use a fresh server or VPS instance without anything important running on it already, as `piku-bootstrap` will make changes to configuration files, running services, etc.
 
 Once you've got a fresh server, download the [piku-bootstrap](./piku-bootstrap) shell script onto your local machine and run it:
 
@@ -28,20 +42,6 @@ The script will display a usage message and you can then bootstrap your server:
 ```
 
 If you put the `piku-bootstrap` script on your `PATH` somewhere, you can use it again to provision other servers in the future.
-
-## Using `piku`
-
-`piku` supports a Heroku-like workflow, like so:
-
-* Create a `git` SSH remote pointing to `piku` with the app name as repo name (e.g. `git remote add piku piku@yourserver:appname`).
-* `git push piku master` your code.
-* `piku` determines the runtime and installs the dependencies for your app (building whatever's required).
-    * For Python, it segregates each app's dependencies into a `virtualenv`.
-    * For Go, it defines a separate `GOPATH` for each app.
-    * For Node, it installs whatever is in `package.json` into `node_modules`.
-* It then looks at a `Procfile` and starts the relevant workers using [uWSGI][uwsgi] as a generic process manager.
-* You can then remotely change application settings (`config:set`) or scale up/down worker processes (`ps:scale`) at will.
-* You can also bake application settings into a file called [`ENV` which is documented here](./docs/ENV.md).
 
 ### `piku` client
 
