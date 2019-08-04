@@ -64,7 +64,25 @@ $ piku # <- will show help for the remote app
 
 If you put this `piku` script on your `PATH` you can use the `piku` command across multiple apps on your local.
 
-### Examples
+### Installing other deps
+
+`piku-bootstrap` uses Ansible internally and it comes with several extra built-in playbooks which you can use to bootstrap common components onto your `piku` server.
+
+Use `piku-bootstrap list-playbooks` to show a list of built-in playbooks, and then to install one add it as an argument to the bootstrap command.
+
+For example, to deploy `nodeenv` onto your server:
+
+```shell
+piku-bootstrap root@yourserver.net nodeenv.yml`
+```
+
+You can also use `piku-bootstrap` to run your own Ansible playbooks like this:
+
+```shell
+piku-bootstrap root@yourserver.net ./myplaybook.yml
+```
+
+## Examples
 
 You can find examples for deploying various kinds of apps into a `piku` server in the [Examples folder](./examples).
 
