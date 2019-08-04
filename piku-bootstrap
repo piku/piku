@@ -49,12 +49,24 @@ main() {
   if [ "$1" = "" ]
   then
     echo
-    echo "Usage: `basename $0` [USER@]HOST [ANSIBLE_ARGS...]"
+    echo "Usage:"
+    echo "       `basename $0` [USER@]HOST [PLAYBOOK] [ANSIBLE_ARGS...]"
+    echo "       `basename $0` lists-playbooks"
+    echo "       `basename $0` update"
     echo
-    echo " HOST\tCreates a user 'piku' on the machine 'HObaST',"
-    echo "\tinstalls git, and sets up the piku.py script."
+    echo " HOST     Creates a user 'piku' on the machine 'HOST',"
+    echo "          installs git, and sets up the piku.py script."
     echo
-    echo " USER\tOptional non-root user to log in as (e.g. 'pi')."
+    echo " USER     Optional non-root user to log in as (e.g. 'pi')."
+    echo
+    echo " PLAYBOOK Optional playbook to deploy on to the server."
+    echo "          For example 'nodeenv.yml' installs nodeenv."
+    echo "          Can be an absolute path to your own playbook."
+    echo
+    echo " list-playbooks"
+    echo "          List available built-in playbooks with list-playbooks."
+    echo
+    echo " update   Pulls the piku repository to get the latest playbooks."
     echo
     echo "WARNING: This script installs software and makes changes"
     echo "         on the target server. Only use a freshly provisioned"
