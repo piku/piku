@@ -34,3 +34,4 @@ You can configure deployment settings by placing special variables in an `ENV` f
 * `NGINX_CLOUDFLARE_ACL` (boolean): activate an ACL allowing access only from Cloudflare IPs
 * `NGINX_STATIC_PATHS`: set an array of `/url:path` values
 * `NGINX_HTTPS_ONLY`: tell nginx to auto-redirect non-SSL traffic to SSL site
+* `NGINX_ALLOW_GIT_FOLDERS`: (boolean) allow access to `.git` folders (default: false, blocked)
