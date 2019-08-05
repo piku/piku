@@ -101,7 +101,7 @@ main() {
       register: uwsgi_location
       when: packages_installed is changed
 
-    - name: Create uwsi symlink
+    - name: Create uwgsi symlink
       file:
         src: "{{uwsgi_location.stdout}}"
         dest: /usr/local/bin/uwsgi-piku
@@ -117,13 +117,13 @@ main() {
         mode: 0700
       when: packages_installed is changed
 
-    - name: Setup uwsgi dist script
+    - name: Install uwsgi-piku dist script
       shell: update-rc.d uwsgi-piku defaults
       args:
         creates: /etc/rc2.d/S01uwsgi-piku
       when: packages_installed is changed
 
-    - name: Install uwsgi systemd script
+    - name: Install uwsgi-piku systemd script
       get_url:
         url: https://raw.githubusercontent.com/rcarmo/piku/master/uwsgi-piku.service
         dest: /etc/systemd/system/uwsgi-piku.service
@@ -209,10 +209,24 @@ main() {
 - hosts: all
   become: yes
   tasks:
-    - name: Start uwsgi service
+
+    - name: Test if systemctl is present
+      shell: command -v systemctl
+      register: systemctl
+
+    - name: Enable uwsgi-piku service
+      systemd:
+        name: uwsgi-piku
+        enabled: yes
+        state: started
+        masked: no
+      when: '"systemctl" in systemctl.stdout'
+
+    - name: Start uwsgi init script
       service:
         name: uwsgi-piku
         state: started
+      when: '"systemctl" not in systemctl.stdout'
 
     - name: Get nginx default config
       get_url:
