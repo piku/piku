@@ -61,49 +61,12 @@ server {
   listen              $NGINX_IPV6_ADDRESS:80;
   listen              $NGINX_IPV4_ADDRESS:80;
 
-  listen              $NGINX_IPV6_ADDRESS:$NGINX_SSL;
-  listen              $NGINX_IPV4_ADDRESS:$NGINX_SSL;
-  ssl                 on;
-  ssl_certificate     $NGINX_ROOT/$APP.crt;
-  ssl_certificate_key $NGINX_ROOT/$APP.key;
-  server_name         $NGINX_SERVER_NAME;
-
-  # These are not required under systemd - enable for debugging only
-  # access_log        $LOG_ROOT/$APP/access.log;
-  # error_log         $LOG_ROOT/$APP/error.log;
-  
-  # Enable gzip compression
-  gzip on;
-  gzip_proxied any;
-  gzip_types text/plain text/xml text/css application/x-javascript text/javascript application/xml+rss application/atom+xml;
-  gzip_comp_level 7;
-  gzip_min_length 2048;
-  gzip_vary on;
-  gzip_disable "MSIE [1-6]\.(?!.*SV1)";
-  
-  # set a custom header for requests
-  add_header X-Deployed-By Piku;
-
-  $INTERNAL_NGINX_STATIC_MAPPINGS
-
   location ^~ /.well-known/acme-challenge {
     allow all;
     root ${ACME_WWW};
   }
 
-  location    / {
-    $INTERNAL_NGINX_UWSGI_SETTINGS
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection "upgrade";
-    proxy_set_header Host $http_host;
-    proxy_set_header X-Forwarded-Proto $scheme;
-    proxy_set_header X-Forwarded-For $remote_addr;
-    proxy_set_header X-Forwarded-Port $server_port;
-    proxy_set_header X-Request-Start $msec;
-    $NGINX_ACL
- }
-
+$NGINX_COMMON
 }
 """
 
@@ -125,6 +88,12 @@ server {
 }
 
 server {
+$NGINX_COMMON
+}
+"""
+# pylint: enable=anomalous-backslash-in-string
+
+NGINX_COMMON_FRAGMENT = """
   listen              $NGINX_IPV6_ADDRESS:$NGINX_SSL;
   listen              $NGINX_IPV4_ADDRESS:$NGINX_SSL;
   ssl                 on;
@@ -162,9 +131,7 @@ server {
     proxy_set_header X-Request-Start $msec;
     $NGINX_ACL
  }
-}
 """
-# pylint: enable=anomalous-backslash-in-string
 
 NGINX_ACME_FIRSTRUN_TEMPLATE = """
 server {
@@ -647,6 +614,8 @@ def spawn_app(app, deltas={}):
                 except Exception as e:
                     echo("Error {} in static path spec: should be /url1:path1[,/url2:path2], ignoring.".format(e))
                     env['INTERNAL_NGINX_STATIC_MAPPINGS'] = ''
+
+            env['NGINX_COMMON'] = expandvars(NGINX_COMMON_FRAGMENT, env)
 
             echo("-----> nginx will map app '{}' to hostname '{}'".format(app, env['NGINX_SERVER_NAME']))
             if('NGINX_HTTPS_ONLY' in env) or ('HTTPS_ONLY' in env):
