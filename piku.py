@@ -119,6 +119,8 @@ NGINX_COMMON_FRAGMENT = """
 
   $INTERNAL_NGINX_STATIC_MAPPINGS
 
+  $NGINX_BLOCK_GIT
+
   location    / {
     $INTERNAL_NGINX_UWSGI_SETTINGS
     proxy_http_version 1.1;
@@ -506,7 +508,7 @@ def spawn_app(app, deltas={}):
     # Load environment variables shipped with repo (if any)
     if exists(env_file):
         env.update(parse_settings(env_file, env))
-    
+
     # Override with custom settings (if any)
     if exists(settings):
         env.update(parse_settings(settings, env))
@@ -598,6 +600,8 @@ def spawn_app(app, deltas={}):
                     cf = defaultdict()
                     echo("-----> Could not retrieve CloudFlare IP ranges: {}".format(format_exc()), fg="red")
             env['NGINX_ACL'] = " ".join(acl)
+
+            env['NGINX_BLOCK_GIT'] = "" if env.get('NGINX_ALLOW_GIT_FOLDERS') else "location ~ /\.git { deny all; }"
 
             env['INTERNAL_NGINX_STATIC_MAPPINGS'] = ''
             
