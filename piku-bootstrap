@@ -41,34 +41,36 @@ main() {
   if [ "$1" = "" ]
   then
     echo
-    echo "Usage: `basename $0` HOST [--pi] [...YOUR_ANSIBLE_ARGS...]"
+    echo "Usage: `basename $0` [USER@]HOST [ANSIBLE_ARGS...]"
     echo
     echo " HOST\tCreates a user 'piku' on the machine 'HOST',"
-    echo "\tinstalls git, and install the piku script there."
+    echo "\tinstalls git, and sets up the piku.py script."
     echo
-    echo " --pi\tShortcut to SSH in as the user 'pi'."
-    echo "\tUse \`ssh-copy-id pi@HOSTNAME\` to upload SSH key first."
+    echo " USER\tOptional non-root user to log in as (e.g. 'pi')."
     echo
-    echo "\tRequires root/sudo on HOSTNAME (--pi implies sudo)."
-    echo "\tRequires HOSTNAME to be a Debian based distribution."
+    echo "WARNING: This script installs software and makes changes"
+    echo "         on the target server. Only use a freshly provisioned"
+    echo "         server which you do not mind being modified."
+    echo
+    echo "Notes:"
+    echo
+    echo " * This script requires that you have root/sudo on HOST."
+    echo " * Use \`ssh-copy-id USER@HOST\` to upload your SSH key first."
+    echo " * HOST must be a Debian/Ubuntu based distribution."
+    echo
+    echo "Raspberry Pi example:"
+    echo
+    echo "\t`basename $0` pi@raspberrypi.local"
     echo
   else
     host="$1"; shift
-    # check for raspberry pi user flag
-    if [ "$1" = "--pi" ]; then PIKU_SSH=pi; shift; else PIKU_SSH=root; fi;
     echo "Bootstrapping piku onto ${host}"
-    # TODO: use pyenv + virtualenv on remote instead and install exact versions
-    PIKU_SSH="${PIKU_SSH}" PYTHONWARNINGS="ignore" ansible-playbook -i "${host}", "$@" /dev/stdin << EOF
+    PYTHONWARNINGS="ignore" ansible-playbook -i "${host}", "$@" /dev/stdin << EOF
 ---
 - hosts: all
   become: yes
   gather_facts: no
-  vars:
-    default_user: "{{ lookup('env', 'PIKU_SSH') }}"
   pre_tasks:
-    - name: Set default SSH user
-      set_fact: ansible_ssh_user="{{default_user}}"
-
     - name: Install python2 required by Ansible
       raw: "( /usr/bin/python --version 2>&1 | grep -c 'Python' > /dev/null ) || apt-get update && apt-get -y install python"
 
@@ -99,7 +101,7 @@ main() {
       register: uwsgi_location
       when: packages_installed is changed
 
-    - name: Create uwsi symlink
+    - name: Create uwgsi symlink
       file:
         src: "{{uwsgi_location.stdout}}"
         dest: /usr/local/bin/uwsgi-piku
@@ -115,13 +117,13 @@ main() {
         mode: 0700
       when: packages_installed is changed
 
-    - name: Setup uwsgi dist script
+    - name: Install uwsgi-piku dist script
       shell: update-rc.d uwsgi-piku defaults
       args:
         creates: /etc/rc2.d/S01uwsgi-piku
       when: packages_installed is changed
 
-    - name: Install uwsgi systemd script
+    - name: Install uwsgi-piku systemd script
       get_url:
         url: https://raw.githubusercontent.com/rcarmo/piku/master/uwsgi-piku.service
         dest: /etc/systemd/system/uwsgi-piku.service
@@ -207,10 +209,24 @@ main() {
 - hosts: all
   become: yes
   tasks:
-    - name: Start uwsgi service
+
+    - name: Test if systemctl is present
+      shell: command -v systemctl
+      register: systemctl
+
+    - name: Enable uwsgi-piku service
+      systemd:
+        name: uwsgi-piku
+        enabled: yes
+        state: started
+        masked: no
+      when: '"systemctl" in systemctl.stdout'
+
+    - name: Start uwsgi init script
       service:
         name: uwsgi-piku
         state: started
+      when: '"systemctl" not in systemctl.stdout'
 
     - name: Get nginx default config
       get_url:

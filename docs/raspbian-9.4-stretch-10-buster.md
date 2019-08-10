@@ -1,12 +1,12 @@
-# Installation on Raspbian Stretch
+# Installation on Raspbian Stretch or Buster
 
 > This is a standalone, distribution-specific version of `INSTALL.md`. You do not need to read or follow the original file, but can refer to it for generic steps like setting up SSH keys (which are assumed to be common knowledge here)
 
-`piku` setup is simplified in modern Debian versions, since it can take advantage of some packaging improvements in [uWSGI][uwsgi] and does not require a custom `systemd` service. However, Stretch still ships with Python 3.5, which means it's not an ideal environment for new deployments on both Intel and ARM devices.
+`piku` setup is simplified in modern Debian versions, since it can take advantage of some packaging improvements in [uWSGI][uwsgi] and does not require a custom `systemd` service. However, Stretch still ships with Python 3.5, which means it's not an ideal environment for new deployments on both Intel and ARM devices (Buster, in turn, ships with Python 3.7).
 
 ## Setting up your Raspberry Pi
 
-Download and install [Raspbian Stretch](https://www.raspberrypi.org/downloads/raspbian/) onto an SD card.
+Download and install [Raspbian](https://www.raspberrypi.org/downloads/raspbian/) onto an SD card.
 
 After you install it is recommended that you do the following to update your installation to the latest available software.
 
@@ -36,7 +36,8 @@ sudo apt-get install -y build-essential certbot git incron \
     python-certbot-nginx python-dev python-pip python-virtualenv \
     python3-dev python3-pip python3-click python3-virtualenv \
     uwsgi uwsgi-plugin-asyncio-python3 uwsgi-plugin-gevent-python \
-    uwsgi-plugin-python uwsgi-plugin-python3 uwsgi-plugin-tornado-python
+    uwsgi-plugin-python uwsgi-plugin-python3 uwsgi-plugin-tornado-python \
+    uwsgi-plugin-lua5.1 uwsgi-plugin-lua5.2 uwsgi-plugin-luajit
 ```
 ## Setting up the `piku` user
 
@@ -76,7 +77,7 @@ Setting '/home/piku/piku.py' as executable.
 
 ## uWSGI Configuration
 
-[uWSGI][uwsgi] in Bionic requires very little configuration, since it is already properly packaged. All you need to do is create a symlink to the `piku` configuration file in `/etc/uwsgi/apps-enabled`:
+[uWSGI][uwsgi] in Stretch and Buster requires very little configuration, since it is already properly packaged. All you need to do is create a symlink to the `piku` configuration file in `/etc/uwsgi/apps-enabled`:
 
 ```bash
 sudo ln /home/$PAAS_USERNAME/.piku/uwsgi/uwsgi.ini /etc/uwsgi/apps-enabled/piku.ini
@@ -113,6 +114,6 @@ To detect configuration changes and tell `nginx` to activate new `piku` sites, w
 
 ## Notes
 
-> This file was last updated on November 2018
+> This file was last updated on June 2019
 
 [uwsgi]: https://github.com/unbit/uwsgi
