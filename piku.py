@@ -361,6 +361,9 @@ def do_deploy(app, deltas={}):
             elif exists(join(app_path, 'pom.xml')) and check_requirements(['java', 'mvn']):
                 echo("-----> Java app detected.", fg='green')
                 settings.update(deploy_java(app, deltas))
+            elif exists(join(app_path, 'build.gradle')) and check_requirements(['java', 'gradle']):
+                echo("-----> Gradle Java app detected.", fg='green')
+                settings.update(deploy_java(app, deltas))
             elif (exists(join(app_path, 'Godeps')) or len(glob(join(app_path,'*.go')))) and check_requirements(['go']):
                 echo("-----> Go app detected.", fg='green')
                 settings.update(deploy_go(app, deltas))
@@ -378,9 +381,35 @@ def do_deploy(app, deltas={}):
     else:
         echo("Error: app '{}' not found.".format(app), fg='red')
 
+def deploy_gradle(app, deltas={}):
+    """Deploy a Java application using Gradle"""  
+    virtual = join(ENV_ROOT, app)
+    target_path = join(APP_ROOT, app, 'build')
+    env_file = join(APP_ROOT, app, 'ENV')
+    build = join(APP_ROOT, app, 'build.gradle')
+
+    first_time = False
+    if not exists(target_path) or first_time == True:
+        venv = 'mkdir ' + virtual
+        call(venv, cwd=PIKU_ROOT, shell=True)
+        env = {
+            'VIRTUAL_ENV': virtual,
+            "PATH": ':'.join([join(virtual, "bin"), join(app, ".bin"),environ['PATH']])
+        }
+        if exists(env_file):
+            env.update(parse_settings(env_file, env))
+            echo("-----> Building Java Application")
+            call('gradle build', cwd=join(APP_ROOT, app), env=env, shell=True)
+            first_time = True
+    else:
+            if getmtime(build) > getmtime(target_path):
+                echo ("-----> Performing a clean build")
+                call('gradle clean build', cwd=join(APP_ROOT, app), env=env, shell=True)
+    
+    return spawn_app(app, deltas)
 
 def deploy_java(app, deltas={}):
-    """Deploy a Java application"""
+    """Deploy a Java application using Maven"""
     # Check for if pom.xml exists or build.gradle
     # Since gradle can build a variety of projects from scala, clojure etc, I think it is better to add a deploy_gradle function
     # TODO: Use jenv to isolate Java Application environments
