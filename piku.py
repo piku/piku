@@ -30,6 +30,7 @@ from time import sleep
 from urllib.request import urlopen
 from pwd import getpwuid
 from grp import getgrgid
+from yaml import safe_load
 
 # === Make sure we can access all system binaries ===
 
@@ -244,7 +245,7 @@ def parse_procfile(filename):
     if not len(workers):
         return {}
     # WSGI trumps regular web workers
-    if 'wsgi' in workers:
+    if 'wsgi' or 'jwsgi' in workers:
         if 'web' in workers:
             echo("Warning: found both 'wsgi' and 'web' workers, disabling 'web'", fg='yellow')
             del(workers['web'])
@@ -332,6 +333,9 @@ def do_deploy(app, deltas={}, newrev=None):
             elif exists(join(app_path, 'pom.xml')) and check_requirements(['java', 'mvn']):
                 echo("-----> Java app detected.", fg='green')
                 settings.update(deploy_java(app, deltas))
+            elif exists(join(app_path, 'build.gradle')) and check_requirements(['java', 'gradle']):
+                echo("-----> Gradle Java app detected.", fg='green')
+                settings.update(deploy_java(app, deltas))
             elif (exists(join(app_path, 'Godeps')) or len(glob(join(app_path,'*.go')))) and check_requirements(['go']):
                 echo("-----> Go app detected.", fg='green')
                 settings.update(deploy_go(app, deltas))
@@ -350,10 +354,78 @@ def do_deploy(app, deltas={}, newrev=None):
     else:
         echo("Error: app '{}' not found.".format(app), fg='red')
 
+def deploy_gradle(app, deltas={}):
+    """Deploy a Java application using Gradle"""  
+    virtual = join(ENV_ROOT, app)
+    target_path = join(APP_ROOT, app, 'build')
+    env_file = join(APP_ROOT, app, 'ENV')
+    build = join(APP_ROOT, app, 'build.gradle')
+
+    first_time = False
+    if not exists(target_path) or first_time == True:
+        venv = 'mkdir ' + virtual
+        call(venv, cwd=PIKU_ROOT, shell=True)
+        env = {
+            'VIRTUAL_ENV': virtual,
+            "PATH": ':'.join([join(virtual, "bin"), join(app, ".bin"),environ['PATH']])
+        }
+        if exists(env_file):
+            env.update(parse_settings(env_file, env))
+            echo("-----> Building Java Application")
+            call('gradle build', cwd=join(APP_ROOT, app), env=env, shell=True)
+            first_time = True
+    else:
+            if getmtime(build) > getmtime(target_path):
+                echo ("-----> Performing a clean build")
+                call('gradle clean build', cwd=join(APP_ROOT, app), env=env, shell=True)
+    
+    return spawn_app(app, deltas)
 
 def deploy_java(app, deltas={}):
-    """Deploy a Java application"""
-    raise NotImplementedError
+    """Deploy a Java application using Maven"""
+    # Check for if pom.xml exists or build.gradle
+    # Since gradle can build a variety of projects from scala, clojure etc, I think it is better to add a deploy_gradle function
+    # TODO: Use jenv to isolate Java Application environments
+
+    virtual = join(ENV_ROOT, app)
+    target_path = join(APP_ROOT, app, 'target')
+    env_file = join(APP_ROOT, app, 'ENV')
+    pom = join(APP_ROOT, app, 'pom.xml')
+
+    first_time = False
+    if not exists(target_path) or first_time == True:
+        venv = 'mkdir ' + virtual
+        call(venv, cwd=PIKU_ROOT, shell=True)
+        env = {
+            'VIRTUAL_ENV': virtual,
+            "PATH": ':'.join([join(virtual, "bin"), join(app, ".bin"),environ['PATH']])
+        }
+        if exists(env_file):
+            env.update(parse_settings(env_file, env))
+            echo("-----> Building Java Application")
+            call('mvn compile', cwd=join(APP_ROOT, app), env=env, shell=True)
+            # Compiles your java project according to pom.xml
+            echo("-----> Running Maven Tests")
+            call('mvn test', cwd=join(APP_ROOT, app), env=env, shell=True)
+            echo("-----> Tests Completed \n-----> Packaging Compiled Sources ")
+            call('mvn package', cwd=join(APP_ROOT, app), env=env, shell=True)
+            echo("-----> Finished Packaging && Now Verifying Compiled Packages")
+            call('mvn verify', cwd=join(APP_ROOT, app), env=env, shell=True)
+            echo("-----> Installing Application on local repository for future usage")
+            call('mvn install', cwd=join(APP_ROOT, app), env=env, shell=True)
+            echo('----->Successfully deployed your package on Maven Local Repository')
+            echo('-----> Deploying App to Maven Central Repository')
+            first_time = True
+    else:
+        if getmtime(pom) > getmtime(target_path):
+            
+            echo("-----> Destroying previous builds")
+            call('mvn clean', cwd=join(APP_ROOT, app), env=env, shell=True)
+            echo('-----> Starting new build')
+            call('mvn compile && mvn test && mvn package && mvn verify && mvn install && mvn deploy', cwd=join(APP_ROOT, app), env=env, shell=True)
+    
+    return spawn_app(app, deltas)
+
 
 
 def deploy_go(app, deltas={}):
@@ -515,7 +587,7 @@ def spawn_app(app, deltas={}):
     if exists(settings):
         env.update(parse_settings(settings, env))
 
-    if 'web' in workers or 'wsgi' in workers:
+    if 'web' in workers or 'wsgi' or 'jwsgi' in workers:
         # Pick a port if none defined
         if 'PORT' not in env:
             env['PORT'] = str(get_free_port())
@@ -545,7 +617,7 @@ def spawn_app(app, deltas={}):
             
             # default to reverse proxying to the TCP port we picked
             env['INTERNAL_NGINX_UWSGI_SETTINGS'] = 'proxy_pass http://{BIND_ADDRESS:s}:{PORT:s};'.format(**env)
-            if 'wsgi' in workers:
+            if 'wsgi' or 'jwsgi' in workers:
                 sock = join(NGINX_ROOT, "{}.sock".format(app))
                 env['INTERNAL_NGINX_UWSGI_SETTINGS'] = expandvars(INTERNAL_NGINX_UWSGI_SETTINGS, env)
                 env['NGINX_SOCKET'] = env['BIND_ADDRESS'] = "unix://" + sock
@@ -719,6 +791,14 @@ def spawn_worker(app, kind, command, env, ordinal=1):
     # only add virtualenv to uwsgi if it's a real virtualenv
     if exists(join(env_path, "bin", "activate_this.py")):
         settings.append(('virtualenv', env_path))
+
+    if kind== 'jwsgi':
+        settings.extend([
+            ('module', command),
+            ('threads',     env.get('UWSGI_THREADS','4')),
+            ('plugin', 'jvm'),
+            ('plugin', 'jwsgi')
+        ])
 
     python_version = int(env.get('PYTHON_VERSION','3'))
 

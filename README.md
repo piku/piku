@@ -39,6 +39,7 @@ If you put the `piku-bootstrap` script on your `PATH` somewhere, you can use it 
     * For Python, it segregates each app's dependencies into a `virtualenv`.
     * For Go, it defines a separate `GOPATH` for each app.
     * For Node, it installs whatever is in `package.json` into `node_modules`.
+    * For Java, it builds your app depending on either `pom.xml` or `build.gradle` file.
 * It then looks at a `Procfile` and starts the relevant workers using [uWSGI][uwsgi] as a generic process manager.
 * You can then remotely change application settings (`config:set`) or scale up/down worker processes (`ps:scale`) at will.
 * You can also bake application settings into a file called [`ENV` which is documented here](./docs/ENV.md).
@@ -89,6 +90,7 @@ From the bottom up:
 - [ ] Review deployment messages
 - [ ] WIP: Review docs/CLI command documentation (short descriptions done, need `help <cmd>` and better descriptions)
 - [ ] Lua/WSAPI support
+- [x] Support for Java Apps with maven/gradle (in progress through jwsgi, by @matrixjnr)
 - [x] Django and Wisp examples (by @chr15m)
 - [x] Project logo (by @chr15m)
 - [x] Various release/deployment improvements (by @chr15m)
