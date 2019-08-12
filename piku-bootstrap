@@ -51,26 +51,23 @@ main() {
     echo
     echo "Usage:"
     echo "       `basename $0` [USER@]HOST [PLAYBOOK] [ANSIBLE_ARGS...]"
-    echo "       `basename $0` lists-playbooks"
+    echo "       `basename $0` list-playbooks"
     echo "       `basename $0` update"
     echo
-    echo " HOST     Creates a user 'piku' on the machine 'HOST',"
-    echo "          installs git, and sets up the piku.py script."
+    echo " HOST      Creates a user 'piku' on the machine 'HOST',"
+    echo "           installs git, and sets up the piku.py script"
+    echo "           by default, unless PLAYBOOK is specified."
     echo
-    echo " USER     Optional non-root user to log in as (e.g. 'pi')."
+    echo " USER      Optional non-root user to log in as (e.g. 'pi')."
     echo
-    echo " PLAYBOOK Optional playbook to deploy on to the server."
-    echo "          For example 'nodeenv.yml' installs nodeenv."
-    echo "          Can be an absolute path to your own playbook."
+    echo " PLAYBOOK  Optional playbook to deploy on to the server."
+    echo "           For example 'nodeenv.yml' installs nodeenv."
+    echo "           Can be an absolute path to your own playbook."
     echo
     echo " list-playbooks"
-    echo "          List available built-in playbooks with list-playbooks."
+    echo "          List available built-in playbooks."
     echo
-    echo " update   Pulls the piku repository to get the latest playbooks."
-    echo
-    echo "WARNING: This script installs software and makes changes"
-    echo "         on the target server. Only use a freshly provisioned"
-    echo "         server which you do not mind being modified."
+    echo " update   Pull the piku repo to get the latest playbooks."
     echo
     echo "Notes:"
     echo
@@ -81,6 +78,11 @@ main() {
     echo "Raspberry Pi example:"
     echo
     echo "\t`basename $0` pi@raspberrypi.local"
+    echo
+    echo " ** WARNING **"
+    echo " This script installs software and makes changes on the target"
+    echo " server. Only use a freshly provisioned server which you do not"
+    echo " mind being modified and reconfigured."
     echo
   else
     case "$1" in
