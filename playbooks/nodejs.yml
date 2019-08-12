@@ -1,0 +1,21 @@
+---
+- hosts: all
+  tasks:
+    - name: Install node packages
+      apt:
+        name: ["nodejs", "npm"]
+
+    - shell: which nodejs
+      args:
+        creates: /usr/sbin/node
+      register: nodejs_location
+
+    - name: Symlink expected node binary name
+      file:
+        src: "{{nodejs_location.stdout}}"
+        dest: /usr/sbin/node
+        owner: root
+        group: root
+        state: link
+      when: nodejs_location is changed
+
