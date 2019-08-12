@@ -96,17 +96,17 @@ main() {
         ;;
       *)
         host="$1"; shift
-        playbook="$1";
-        if [ "${playbook}" = "" ]
+        if [ ! "$1" = "" -a -z "${1##*.yml*}" ];
         then
+          playbook="$1"; shift;
+        else
           playbook="piku.yml"
         fi
-        if [ -z "${playbook##*.yml*}" ] ;then
-          shift;
+        if [ -z "${playbook##*.yml*}" ]; then
           echo "Bootstrapping piku onto ${host}"
           builtin="${REPO}/playbooks/${playbook}"
           if [ ! -f "${playbook}" -a -f "${builtin}" ]; then
-            echo "Using built-in playbook."
+            echo "Using built-in playbook: ${playbook}"
             playbook="${builtin}"
           fi
           PYTHONWARNINGS="ignore" ansible-playbook -i "${host}", "${playbook}" "$@"
