@@ -67,7 +67,7 @@ server {
     root ${ACME_WWW};
   }
 
-$NGINX_COMMON
+$INTERNAL_NGINX_COMMON
 }
 """
 
@@ -89,7 +89,7 @@ server {
 }
 
 server {
-$NGINX_COMMON
+$INTERNAL_NGINX_COMMON
 }
 """
 # pylint: enable=anomalous-backslash-in-string
@@ -118,11 +118,11 @@ NGINX_COMMON_FRAGMENT = """
   # set a custom header for requests
   add_header X-Deployed-By Piku;
 
-  $NGINX_CUSTOM_CLAUSES
+  $INTERNAL_NGINX_CUSTOM_CLAUSES
 
   $INTERNAL_NGINX_STATIC_MAPPINGS
 
-  $NGINX_BLOCK_GIT
+  $INTERNAL_NGINX_BLOCK_GIT
 
   location    / {
     $INTERNAL_NGINX_UWSGI_SETTINGS
@@ -673,9 +673,10 @@ def spawn_app(app, deltas={}):
                 except Exception:
                     cf = defaultdict()
                     echo("-----> Could not retrieve CloudFlare IP ranges: {}".format(format_exc()), fg="red")
+
             env['NGINX_ACL'] = " ".join(acl)
 
-            env['NGINX_BLOCK_GIT'] = "" if env.get('NGINX_ALLOW_GIT_FOLDERS') else "location ~ /\.git { deny all; }"
+            env['INTERNAL_NGINX_BLOCK_GIT'] = "" if env.get('NGINX_ALLOW_GIT_FOLDERS') else "location ~ /\.git { deny all; }"
 
             env['INTERNAL_NGINX_STATIC_MAPPINGS'] = ''
             
@@ -693,8 +694,8 @@ def spawn_app(app, deltas={}):
                     echo("Error {} in static path spec: should be /url1:path1[,/url2:path2], ignoring.".format(e))
                     env['INTERNAL_NGINX_STATIC_MAPPINGS'] = ''
 
-            env['NGINX_CUSTOM_CLAUSES'] = expandvars(open(join(app_path, env["NGINX_INCLUDE_FILE"])).read(), env) if env.get("NGINX_INCLUDE_FILE") else ""
-            env['NGINX_COMMON'] = expandvars(NGINX_COMMON_FRAGMENT, env)
+            env['INTERNAL_NGINX_CUSTOM_CLAUSES'] = expandvars(open(join(app_path, env["NGINX_INCLUDE_FILE"])).read(), env) if env.get("NGINX_INCLUDE_FILE") else ""
+            env['INTERNAL_NGINX_COMMON'] = expandvars(NGINX_COMMON_FRAGMENT, env)
 
             echo("-----> nginx will map app '{}' to hostname '{}'".format(app, env['NGINX_SERVER_NAME']))
             if('NGINX_HTTPS_ONLY' in env) or ('HTTPS_ONLY' in env):
