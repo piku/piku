@@ -1,0 +1,16 @@
+#parse("/velocity/layout.vm")
+#@mainLayout()
+<h1>$msg.get("BOOKS_HEADING_ALL")</h1>
+<div class="row row-3">
+    #foreach($book in $books)
+        <div class="col">
+            <a class="book" href="$WebPath.getBOOKS()$book.getIsbn()">
+                <div class="bookCover">
+                    <img src="$book.getMediumCover()" alt="$book.getTitle()">
+                </div>
+                $msg.get("BOOKS_CAPTION", $book.getTitle(), $book.getAuthor())
+            </a>
+        </div>
+    #end
+</div>
+#end

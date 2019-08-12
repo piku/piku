@@ -30,6 +30,7 @@ from time import sleep
 from urllib.request import urlopen
 from pwd import getpwuid
 from grp import getgrgid
+from yaml import safe_load
 
 # === Make sure we can access all system binaries ===
 
@@ -61,49 +62,12 @@ server {
   listen              $NGINX_IPV6_ADDRESS:80;
   listen              $NGINX_IPV4_ADDRESS:80;
 
-  listen              $NGINX_IPV6_ADDRESS:$NGINX_SSL;
-  listen              $NGINX_IPV4_ADDRESS:$NGINX_SSL;
-  ssl                 on;
-  ssl_certificate     $NGINX_ROOT/$APP.crt;
-  ssl_certificate_key $NGINX_ROOT/$APP.key;
-  server_name         $NGINX_SERVER_NAME;
-
-  # These are not required under systemd - enable for debugging only
-  # access_log        $LOG_ROOT/$APP/access.log;
-  # error_log         $LOG_ROOT/$APP/error.log;
-  
-  # Enable gzip compression
-  gzip on;
-  gzip_proxied any;
-  gzip_types text/plain text/xml text/css application/x-javascript text/javascript application/xml+rss application/atom+xml;
-  gzip_comp_level 7;
-  gzip_min_length 2048;
-  gzip_vary on;
-  gzip_disable "MSIE [1-6]\.(?!.*SV1)";
-  
-  # set a custom header for requests
-  add_header X-Deployed-By Piku;
-
-  $INTERNAL_NGINX_STATIC_MAPPINGS
-
   location ^~ /.well-known/acme-challenge {
     allow all;
     root ${ACME_WWW};
   }
 
-  location    / {
-    $INTERNAL_NGINX_UWSGI_SETTINGS
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection "upgrade";
-    proxy_set_header Host $http_host;
-    proxy_set_header X-Forwarded-Proto $scheme;
-    proxy_set_header X-Forwarded-For $remote_addr;
-    proxy_set_header X-Forwarded-Port $server_port;
-    proxy_set_header X-Request-Start $msec;
-    $NGINX_ACL
- }
-
+$NGINX_COMMON
 }
 """
 
@@ -125,6 +89,12 @@ server {
 }
 
 server {
+$NGINX_COMMON
+}
+"""
+# pylint: enable=anomalous-backslash-in-string
+
+NGINX_COMMON_FRAGMENT = """
   listen              $NGINX_IPV6_ADDRESS:$NGINX_SSL;
   listen              $NGINX_IPV4_ADDRESS:$NGINX_SSL;
   ssl                 on;
@@ -148,7 +118,11 @@ server {
   # set a custom header for requests
   add_header X-Deployed-By Piku;
 
+  $NGINX_CUSTOM_CLAUSES
+
   $INTERNAL_NGINX_STATIC_MAPPINGS
+
+  $NGINX_BLOCK_GIT
 
   location    / {
     $INTERNAL_NGINX_UWSGI_SETTINGS
@@ -162,9 +136,7 @@ server {
     proxy_set_header X-Request-Start $msec;
     $NGINX_ACL
  }
-}
 """
-# pylint: enable=anomalous-backslash-in-string
 
 NGINX_ACME_FIRSTRUN_TEMPLATE = """
 server {
@@ -273,7 +245,7 @@ def parse_procfile(filename):
     if not len(workers):
         return {}
     # WSGI trumps regular web workers
-    if 'wsgi' in workers:
+    if 'wsgi' or 'jwsgi' in workers:
         if 'web' in workers:
             echo("Warning: found both 'wsgi' and 'web' workers, disabling 'web'", fg='yellow')
             del(workers['web'])
@@ -307,7 +279,7 @@ def parse_settings(filename, env={}):
         
     with open(filename, 'r') as settings:
         for line in settings:
-            if '#' == line[0]: # allow for comments
+            if '#' == line[0] or len(line.strip()) == 0: # ignore comments and newlines
                 continue
             try:
                 k, v = map(lambda x: x.strip(), line.split("=", 1))
@@ -330,7 +302,7 @@ def check_requirements(binaries):
     return True
     
 
-def do_deploy(app, deltas={}):
+def do_deploy(app, deltas={}, newrev=None):
     """Deploy an app by resetting the work directory"""
     
     app_path = join(APP_ROOT, app)
@@ -343,7 +315,8 @@ def do_deploy(app, deltas={}):
     if exists(app_path):
         echo("-----> Deploying app '{}'".format(app), fg='green')
         call('git fetch --quiet', cwd=app_path, env=env, shell=True)
-        call('git reset --hard origin/master', cwd=app_path, env=env, shell=True)
+        if newrev:
+            call('git reset --hard {}'.format(newrev), cwd=app_path, env=env, shell=True)
         call('git submodule init', cwd=app_path, env=env, shell=True)
         call('git submodule update', cwd=app_path, env=env, shell=True)
         if not exists(log_path):
@@ -360,6 +333,9 @@ def do_deploy(app, deltas={}):
             elif exists(join(app_path, 'pom.xml')) and check_requirements(['java', 'mvn']):
                 echo("-----> Java app detected.", fg='green')
                 settings.update(deploy_java(app, deltas))
+            elif exists(join(app_path, 'build.gradle')) and check_requirements(['java', 'gradle']):
+                echo("-----> Gradle Java app detected.", fg='green')
+                settings.update(deploy_java(app, deltas))
             elif (exists(join(app_path, 'Godeps')) or len(glob(join(app_path,'*.go')))) and check_requirements(['go']):
                 echo("-----> Go app detected.", fg='green')
                 settings.update(deploy_go(app, deltas))
@@ -370,6 +346,7 @@ def do_deploy(app, deltas={}):
                 echo("-----> Releasing", fg='green')
                 retval = call(workers["release"], cwd=app_path, env=settings, shell=True)
                 if retval:
+                    echo("-----> Exiting due to release command error value: {}".format(retval))
                     exit(retval)
                 workers.pop("release", None)
         else:
@@ -377,10 +354,78 @@ def do_deploy(app, deltas={}):
     else:
         echo("Error: app '{}' not found.".format(app), fg='red')
 
+def deploy_gradle(app, deltas={}):
+    """Deploy a Java application using Gradle"""  
+    virtual = join(ENV_ROOT, app)
+    target_path = join(APP_ROOT, app, 'build')
+    env_file = join(APP_ROOT, app, 'ENV')
+    build = join(APP_ROOT, app, 'build.gradle')
+
+    first_time = False
+    if not exists(target_path) or first_time == True:
+        venv = 'mkdir ' + virtual
+        call(venv, cwd=PIKU_ROOT, shell=True)
+        env = {
+            'VIRTUAL_ENV': virtual,
+            "PATH": ':'.join([join(virtual, "bin"), join(app, ".bin"),environ['PATH']])
+        }
+        if exists(env_file):
+            env.update(parse_settings(env_file, env))
+            echo("-----> Building Java Application")
+            call('gradle build', cwd=join(APP_ROOT, app), env=env, shell=True)
+            first_time = True
+    else:
+            if getmtime(build) > getmtime(target_path):
+                echo ("-----> Performing a clean build")
+                call('gradle clean build', cwd=join(APP_ROOT, app), env=env, shell=True)
+    
+    return spawn_app(app, deltas)
 
 def deploy_java(app, deltas={}):
-    """Deploy a Java application"""
-    raise NotImplementedError
+    """Deploy a Java application using Maven"""
+    # Check for if pom.xml exists or build.gradle
+    # Since gradle can build a variety of projects from scala, clojure etc, I think it is better to add a deploy_gradle function
+    # TODO: Use jenv to isolate Java Application environments
+
+    virtual = join(ENV_ROOT, app)
+    target_path = join(APP_ROOT, app, 'target')
+    env_file = join(APP_ROOT, app, 'ENV')
+    pom = join(APP_ROOT, app, 'pom.xml')
+
+    first_time = False
+    if not exists(target_path) or first_time == True:
+        venv = 'mkdir ' + virtual
+        call(venv, cwd=PIKU_ROOT, shell=True)
+        env = {
+            'VIRTUAL_ENV': virtual,
+            "PATH": ':'.join([join(virtual, "bin"), join(app, ".bin"),environ['PATH']])
+        }
+        if exists(env_file):
+            env.update(parse_settings(env_file, env))
+            echo("-----> Building Java Application")
+            call('mvn compile', cwd=join(APP_ROOT, app), env=env, shell=True)
+            # Compiles your java project according to pom.xml
+            echo("-----> Running Maven Tests")
+            call('mvn test', cwd=join(APP_ROOT, app), env=env, shell=True)
+            echo("-----> Tests Completed \n-----> Packaging Compiled Sources ")
+            call('mvn package', cwd=join(APP_ROOT, app), env=env, shell=True)
+            echo("-----> Finished Packaging && Now Verifying Compiled Packages")
+            call('mvn verify', cwd=join(APP_ROOT, app), env=env, shell=True)
+            echo("-----> Installing Application on local repository for future usage")
+            call('mvn install', cwd=join(APP_ROOT, app), env=env, shell=True)
+            echo('----->Successfully deployed your package on Maven Local Repository')
+            echo('-----> Deploying App to Maven Central Repository')
+            first_time = True
+    else:
+        if getmtime(pom) > getmtime(target_path):
+            
+            echo("-----> Destroying previous builds")
+            call('mvn clean', cwd=join(APP_ROOT, app), env=env, shell=True)
+            echo('-----> Starting new build')
+            call('mvn compile && mvn test && mvn package && mvn verify && mvn install && mvn deploy', cwd=join(APP_ROOT, app), env=env, shell=True)
+    
+    return spawn_app(app, deltas)
+
 
 
 def deploy_go(app, deltas={}):
@@ -425,19 +470,32 @@ def deploy_node(app, deltas={}):
         makedirs(node_path)
         first_time = True
 
-    if exists(deps):
-        if first_time or getmtime(deps) > getmtime(node_path):
-            env = {
-                'VIRTUAL_ENV': virtualenv_path,
-                'NODE_PATH': node_path,
-                'NPM_CONFIG_PREFIX': abspath(join(node_path, "..")),
-                "PATH": ':'.join([join(virtualenv_path, "bin"), join(node_path, ".bin"),environ['PATH']])
-            }
-            if exists(env_file):
-                env.update(parse_settings(env_file, env))
-            if env.get("NODE_VERSION") and check_requirements(['nodeenv']):
+    env = {
+        'VIRTUAL_ENV': virtualenv_path,
+        'NODE_PATH': node_path,
+        'NPM_CONFIG_PREFIX': abspath(join(node_path, "..")),
+        "PATH": ':'.join([join(virtualenv_path, "bin"), join(node_path, ".bin"),environ['PATH']])
+    }
+    if exists(env_file):
+        env.update(parse_settings(env_file, env))
+
+    version = env.get("NODE_VERSION")
+    node_binary = join(virtualenv_path, "bin", "node")
+    installed = check_output("{} -v".format(node_binary), cwd=join(APP_ROOT, app), env=env, shell=True).decode("utf8").rstrip("\n") if exists(node_binary) else ""
+
+    if version and check_requirements(['nodeenv']):
+        if not installed.endswith(version):
+            started = glob(join(UWSGI_ENABLED, '{}*.ini'.format(app)))
+            if installed and len(started):
+                echo("Warning: Can't update node with app running. Stop the app & retry.", fg='yellow')
+            else:
                 echo("-----> Installing node version '{NODE_VERSION:s}' using nodeenv".format(**env), fg='green')
-                call("nodeenv --prebuilt --node={NODE_VERSION:s} --force {VIRTUAL_ENV:s}".format(**env), cwd=virtualenv_path, env=env, shell=True)
+                call("nodeenv --prebuilt --node={NODE_VERSION:s} --clean-src --force {VIRTUAL_ENV:s}".format(**env), cwd=virtualenv_path, env=env, shell=True)
+        else:
+            echo("-----> Node is installed at {}.".format(version))
+
+    if exists(deps) and check_requirements(['npm']):
+        if first_time or getmtime(deps) > getmtime(node_path):
             echo("-----> Running npm for '{}'".format(app), fg='green')
             symlink(node_path, node_path_tmp)
             call('npm install', cwd=join(APP_ROOT, app), env=env, shell=True)
@@ -524,12 +582,12 @@ def spawn_app(app, deltas={}):
     # Load environment variables shipped with repo (if any)
     if exists(env_file):
         env.update(parse_settings(env_file, env))
-    
+
     # Override with custom settings (if any)
     if exists(settings):
         env.update(parse_settings(settings, env))
 
-    if 'web' in workers or 'wsgi' in workers:
+    if 'web' in workers or 'wsgi' or 'jwsgi' in workers:
         # Pick a port if none defined
         if 'PORT' not in env:
             env['PORT'] = str(get_free_port())
@@ -559,7 +617,7 @@ def spawn_app(app, deltas={}):
             
             # default to reverse proxying to the TCP port we picked
             env['INTERNAL_NGINX_UWSGI_SETTINGS'] = 'proxy_pass http://{BIND_ADDRESS:s}:{PORT:s};'.format(**env)
-            if 'wsgi' in workers:
+            if 'wsgi' or 'jwsgi' in workers:
                 sock = join(NGINX_ROOT, "{}.sock".format(app))
                 env['INTERNAL_NGINX_UWSGI_SETTINGS'] = expandvars(INTERNAL_NGINX_UWSGI_SETTINGS, env)
                 env['NGINX_SOCKET'] = env['BIND_ADDRESS'] = "unix://" + sock
@@ -617,6 +675,8 @@ def spawn_app(app, deltas={}):
                     echo("-----> Could not retrieve CloudFlare IP ranges: {}".format(format_exc()), fg="red")
             env['NGINX_ACL'] = " ".join(acl)
 
+            env['NGINX_BLOCK_GIT'] = "" if env.get('NGINX_ALLOW_GIT_FOLDERS') else "location ~ /\.git { deny all; }"
+
             env['INTERNAL_NGINX_STATIC_MAPPINGS'] = ''
             
             # Get a mapping of /url:path1,/url2:path2
@@ -632,6 +692,9 @@ def spawn_app(app, deltas={}):
                 except Exception as e:
                     echo("Error {} in static path spec: should be /url1:path1[,/url2:path2], ignoring.".format(e))
                     env['INTERNAL_NGINX_STATIC_MAPPINGS'] = ''
+
+            env['NGINX_CUSTOM_CLAUSES'] = expandvars(open(join(app_path, env["NGINX_INCLUDE_FILE"])).read(), env) if env.get("NGINX_INCLUDE_FILE") else ""
+            env['NGINX_COMMON'] = expandvars(NGINX_COMMON_FRAGMENT, env)
 
             echo("-----> nginx will map app '{}' to hostname '{}'".format(app, env['NGINX_SERVER_NAME']))
             if('NGINX_HTTPS_ONLY' in env) or ('HTTPS_ONLY' in env):
@@ -728,6 +791,14 @@ def spawn_worker(app, kind, command, env, ordinal=1):
     # only add virtualenv to uwsgi if it's a real virtualenv
     if exists(join(env_path, "bin", "activate_this.py")):
         settings.append(('virtualenv', env_path))
+
+    if kind== 'jwsgi':
+        settings.extend([
+            ('module', command),
+            ('threads',     env.get('UWSGI_THREADS','4')),
+            ('plugin', 'jvm'),
+            ('plugin', 'jwsgi')
+        ])
 
     python_version = int(env.get('PYTHON_VERSION','3'))
 
@@ -1190,17 +1261,12 @@ def cmd_git_hook(app):
     for line in stdin:
         # pylint: disable=unused-variable
         oldrev, newrev, refname = line.strip().split(" ")
-        #echo("refs:", oldrev, newrev, refname)
-        if refname == "refs/heads/master":
-            # Handle pushes to master branch
-            if not exists(app_path):
-                echo("-----> Creating app '{}'".format(app), fg='green')
-                makedirs(app_path)
-                call('git clone --quiet {} {}'.format(repo_path, app), cwd=APP_ROOT, shell=True)
-            do_deploy(app)
-        else:
-            # TODO: Handle pushes to another branch
-            echo("receive-branch '{}': {}, {}".format(app, newrev, refname))
+        # Handle pushes
+        if not exists(app_path):
+            echo("-----> Creating app '{}'".format(app), fg='green')
+            makedirs(app_path)
+            call('git clone --quiet {} {}'.format(repo_path, app), cwd=APP_ROOT, shell=True)
+        do_deploy(app, newrev=newrev)
 
 
 @piku.command("git-receive-pack")
@@ -1223,6 +1289,17 @@ set -e; set -o pipefail;
 cat | PIKU_ROOT="{PIKU_ROOT:s}" {PIKU_SCRIPT:s} git-hook {app:s}""".format(**env))
         # Make the hook executable by our user
         chmod(hook_path, stat(hook_path).st_mode | S_IXUSR)
+    # Handle the actual receive. We'll be called with 'git-hook' after it happens
+    call('git-shell -c "{}" '.format(argv[1] + " '{}'".format(app)), cwd=GIT_ROOT, shell=True)
+
+
+@piku.command("git-upload-pack")
+@argument('app')
+def cmd_git_receive_pack(app):
+    """INTERNAL: Handle git upload pack for an app"""
+    app = sanitize_app_name(app)
+    env = globals()
+    env.update(locals())
     # Handle the actual receive. We'll be called with 'git-hook' after it happens
     call('git-shell -c "{}" '.format(argv[1] + " '{}'".format(app)), cwd=GIT_ROOT, shell=True)
 

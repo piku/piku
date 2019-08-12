@@ -1,0 +1,22 @@
+#parse("/velocity/layout.vm")
+#@mainLayout()
+    <h1>$msg.get("INDEX_HEADING")</h1>
+    <h2>$msg.get("INDEX_REGISTERED_USERS", $users.size())</h2>
+    <ul>
+        #foreach($user in $users)
+            <li>$user</li>
+        #end
+    </ul>
+    <p>$msg.get("INDEX_PASSWORD_INFO")</p>
+    #if($book)
+    <h2>$msg.get("INDEX_BOOK_OF_THE_DAY_TEXT")</h2>
+    <div class="row row-2">
+            <div class="col">
+                <a href="$WebPath.getBOOKS()$book.getIsbn()">$msg.get("INDEX_BOOK_OF_THE_DAY_LINK", $book.getTitle(), $book.getAuthor())</a>
+            </div>
+            <div class="col">
+                <img src="$book.getLargeCover()" alt="$book.getTitle()">
+            </div>
+        </div>
+    #end
+#end

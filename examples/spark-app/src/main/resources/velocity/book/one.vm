@@ -1,0 +1,14 @@
+#parse("/velocity/layout.vm")
+#@mainLayout()
+    #if($book)
+    <h1>$book.getTitle()</h1>
+    <h2>$book.getAuthor()</h2>
+    <div class="book">
+        <div class="bookCover">
+            <img src="$book.getLargeCover()" alt="$book.getTitle()">
+        </div>
+    </div>
+    #else
+    <h1>$msg.get("BOOKS_BOOK_NOT_FOUND")</h1>
+    #end
+#end
