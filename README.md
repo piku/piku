@@ -10,15 +10,17 @@ The tiniest Heroku/CloudFoundry-like PaaS you've ever seen.
 
 `piku` supports a Heroku-like workflow, like so:
 
-* Create a `git` SSH remote pointing to `piku` with the app name as repo name (e.g. `git remote add piku piku@yourserver:appname`).
-* `git push piku master` your code.
+* Create a `git` SSH remote pointing to your `piku` server with the app name as repo name.
+  e.g. `git remote add piku piku@yourserver:appname`.
+* Push your code: `git push piku master`.
 * `piku` determines the runtime and installs the dependencies for your app (building whatever's required).
     * For Python, it segregates each app's dependencies into a `virtualenv`.
     * For Go, it defines a separate `GOPATH` for each app.
     * For Node, it installs whatever is in `package.json` into `node_modules`.
     * For Java, it builds your app depending on either `pom.xml` or `build.gradle` file.
 * It then looks at a `Procfile` and starts the relevant workers using [uWSGI][uwsgi] as a generic process manager.
-* You can then remotely change application settings (`config:set`) or scale up/down worker processes (`ps:scale`) at will.
+* You can optionally also specify a `release` worker which is run once when the app is deployed.
+* You can then remotely change application settings (`config:set`) or scale up/down worker processes (`ps:scale`).
 * You can also bake application settings into a file called [`ENV` which is documented here](./docs/ENV.md).
 
 ## Install
