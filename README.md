@@ -11,13 +11,13 @@ The tiniest Heroku/CloudFoundry-like PaaS you've ever seen.
 `piku` supports a Heroku-like workflow, like so:
 
 * Create a `git` SSH remote pointing to your `piku` server with the app name as repo name.
-  e.g. `git remote add piku piku@yourserver:appname`.
+  `git remote add piku piku@yourserver:appname`.
 * Push your code: `git push piku master`.
 * `piku` determines the runtime and installs the dependencies for your app (building whatever's required).
-    * For Python, it segregates each app's dependencies into a `virtualenv`.
-    * For Go, it defines a separate `GOPATH` for each app.
-    * For Node, it installs whatever is in `package.json` into `node_modules`.
-    * For Java, it builds your app depending on either `pom.xml` or `build.gradle` file.
+   * For Python, it segregates each app's dependencies into a `virtualenv`.
+   * For Go, it defines a separate `GOPATH` for each app.
+   * For Node, it installs whatever is in `package.json` into `node_modules`.
+   * For Java, it builds your app depending on either `pom.xml` or `build.gradle` file.
 * It then looks at a `Procfile` and starts the relevant workers using [uWSGI][uwsgi] as a generic process manager.
 * You can optionally also specify a `release` worker which is run once when the app is deployed.
 * You can then remotely change application settings (`config:set`) or scale up/down worker processes (`ps:scale`).
@@ -46,6 +46,8 @@ The script will display a usage message and you can then bootstrap your server:
 
 If you put the `piku-bootstrap` script on your `PATH` somewhere, you can use it again to provision other servers in the future.
 
+See below for instructions on [installing other custom dependencies](#installing-other-dependencies) that your apps might need like a database etc.
+
 ### `piku` client
 
 To make life easier you can also download the [piku](./piku) helper shell script and install it on your local.
@@ -67,7 +69,7 @@ $ piku # <- will show help for the remote app
 
 If you put this `piku` script on your `PATH` you can use the `piku` command across multiple apps on your local.
 
-### Installing other deps
+### Installing other dependencies
 
 `piku-bootstrap` uses Ansible internally and it comes with several extra built-in playbooks which you can use to bootstrap common components onto your `piku` server.
 
@@ -76,7 +78,7 @@ Use `piku-bootstrap list-playbooks` to show a list of built-in playbooks, and th
 For example, to deploy `nodeenv` onto your server:
 
 ```shell
-piku-bootstrap root@yourserver.net nodeenv.yml`
+piku-bootstrap root@yourserver.net nodeenv.yml
 ```
 
 You can also use `piku-bootstrap` to run your own Ansible playbooks like this:
