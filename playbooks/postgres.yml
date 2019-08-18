@@ -1,0 +1,13 @@
+---
+- hosts: all
+  tasks:
+    - name: Install postgres
+      apt:
+        name: ["postgresql", "python-psycopg2"]
+
+    - name: Create piku postgres superuser
+      become: true
+      become_user: postgres
+      postgresql_user:
+        name: piku
+        role_attr_flags: SUPERUSER

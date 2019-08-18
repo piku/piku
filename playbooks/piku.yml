@@ -1,0 +1,186 @@
+---
+- hosts: all
+  become: yes
+  gather_facts: no
+  pre_tasks:
+    - name: Install python2 required by Ansible
+      raw: "( /usr/bin/python --version 2>&1 | grep -c 'Python' > /dev/null ) || apt-get update && apt-get -y install python"
+
+- hosts: all
+  become: yes
+  tasks:
+    - name: Add piku user
+      user:
+        name: piku
+        password: !
+        comment: PaaS access
+        group: www-data
+
+    - name: Install Debian Packages
+      apt:
+        pkg: ['bc', 'git', 'build-essential', 'libpcre3-dev', 'zlib1g-dev', 'python', 'python3', 'python3-pip', 'python3-dev', 'python-pip', 'python-setuptools', 'python3-setuptools', 'nginx', 'incron', 'acl']
+        #, 'python-dev', 'python3', 'python3-virtualenv', 'python3-pip']
+        update_cache: true
+        state: present
+
+    - name: Install Python packages
+      pip:
+        executable: pip3
+        name: ['setuptools', 'click==7.0', 'virtualenv==15.1.0', 'uwsgi==2.0.15']
+      register: packages_installed
+
+    - shell: which uwsgi
+      register: uwsgi_location
+      when: packages_installed is changed
+
+    - name: Create uwgsi symlink
+      file:
+        src: "{{uwsgi_location.stdout}}"
+        dest: /usr/local/bin/uwsgi-piku
+        owner: root
+        group: root
+        state: link
+      when: packages_installed is changed
+
+    - name: Install uwsgi dist script
+      get_url:
+        url: https://raw.githubusercontent.com/rcarmo/piku/master/uwsgi-piku.dist
+        dest: /etc/init.d/uwsgi-piku
+        mode: 0700
+      when: packages_installed is changed
+
+    - name: Install uwsgi-piku dist script
+      shell: update-rc.d uwsgi-piku defaults
+      args:
+        creates: /etc/rc2.d/S01uwsgi-piku
+      when: packages_installed is changed
+
+    - name: Install uwsgi-piku systemd script
+      get_url:
+        url: https://raw.githubusercontent.com/rcarmo/piku/master/uwsgi-piku.service
+        dest: /etc/systemd/system/uwsgi-piku.service
+        mode: 0600
+      when: packages_installed is changed
+
+    - name: Create piku ansible tmp dir
+      file:
+        path: ~piku/.ansible/tmp
+        mode: 0700
+        owner: piku
+        group: www-data
+        state: directory
+
+- hosts: all
+  become: yes
+  become_user: piku
+  tasks:
+    ### TODO: use pyenv like this instead
+
+    #- name: Download pyenv installer
+    #  get_url:
+    #    url: https://pyenv.run
+    #    dest: ~/pyenv-installer
+    #    mode: 0755
+
+    #- name: Run pyenv installer
+    #  shell:
+    #    argv: ~/pyenv-installer
+    #    creates: ~/.pyenv
+
+    #- name: Install python3
+    #  shell: ~/.pyenv/bin/pyenv install 3.6.8
+
+    #- name: Use python3
+    #  shell: ~/.pyenv/bin/pyenv local 3.6.8
+
+    - name: Fetch piku.py script
+      get_url:
+        url: https://raw.githubusercontent.com/rcarmo/piku/master/piku.py
+        dest: ~/piku.py
+        mode: 0700
+
+    - name: Run piku setup
+      shell: python3 ~/piku.py setup
+      args:
+        creates: ~/.piku
+
+    - name: Copy up my SSH key for piku
+      copy: src=~/.ssh/id_rsa.pub dest=/tmp/id_rsa.pub
+
+    - name: Ask piku to use SSH key
+      shell: python3 ~/piku.py setup:ssh /tmp/id_rsa.pub
+      args:
+        creates: ~/.ssh/authorized_keys
+
+    - name: Check if acme.sh is already installed
+      stat:
+        path: ~/.acme.sh/acme.sh
+      register: acme_stat_result
+
+    - name: Download acme.sh
+      get_url:
+        url: https://raw.githubusercontent.com/Neilpang/acme.sh/6ff3f5d/acme.sh
+        dest: ~/acme.sh
+        mode: 0755
+      when: acme_stat_result.stat.exists == False
+      register: acme_installer
+
+    - name: Execute acme.sh installer
+      shell: ./acme.sh --install
+      args:
+        chdir: ~/
+        creates: ~/.acme.sh/acme.sh
+        executable: /bin/bash
+      when: acme_installer is defined
+
+    - name: Remove acme.sh installer
+      file: path=~/acme.sh state=absent
+      when: acme_installer is defined
+
+
+- hosts: all
+  become: yes
+  tasks:
+
+    - name: Test if systemctl is present
+      shell: command -v systemctl
+      register: systemctl
+
+    - name: Enable uwsgi-piku service
+      systemd:
+        name: uwsgi-piku
+        enabled: yes
+        state: started
+        masked: no
+      when: '"systemctl" in systemctl.stdout'
+
+    - name: Start uwsgi init script
+      service:
+        name: uwsgi-piku
+        state: started
+      when: '"systemctl" not in systemctl.stdout'
+
+    - name: Get nginx default config
+      get_url:
+        url: https://raw.githubusercontent.com/rcarmo/piku/master/nginx.default.dist
+        dest: /etc/nginx/sites-available/default
+        force: yes
+      register: nginx_config_installed
+
+    - name: Restart nginx service
+      service:
+        name: nginx
+        state: restarted
+      when: nginx_config_installed is changed
+
+    - name: Get incron config
+      get_url:
+        url: https://raw.githubusercontent.com/rcarmo/piku/master/incron.dist
+        dest: /etc/incron.d/piku
+      register: incron_config_installed
+
+    - name: Restart incron service
+      service:
+        name: incron
+        state: restarted
+      when: incron_config_installed is changed
