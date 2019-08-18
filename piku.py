@@ -245,7 +245,7 @@ def parse_procfile(filename):
     if not len(workers):
         return {}
     # WSGI trumps regular web workers
-    if 'wsgi' or 'jwsgi' in workers:
+    if 'wsgi' in workers or 'jwsgi' in workers:
         if 'web' in workers:
             echo("Warning: found both 'wsgi' and 'web' workers, disabling 'web'", fg='yellow')
             del(workers['web'])
