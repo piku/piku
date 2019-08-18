@@ -587,7 +587,7 @@ def spawn_app(app, deltas={}):
     if exists(settings):
         env.update(parse_settings(settings, env))
 
-    if 'web' in workers or 'wsgi' or 'jwsgi' in workers:
+    if 'web' in workers or 'wsgi' in workers or 'jwsgi' in workers:
         # Pick a port if none defined
         if 'PORT' not in env:
             env['PORT'] = str(get_free_port())
@@ -617,7 +617,7 @@ def spawn_app(app, deltas={}):
             
             # default to reverse proxying to the TCP port we picked
             env['INTERNAL_NGINX_UWSGI_SETTINGS'] = 'proxy_pass http://{BIND_ADDRESS:s}:{PORT:s};'.format(**env)
-            if 'wsgi' or 'jwsgi' in workers:
+            if 'wsgi' in workers or 'jwsgi' in workers:
                 sock = join(NGINX_ROOT, "{}.sock".format(app))
                 env['INTERNAL_NGINX_UWSGI_SETTINGS'] = expandvars(INTERNAL_NGINX_UWSGI_SETTINGS, env)
                 env['NGINX_SOCKET'] = env['BIND_ADDRESS'] = "unix://" + sock
