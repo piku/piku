@@ -858,7 +858,10 @@ def spawn_worker(app, kind, command, env, ordinal=1):
     for k in ['NGINX_ACL']:
         if k in env:
             del env[k]
-    
+
+    # insert user defined uwsgi settings if set
+    settings += parse_settings(join(APP_ROOT, app, env.get("UWSGI_INCLUDE_FILE"))).items() if env.get("UWSGI_INCLUDE_FILE") else []
+
     for k, v in env.items():
         settings.append(('env', '{k:s}={v}'.format(**locals())))
 

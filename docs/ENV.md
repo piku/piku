@@ -29,6 +29,7 @@ You can configure deployment settings by placing special variables in an `ENV` f
 * `UWSGI_LOG_X_FORWARDED_FOR` (boolean): set the `log-x-forwarded-for` option.
 * `UWSGI_GEVENT`: enable the Python 2 `gevent` plugin
 * `UWSGI_ASYNCIO`: enable the Python 2/3 `asyncio` plugin
+* `UWSGI_INCLUDE_FILE`: a uwsgi config file in the app's dir to include - useful for including custom uwsgi directives.
 
 ## Nginx Settings
 
