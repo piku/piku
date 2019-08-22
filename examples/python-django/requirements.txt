@@ -1,3 +1,0 @@
-Django==2.1.11
-pytz==2019.1
-sqlparse==0.3.0
