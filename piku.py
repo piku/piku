@@ -379,8 +379,6 @@ def deploy_gradle(app, deltas={}):
             echo("-----> Building Java Application")
             call('gradle build', cwd=join(APP_ROOT, app), shell=True)
     else:
-        venv = 'mkdir ' + virtual
-        call(venv, cwd=PIKU_ROOT, shell=True)
         env = {
             'VIRTUAL_ENV': virtual,
             "PATH": ':'.join([join(virtual, "bin"), join(app, ".bin"),environ['PATH']])
@@ -418,8 +416,6 @@ def deploy_java(app, deltas={}):
             echo("-----> Building Java Application")
             call("mvn package", shell=True)
     else:
-        venv = 'mkdir ' + virtual
-        call(venv, cwd=PIKU_ROOT, shell=True)
         env = {
             'VIRTUAL_ENV': virtual,
             "PATH": ':'.join([join(virtual, "bin"), join(app, ".bin"),environ['PATH']])
@@ -458,8 +454,6 @@ def deploy_clojure(app, deltas={}):
             echo("-----> Building Clojure Application")
             call("lein uberjar", shell=True)
     else:
-        venv = 'mkdir ' + virtual
-        call(venv, cwd=PIKU_ROOT, shell=True)
         env = {
             'VIRTUAL_ENV': virtual,
             "PATH": ':'.join([join(virtual, "bin"), join(app, ".bin"),environ['PATH']])
