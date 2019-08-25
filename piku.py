@@ -350,6 +350,9 @@ def do_deploy(app, deltas={}, newrev=None):
             elif 'static' in workers:
                 echo("-----> Static app detected.", fg='green')
                 settings.update(deploy_identity(app, deltas))
+            elif exists(join(app_path, 'project.clj')) and check_requirements(['java', 'lein', 'clojure']):
+                echo("-----> Clojure app detected.", fg='green' )
+                settings.update(deploy_clojure(app, deltas))
             else:
                 echo("-----> Could not detect runtime!", fg='red')
             # TODO: detect other runtimes
@@ -425,6 +428,45 @@ def deploy_java(app, deltas={}):
     
     return spawn_app(app, deltas)
 
+def deploy_clojure(app, deltas={}):
+    """Deploy a Clojure Application"""
+
+    virtual = join(ENV_ROOT, app)
+    target_path = join(APP_ROOT, app, 'target')
+    env_file = join(APP_ROOT, app, 'ENV')
+    projectfile = join(APP_ROOT, app, 'project.clj')
+
+
+    if not exists(target_path):
+        venv = 'mkdir ' + virtual
+        call(venv, cwd=PIKU_ROOT, shell=True)
+        env = {
+            'VIRTUAL_ENV': virtual,
+            "PATH": ':'.join([join(virtual, "bin"), join(app, ".bin"),environ['PATH']])
+        }
+        if exists(env_file):
+            env.update(parse_settings(env_file, env))
+            echo("-----> Building Clojure Application")
+            call('lein uberjar', cwd=join(APP_ROOT, app), env=env, shell=True)
+        else:
+            echo("-----> Building Clojure Application")
+            call("lein uberjar", shell=True)
+    else:
+        venv = 'mkdir ' + virtual
+        call(venv, cwd=PIKU_ROOT, shell=True)
+        env = {
+            'VIRTUAL_ENV': virtual,
+            "PATH": ':'.join([join(virtual, "bin"), join(app, ".bin"),environ['PATH']])
+        }
+        if exists(env_file):
+            env.update(parse_settings(env_file, env))
+            echo("-----> Building Clean Clojure Application")
+            call('lein clean uberjar', cwd=join(APP_ROOT, app), env=env, shell=True)
+        else:
+            echo("-----> Building Clean Clojure Application")
+            call("lein clean uberjar", shell=True)
+
+    return spawn_app(app, deltas)
 
 
 def deploy_go(app, deltas={}):
