@@ -105,14 +105,15 @@ From the bottom up:
 - [ ] `chroot`/namespace isolation (tentative)
 - [ ] Relay commands to other nodes
 - [ ] Proxy deployments to other nodes (build on one box, deploy to many)
-- [ ] Support Clojure/Java deployments through `boot` or `lein`
+- [ ] Support Clojure deployments through `boot`
 - [ ] Sample Go app
 - [ ] Support Go deployments (in progress)
 - [ ] nginx SSL optimization/cypher suites, own certificates
 - [ ] Review deployment messages
 - [ ] WIP: Review docs/CLI command documentation (short descriptions done, need `help <cmd>` and better descriptions)
 - [ ] Lua/WSAPI support
-- [x] Support for Java Apps with maven/gradle (in progress through jwsgi, by @matrixjnr)
+- [x] Support Clojure deployments through `lein`(by @matrixjnr)
+- [x] Support for Java Apps with maven/gradle (by @matrixjnr)
 - [x] Django and Wisp examples (by @chr15m)
 - [x] Project logo (by @chr15m)
 - [x] Various release/deployment improvements (by @chr15m)
