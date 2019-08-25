@@ -339,6 +339,9 @@ def do_deploy(app, deltas={}, newrev=None):
             elif (exists(join(app_path, 'Godeps')) or len(glob(join(app_path,'*.go')))) and check_requirements(['go']):
                 echo("-----> Go app detected.", fg='green')
                 settings.update(deploy_go(app, deltas))
+            elif exists(join(app_path, 'project.clj')) and check_requirements(['java', 'lein', 'clojure']):
+                echo("-----> Clojure app detected.", fg='green' )
+                settings.update(deploy_clojure(app, deltas))
             else:
                 echo("-----> Could not detect runtime!", fg='red')
             # TODO: detect other runtimes
@@ -361,8 +364,7 @@ def deploy_gradle(app, deltas={}):
     env_file = join(APP_ROOT, app, 'ENV')
     build = join(APP_ROOT, app, 'build.gradle')
 
-    first_time = False
-    if not exists(target_path) or first_time == True:
+    if not exists(target_path):
         venv = 'mkdir ' + virtual
         call(venv, cwd=PIKU_ROOT, shell=True)
         env = {
@@ -373,18 +375,27 @@ def deploy_gradle(app, deltas={}):
             env.update(parse_settings(env_file, env))
             echo("-----> Building Java Application")
             call('gradle build', cwd=join(APP_ROOT, app), env=env, shell=True)
-            first_time = True
+        else:
+            echo("-----> Building Java Application")
+            call('gradle build', cwd=join(APP_ROOT, app), shell=True)
     else:
-            if getmtime(build) > getmtime(target_path):
-                echo ("-----> Performing a clean build")
-                call('gradle clean build', cwd=join(APP_ROOT, app), env=env, shell=True)
+        venv = 'mkdir ' + virtual
+        call(venv, cwd=PIKU_ROOT, shell=True)
+        env = {
+            'VIRTUAL_ENV': virtual,
+            "PATH": ':'.join([join(virtual, "bin"), join(app, ".bin"),environ['PATH']])
+        }
+        if exists(env_file):
+            echo ("-----> Rebuilding your Gradle Project")
+            call('gradle clean build', cwd=join(APP_ROOT, app), env=env, shell=True)
+        else:
+            echo("-----> Building Java Application")
+            call('gradle clean build', cwd=join(APP_ROOT, app), shell=True)     
     
     return spawn_app(app, deltas)
 
 def deploy_java(app, deltas={}):
     """Deploy a Java application using Maven"""
-    # Check for if pom.xml exists or build.gradle
-    # Since gradle can build a variety of projects from scala, clojure etc, I think it is better to add a deploy_gradle function
     # TODO: Use jenv to isolate Java Application environments
 
     virtual = join(ENV_ROOT, app)
@@ -392,8 +403,7 @@ def deploy_java(app, deltas={}):
     env_file = join(APP_ROOT, app, 'ENV')
     pom = join(APP_ROOT, app, 'pom.xml')
 
-    first_time = False
-    if not exists(target_path) or first_time == True:
+    if not exists(target_path):
         venv = 'mkdir ' + virtual
         call(venv, cwd=PIKU_ROOT, shell=True)
         env = {
@@ -403,29 +413,66 @@ def deploy_java(app, deltas={}):
         if exists(env_file):
             env.update(parse_settings(env_file, env))
             echo("-----> Building Java Application")
-            call('mvn compile', cwd=join(APP_ROOT, app), env=env, shell=True)
-            # Compiles your java project according to pom.xml
-            echo("-----> Running Maven Tests")
-            call('mvn test', cwd=join(APP_ROOT, app), env=env, shell=True)
-            echo("-----> Tests Completed \n-----> Packaging Compiled Sources ")
             call('mvn package', cwd=join(APP_ROOT, app), env=env, shell=True)
-            echo("-----> Finished Packaging && Now Verifying Compiled Packages")
-            call('mvn verify', cwd=join(APP_ROOT, app), env=env, shell=True)
-            echo("-----> Installing Application on local repository for future usage")
-            call('mvn install', cwd=join(APP_ROOT, app), env=env, shell=True)
-            echo('----->Successfully deployed your package on Maven Local Repository')
-            echo('-----> Deploying App to Maven Central Repository')
-            first_time = True
+        else:
+            echo("-----> Building Java Application")
+            call("mvn package", shell=True)
     else:
-        if getmtime(pom) > getmtime(target_path):
-            
-            echo("-----> Destroying previous builds")
-            call('mvn clean', cwd=join(APP_ROOT, app), env=env, shell=True)
-            echo('-----> Starting new build')
-            call('mvn compile && mvn test && mvn package && mvn verify && mvn install && mvn deploy', cwd=join(APP_ROOT, app), env=env, shell=True)
-    
+        venv = 'mkdir ' + virtual
+        call(venv, cwd=PIKU_ROOT, shell=True)
+        env = {
+            'VIRTUAL_ENV': virtual,
+            "PATH": ':'.join([join(virtual, "bin"), join(app, ".bin"),environ['PATH']])
+        }
+        if exists(env_file):
+            env.update(parse_settings(env_file, env))
+            echo("-----> Rebuilding Building Java Application")
+            call('mvn clean package', cwd=join(APP_ROOT, app), env=env, shell=True)
+        else:
+            echo("-----> Rebuilding Java Application")
+            call("mvn clean package", shell=True)
+
     return spawn_app(app, deltas)
 
+def deploy_clojure(app, deltas={}):
+    """Deploy a Clojure Application"""
+    
+    virtual = join(ENV_ROOT, app)
+    target_path = join(APP_ROOT, app, 'target')
+    env_file = join(APP_ROOT, app, 'ENV')
+    projectfile = join(APP_ROOT, app, 'project.clj')
+
+
+    if not exists(target_path):
+        venv = 'mkdir ' + virtual
+        call(venv, cwd=PIKU_ROOT, shell=True)
+        env = {
+            'VIRTUAL_ENV': virtual,
+            "PATH": ':'.join([join(virtual, "bin"), join(app, ".bin"),environ['PATH']])
+        }
+        if exists(env_file):
+            env.update(parse_settings(env_file, env))
+            echo("-----> Building Clojure Application")
+            call('lein uberjar', cwd=join(APP_ROOT, app), env=env, shell=True)
+        else:
+            echo("-----> Building Clojure Application")
+            call("lein uberjar", shell=True)
+    else:
+        venv = 'mkdir ' + virtual
+        call(venv, cwd=PIKU_ROOT, shell=True)
+        env = {
+            'VIRTUAL_ENV': virtual,
+            "PATH": ':'.join([join(virtual, "bin"), join(app, ".bin"),environ['PATH']])
+        }
+        if exists(env_file):
+            env.update(parse_settings(env_file, env))
+            echo("-----> Building Clean Clojure Application")
+            call('lein clean uberjar', cwd=join(APP_ROOT, app), env=env, shell=True)
+        else:
+            echo("-----> Building Clean Clojure Application")
+            call("lein clean uberjar", shell=True)
+
+    return spawn_app(app, deltas)
 
 
 def deploy_go(app, deltas={}):
@@ -964,7 +1011,7 @@ def list_apps():
 @piku.command("config")
 @argument('app')
 def cmd_config(app):
-    """Show config, e.g.: piku config <app>"""
+    """Show app config, e.g.: piku config <app>"""
     
     app = exit_if_invalid(app)
     
@@ -979,7 +1026,7 @@ def cmd_config(app):
 @argument('app')
 @argument('setting')
 def cmd_config_get(app, setting):
-    """e.g.: piku config:get <app> FOO"""
+    """Get specified app config, e.g.: piku config:get <app> FOO"""
     
     app = exit_if_invalid(app)
     
@@ -996,7 +1043,7 @@ def cmd_config_get(app, setting):
 @argument('app')
 @argument('settings', nargs=-1)
 def cmd_config_set(app, settings):
-    """e.g.: piku config:set <app> FOO=bar BAZ=quux"""
+    """Sets specified app config, e.g.: piku config:set <app> FOO=bar BAZ=quux"""
     
     app = exit_if_invalid(app)
     
@@ -1018,7 +1065,7 @@ def cmd_config_set(app, settings):
 @argument('app')
 @argument('settings', nargs=-1)
 def cmd_config_unset(app, settings):
-    """e.g.: piku config:unset <app> FOO"""
+    """Unsets the specified config, e.g.: piku config:unset <app> FOO"""
     
     app = exit_if_invalid(app)
     
@@ -1035,7 +1082,7 @@ def cmd_config_unset(app, settings):
 @piku.command("config:live")
 @argument('app')
 def cmd_config_live(app):
-    """e.g.: piku config:live <app>"""
+    """Get live config of an app, e.g.: piku config:live <app>"""
     
     app = exit_if_invalid(app)
 
@@ -1049,7 +1096,7 @@ def cmd_config_live(app):
 @piku.command("deploy")
 @argument('app')
 def cmd_deploy(app):
-    """e.g.: piku deploy <app>"""
+    """Deploy an app, e.g.: piku deploy <app>"""
     
     app = exit_if_invalid(app)
     do_deploy(app)
@@ -1058,7 +1105,7 @@ def cmd_deploy(app):
 @piku.command("destroy")
 @argument('app')
 def cmd_destroy(app):
-    """e.g.: piku destroy <app>"""
+    """Deletes a deployed app, e.g.: piku destroy <app>"""
     
     app = exit_if_invalid(app)
     
@@ -1092,7 +1139,7 @@ def cmd_destroy(app):
 @piku.command("logs")
 @argument('app')
 def cmd_logs(app):
-    """Tail running logs, e.g: piku logs <app>"""
+    """Tail running logs for an app, e.g: piku logs <app>"""
     
     app = exit_if_invalid(app)
 
@@ -1107,7 +1154,7 @@ def cmd_logs(app):
 @piku.command("ps")
 @argument('app')
 def cmd_ps(app):
-    """Show process count, e.g: piku ps <app>"""
+    """Show process count of an app, e.g: piku ps <app>"""
     
     app = exit_if_invalid(app)
 
@@ -1122,7 +1169,7 @@ def cmd_ps(app):
 @argument('app')
 @argument('settings', nargs=-1)
 def cmd_ps_scale(app, settings):
-    """e.g.: piku ps:scale <app> <proc>=<count>"""
+    """Scale app workers, e.g.: piku ps:scale <app> <proc>=<count>"""
     
     app = exit_if_invalid(app)
 
@@ -1150,7 +1197,7 @@ def cmd_ps_scale(app, settings):
 @argument('app')
 @argument('cmd', nargs=-1)
 def cmd_run(app, cmd):
-    """e.g.: piku run <app> ls -- -al"""
+    """Run a sleeping app, e.g.: piku run <app> ls -- -al"""
 
     app = exit_if_invalid(app)
 
@@ -1249,7 +1296,7 @@ def cmd_stop(app):
             remove(c)
     else:
         echo("Error: app '{}' not deployed!".format(app), fg='red')
-        
+       
         
 # --- Internal commands ---
 
