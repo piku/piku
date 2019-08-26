@@ -30,7 +30,6 @@ from time import sleep
 from urllib.request import urlopen
 from pwd import getpwuid
 from grp import getgrgid
-from yaml import safe_load
 
 # === Make sure we can access all system binaries ===
 
