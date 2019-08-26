@@ -36,7 +36,7 @@ main() {
   # ensure we have the piku repo checked out
   if [ ! -d "${REPO}" ]; then
     echo " #> Piku repo not found. Installing it into ${REPO}."
-    git clone https://github.com/rcarmo/piku "${REPO}"
+    git clone https://github.com/piku/piku "${REPO}"
   fi
 
   # ensure ansible

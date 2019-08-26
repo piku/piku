@@ -32,7 +32,7 @@ To use `piku` you need a VPS, Raspberry Pi, or other server bootstrapped with `p
 Once you've got a fresh server, download the [piku-bootstrap](./piku-bootstrap) shell script onto your local machine and run it:
 
 ```shell
-curl https://raw.githubusercontent.com/rcarmo/piku/master/piku-bootstrap > piku-bootstrap && chmod 755 piku-bootstrap
+curl https://raw.githubusercontent.com/piku/piku/master/piku-bootstrap > piku-bootstrap && chmod 755 piku-bootstrap
 ./piku-bootstrap
 ```
 
@@ -53,7 +53,7 @@ See below for instructions on [installing other custom dependencies](#installing
 To make life easier you can also download the [piku](./piku) helper shell script and install it on your local.
 
 ```shell
-curl https://raw.githubusercontent.com/rcarmo/piku/master/piku > piku && chmod 755 piku
+curl https://raw.githubusercontent.com/piku/piku/master/piku > piku && chmod 755 piku
 ```
 
 This shell script makes working with `piku` remotes a bit simpler. If you have a git remote called `piku` in the current folder it will infer the remote server and app name and insert those into the remote piku commands. This allows you do execute commands like the following on your running remote app:

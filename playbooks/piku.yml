@@ -44,7 +44,7 @@
 
     - name: Install uwsgi dist script
       get_url:
-        url: https://raw.githubusercontent.com/rcarmo/piku/master/uwsgi-piku.dist
+        url: https://raw.githubusercontent.com/piku/piku/master/uwsgi-piku.dist
         dest: /etc/init.d/uwsgi-piku
         mode: 0700
       when: packages_installed is changed
@@ -57,7 +57,7 @@
 
     - name: Install uwsgi-piku systemd script
       get_url:
-        url: https://raw.githubusercontent.com/rcarmo/piku/master/uwsgi-piku.service
+        url: https://raw.githubusercontent.com/piku/piku/master/uwsgi-piku.service
         dest: /etc/systemd/system/uwsgi-piku.service
         mode: 0600
       when: packages_installed is changed
@@ -95,7 +95,7 @@
 
     - name: Fetch piku.py script
       get_url:
-        url: https://raw.githubusercontent.com/rcarmo/piku/master/piku.py
+        url: https://raw.githubusercontent.com/piku/piku/master/piku.py
         dest: ~/piku.py
         mode: 0700
 
@@ -162,7 +162,7 @@
 
     - name: Get nginx default config
       get_url:
-        url: https://raw.githubusercontent.com/rcarmo/piku/master/nginx.default.dist
+        url: https://raw.githubusercontent.com/piku/piku/master/nginx.default.dist
         dest: /etc/nginx/sites-available/default
         force: yes
       register: nginx_config_installed
@@ -175,7 +175,7 @@
 
     - name: Get incron config
       get_url:
-        url: https://raw.githubusercontent.com/rcarmo/piku/master/incron.dist
+        url: https://raw.githubusercontent.com/piku/piku/master/incron.dist
         dest: /etc/incron.d/piku
       register: incron_config_installed
 

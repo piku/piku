@@ -34,7 +34,7 @@ This user _is not supposed to login to your system_. Instead, you'll interact wi
 # copy your public key to /tmp (I'm assuming it's the first entry in authorized_keys)
 head -1 ~/.ssh/authorized_keys > /tmp/pubkey
 # install piku and have it set up SSH keys and default files
-sudo su - $PAAS_USERNAME -c "wget https://raw.githubusercontent.com/rcarmo/piku/master/piku.py && python3 ~/piku.py setup && python3 ~/piku.py setup:ssh /tmp/pubkey"
+sudo su - $PAAS_USERNAME -c "wget https://raw.githubusercontent.com/piku/piku/master/piku.py && python3 ~/piku.py setup && python3 ~/piku.py setup:ssh /tmp/pubkey"
 rm /tmp/pubkey
 ```
 

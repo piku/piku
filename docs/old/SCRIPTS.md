@@ -12,10 +12,10 @@ sudo adduser --disabled-password --gecos 'PaaS access' --ingroup www-data piku
 
 # move to /tmp and grab our distribution files
 cd /tmp
-wget https://raw.githubusercontent.com/rcarmo/piku/master/piku.py
-wget https://raw.githubusercontent.com/rcarmo/piku/master/incron.dist
-wget https://raw.githubusercontent.com/rcarmo/piku/master/nginx.default.dist
-wget https://raw.githubusercontent.com/rcarmo/piku/master/uwsgi-piku.service
+wget https://raw.githubusercontent.com/piku/piku/master/piku.py
+wget https://raw.githubusercontent.com/piku/piku/master/incron.dist
+wget https://raw.githubusercontent.com/piku/piku/master/nginx.default.dist
+wget https://raw.githubusercontent.com/piku/piku/master/uwsgi-piku.service
 # Set up nginx to pick up our config files
 sudo cp /tmp/nginx.default.dist /etc/nginx/sites-available/default
 # Set up incron to reload nginx upon config changes

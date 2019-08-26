@@ -57,7 +57,7 @@ sudo reboot
 
 (We assume you know about ssh keys and have one "at hand", you'll need to copy it)
 
-Clone the [piku repo](https://github.com/rcarmo/piku) somewhere and copy files to your Raspberry Pi
+Clone the [piku repo](https://github.com/piku/piku) somewhere and copy files to your Raspberry Pi
 
 ```bash
 # as yourself in your desktop/laptop computer
