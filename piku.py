@@ -338,6 +338,9 @@ def do_deploy(app, deltas={}, newrev=None):
             elif (exists(join(app_path, 'Godeps')) or len(glob(join(app_path,'*.go')))) and check_requirements(['go']):
                 echo("-----> Go app detected.", fg='green')
                 settings.update(deploy_go(app, deltas))
+            elif 'release' in workers and 'web' in workers:
+                echo("-----> Generic app detected.", fg='green')
+                settings.update(deploy_identity(app, deltas))
             else:
                 echo("-----> Could not detect runtime!", fg='red')
             # TODO: detect other runtimes
@@ -532,7 +535,14 @@ def deploy_python(app, deltas={}):
         call('pip install -r {}'.format(requirements), cwd=virtualenv_path, shell=True)
     return spawn_app(app, deltas)
 
- 
+
+def deploy_identity(app, deltas={}):
+    env_path = join(ENV_ROOT, app)
+    if not exists(env_path):
+        makedirs(env_path)
+    return spawn_app(app, deltas)
+
+
 def spawn_app(app, deltas={}):
     """Create all workers for an app"""
     
