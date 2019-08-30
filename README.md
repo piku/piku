@@ -22,6 +22,7 @@ The tiniest Heroku/CloudFoundry-like PaaS you've ever seen.
 * You can optionally also specify a `release` worker which is run once when the app is deployed.
 * You can then remotely change application settings (`config:set`) or scale up/down worker processes (`ps:scale`).
 * You can also bake application settings into a file called [`ENV` which is documented here](./docs/ENV.md).
+* A `static` worker type, with the root path as the argument, can be used to deploy a gh-pages style static site.
 
 ## Install
 
