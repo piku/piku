@@ -21,17 +21,24 @@ then
 else
   server=${PIKU_SERVER:-`echo $remote | cut -f1 -d":" 2>/dev/null`}
   app=${PIKU_APP:-`echo $remote | cut -f2 -d":" 2>/dev/null`}
+  # gather SSH flags
+  while [ "${1#\-}"x != "${1}x" ];
+  do
+    sshflags="${sshflags} ${1}"
+    shift
+  done
+  # check the Piku command to be run
   cmd="$1"
   out "Server: $server"
   out "App: $app"
   out
   case "$cmd" in
     apps|setup|setup:ssh|"")
-      ssh -A "$server" "$@"
+      ssh ${sshflags} "$server" "$@"
       ;;
     *)
       shift # remove cmd arg
-      ssh -A "$server" "$cmd" "$app" "$@"
+      ssh ${sshflags} "$server" "$cmd" "$app" "$@"
       ;;
   esac
 fi

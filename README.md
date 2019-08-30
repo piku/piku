@@ -67,7 +67,21 @@ $ piku destroy
 $ piku # <- will show help for the remote app
 ```
 
-If you put this `piku` script on your `PATH` you can use the `piku` command across multiple apps on your local.
+You can pass flags through to the underlying SSH command, for example `-t` to run interactive commands remotely, and `-A` to proxy authentication credentials in order to do remote git pulls.
+
+Here is an example of using the `-t` flag to obtain a `bash` shell in the app directory of one of your Piku apps:
+
+```
+$ piku -t run bash
+Piku remote operator.
+Server: piku@cloud.mccormickit.com
+App: dashboard
+
+piku@piku:~/.piku/apps/dashboard$ ls
+data  ENV  index.html  package.json  package-lock.json  Procfile  server.wisp
+```
+
+Tip: If you put this `piku` script on your `PATH` you can use the `piku` command across multiple apps on your local.
 
 ### Installing other dependencies
 
