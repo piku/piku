@@ -20,7 +20,8 @@ An app is simply a `git` repository with some additional files on the top level,
 
 * `wsgi` workers, in the format `dotted.module:entry_point` (Python-only)
 * `web` workers, which can be anything that honors the `PORT` environment variable
-* `worker` prcesses, which are standalone workers and can have arbitrary names
+* `static` workers, which simply mount the first argument as the root static path
+* `worker` processes, which are standalone workers and can have arbitrary names
 
 So a Python application could have a `Procfile` like such:
 

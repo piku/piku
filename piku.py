@@ -123,6 +123,10 @@ NGINX_COMMON_FRAGMENT = """
 
   $INTERNAL_NGINX_BLOCK_GIT
 
+  $INTERNAL_NGINX_PORTMAP
+"""
+
+NGINX_PORTMAP_FRAGMENT = """
   location    / {
     $INTERNAL_NGINX_UWSGI_SETTINGS
     proxy_http_version 1.1;
@@ -134,7 +138,7 @@ NGINX_COMMON_FRAGMENT = """
     proxy_set_header X-Forwarded-Port $server_port;
     proxy_set_header X-Request-Start $msec;
     $NGINX_ACL
- }
+  }
 """
 
 NGINX_ACME_FIRSTRUN_TEMPLATE = """
@@ -340,6 +344,8 @@ def do_deploy(app, deltas={}, newrev=None):
                 settings.update(deploy_go(app, deltas))
             elif 'release' in workers and 'web' in workers:
                 echo("-----> Generic app detected.", fg='green')
+            elif 'static' in workers:
+                echo("-----> Static app detected.", fg='green')
                 settings.update(deploy_identity(app, deltas))
             else:
                 echo("-----> Could not detect runtime!", fg='red')
@@ -596,7 +602,7 @@ def spawn_app(app, deltas={}):
     if exists(settings):
         env.update(parse_settings(settings, env))
 
-    if 'web' in workers or 'wsgi' in workers or 'jwsgi' in workers:
+    if 'web' in workers or 'wsgi' in workers or 'jwsgi' in workers or 'static' in workers:
         # Pick a port if none defined
         if 'PORT' not in env:
             env['PORT'] = str(get_free_port())
@@ -688,9 +694,13 @@ def spawn_app(app, deltas={}):
             env['INTERNAL_NGINX_BLOCK_GIT'] = "" if env.get('NGINX_ALLOW_GIT_FOLDERS') else "location ~ /\.git { deny all; }"
 
             env['INTERNAL_NGINX_STATIC_MAPPINGS'] = ''
-            
+
             # Get a mapping of /url:path1,/url2:path2
             static_paths = env.get('NGINX_STATIC_PATHS','')
+            # prepend static worker path if present
+            if 'static' in workers:
+                stripped = workers['static'].strip("/").rstrip("/")
+                static_paths = "/:" + (stripped if stripped else ".") + "/" + ("," if static_paths else "") + static_paths
             if len(static_paths):
                 try:
                     items = static_paths.split(',')
@@ -704,6 +714,9 @@ def spawn_app(app, deltas={}):
                     env['INTERNAL_NGINX_STATIC_MAPPINGS'] = ''
 
             env['INTERNAL_NGINX_CUSTOM_CLAUSES'] = expandvars(open(join(app_path, env["NGINX_INCLUDE_FILE"])).read(), env) if env.get("NGINX_INCLUDE_FILE") else ""
+            env['INTERNAL_NGINX_PORTMAP'] = ""
+            if 'web' in workers or 'uwsgi' in workers or 'jwsgi' in workers:
+                env['INTERNAL_NGINX_PORTMAP'] = expandvars(NGINX_PORTMAP_FRAGMENT, env)
             env['INTERNAL_NGINX_COMMON'] = expandvars(NGINX_COMMON_FRAGMENT, env)
 
             echo("-----> nginx will map app '{}' to hostname '{}'".format(app, env['NGINX_SERVER_NAME']))
@@ -857,10 +870,12 @@ def spawn_worker(app, kind, command, env, ordinal=1):
     elif kind == 'web':
         echo("-----> nginx will talk to the 'web' process via {BIND_ADDRESS:s}:{PORT:s}".format(**env), fg='yellow')
         settings.append(('attach-daemon', command))
+    elif kind == 'static':
+        echo("-----> nginx serving static files only".format(**env), fg='yellow')
     else:
         settings.append(('attach-daemon', command))
         
-    if kind in ['wsgi','web']:
+    if kind in ['wsgi', 'web']:
         settings.append(('log-format','%%(addr) - %%(user) [%%(ltime)] "%%(method) %%(uri) %%(proto)" %%(status) %%(size) "%%(referer)" "%%(uagent)" %%(msecs)ms'))
         
     # remove unnecessary variables from the env in nginx.ini
@@ -874,12 +889,13 @@ def spawn_worker(app, kind, command, env, ordinal=1):
     for k, v in env.items():
         settings.append(('env', '{k:s}={v}'.format(**locals())))
 
-    with open(available, 'w') as h:
-        h.write('[uwsgi]\n')
-        for k, v in settings:
-            h.write("{k:s} = {v}\n".format(**locals()))
-    
-    copyfile(available, enabled)
+    if kind != 'static':
+        with open(available, 'w') as h:
+            h.write('[uwsgi]\n')
+            for k, v in settings:
+                h.write("{k:s} = {v}\n".format(**locals()))
+
+        copyfile(available, enabled)
 
 def do_restart(app):
     config = glob(join(UWSGI_ENABLED, '{}*.ini'.format(app)))
