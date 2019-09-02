@@ -1,0 +1,2 @@
+jwsgi: java -jar target/my-app-1-jar-with-dependencies.jar
+worker: cd target/classes && java demo.Worker
