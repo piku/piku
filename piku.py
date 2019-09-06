@@ -414,7 +414,7 @@ def deploy_java(app, deltas={}):
             call('mvn package', cwd=join(APP_ROOT, app), env=env, shell=True)
         else:
             echo("-----> Building Java Application")
-            call("mvn package",env=env, shell=True)
+            call("mvn package", cwd=join(APP_ROOT, app),env=env, shell=True)
     else:
         env = {
             'VIRTUAL_ENV': virtual,
@@ -426,7 +426,7 @@ def deploy_java(app, deltas={}):
             call('mvn clean package', cwd=join(APP_ROOT, app), env=env, shell=True)
         else:
             echo("-----> Rebuilding Java Application")
-            call("mvn clean package", env=env, shell=True)
+            call("mvn clean package", cwd=join(APP_ROOT, app), env=env, shell=True)
 
     return spawn_app(app, deltas)
 
@@ -453,7 +453,7 @@ def deploy_clojure(app, deltas={}):
             call('lein uberjar', cwd=join(APP_ROOT, app), env=env, shell=True)
         else:
             echo("-----> Building Clojure Application")
-            call("lein uberjar",env=env, shell=True)
+            call("lein uberjar",cwd=join(APP_ROOT, app), env=env, shell=True)
     else:
         env = {
             'VIRTUAL_ENV': virtual,
@@ -466,7 +466,7 @@ def deploy_clojure(app, deltas={}):
             call('lein clean && lein uberjar', cwd=join(APP_ROOT, app), env=env, shell=True)
         else:
             echo("-----> Building Clean Clojure Application")
-            call("lein clean && lein uberjar",env=env, shell=True)
+            call("lein clean && lein uberjar", cwd=join(APP_ROOT, app), env=env, shell=True)
 
     return spawn_app(app, deltas)
 
