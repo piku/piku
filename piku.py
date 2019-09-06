@@ -377,7 +377,7 @@ def deploy_gradle(app, deltas={}):
             call('gradle build', cwd=join(APP_ROOT, app), env=env, shell=True)
         else:
             echo("-----> Building Java Application")
-            call('gradle build', cwd=join(APP_ROOT, app), shell=True)
+            call('gradle build', cwd=join(APP_ROOT, app), env=env, shell=True)
     else:
         env = {
             'VIRTUAL_ENV': virtual,
@@ -388,7 +388,7 @@ def deploy_gradle(app, deltas={}):
             call('gradle clean build', cwd=join(APP_ROOT, app), env=env, shell=True)
         else:
             echo("-----> Building Java Application")
-            call('gradle clean build', cwd=join(APP_ROOT, app), shell=True)     
+            call('gradle clean build', cwd=join(APP_ROOT, app), env=env, shell=True)     
     
     return spawn_app(app, deltas)
 
@@ -414,7 +414,7 @@ def deploy_java(app, deltas={}):
             call('mvn package', cwd=join(APP_ROOT, app), env=env, shell=True)
         else:
             echo("-----> Building Java Application")
-            call("mvn package", shell=True)
+            call("mvn package",env=env, shell=True)
     else:
         env = {
             'VIRTUAL_ENV': virtual,
@@ -426,7 +426,7 @@ def deploy_java(app, deltas={}):
             call('mvn clean package', cwd=join(APP_ROOT, app), env=env, shell=True)
         else:
             echo("-----> Rebuilding Java Application")
-            call("mvn clean package", shell=True)
+            call("mvn clean package", env=env, shell=True)
 
     return spawn_app(app, deltas)
 
@@ -444,7 +444,8 @@ def deploy_clojure(app, deltas={}):
         call(venv, cwd=PIKU_ROOT, shell=True)
         env = {
             'VIRTUAL_ENV': virtual,
-            "PATH": ':'.join([join(virtual, "bin"), join(app, ".bin"),environ['PATH']])
+            "PATH": ':'.join([join(virtual, "bin"), join(app, ".bin"),environ['PATH']]),
+            "LEIN_HOME": environ.get('LEIN_HOME', join(environ['HOME'],'.lein'))
         }
         if exists(env_file):
             env.update(parse_settings(env_file, env))
@@ -452,19 +453,20 @@ def deploy_clojure(app, deltas={}):
             call('lein uberjar', cwd=join(APP_ROOT, app), env=env, shell=True)
         else:
             echo("-----> Building Clojure Application")
-            call("lein uberjar", shell=True)
+            call("lein uberjar",env=env, shell=True)
     else:
         env = {
             'VIRTUAL_ENV': virtual,
-            "PATH": ':'.join([join(virtual, "bin"), join(app, ".bin"),environ['PATH']])
+            "PATH": ':'.join([join(virtual, "bin"), join(app, ".bin"),environ['PATH']]),
+            "LEIN_HOME": environ.get('LEIN_HOME', join(environ['HOME'],'.lein'))
         }
         if exists(env_file):
             env.update(parse_settings(env_file, env))
             echo("-----> Building Clean Clojure Application")
-            call('lein clean uberjar', cwd=join(APP_ROOT, app), env=env, shell=True)
+            call('lein clean && lein uberjar', cwd=join(APP_ROOT, app), env=env, shell=True)
         else:
             echo("-----> Building Clean Clojure Application")
-            call("lein clean uberjar", shell=True)
+            call("lein clean && lein uberjar",env=env, shell=True)
 
     return spawn_app(app, deltas)
 
