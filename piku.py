@@ -344,6 +344,7 @@ def do_deploy(app, deltas={}, newrev=None):
                 settings.update(deploy_go(app, deltas))
             elif 'release' in workers and 'web' in workers:
                 echo("-----> Generic app detected.", fg='green')
+                settings.update(deploy_identity(app, deltas))
             elif 'static' in workers:
                 echo("-----> Static app detected.", fg='green')
                 settings.update(deploy_identity(app, deltas))
