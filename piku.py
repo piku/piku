@@ -716,7 +716,7 @@ def spawn_app(app, deltas={}):
 
             env['INTERNAL_NGINX_CUSTOM_CLAUSES'] = expandvars(open(join(app_path, env["NGINX_INCLUDE_FILE"])).read(), env) if env.get("NGINX_INCLUDE_FILE") else ""
             env['INTERNAL_NGINX_PORTMAP'] = ""
-            if 'web' in workers or 'uwsgi' in workers or 'jwsgi' in workers:
+            if 'web' in workers or 'wsgi' in workers or 'jwsgi' in workers:
                 env['INTERNAL_NGINX_PORTMAP'] = expandvars(NGINX_PORTMAP_FRAGMENT, env)
             env['INTERNAL_NGINX_COMMON'] = expandvars(NGINX_COMMON_FRAGMENT, env)
 
