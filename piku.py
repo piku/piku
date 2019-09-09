@@ -365,73 +365,61 @@ def do_deploy(app, deltas={}, newrev=None):
 
 def deploy_gradle(app, deltas={}):
     """Deploy a Java application using Gradle"""  
-    virtual = join(ENV_ROOT, app)
-    target_path = join(APP_ROOT, app, 'build')
+    java_path = join(ENV_ROOT, app)
+    build_path = join(APP_ROOT, app, 'build')
     env_file = join(APP_ROOT, app, 'ENV')
     build = join(APP_ROOT, app, 'build.gradle')
 
-    first_time = False
-    if not exists(target_path) or first_time == True:
-        venv = 'mkdir ' + virtual
-        call(venv, cwd=PIKU_ROOT, shell=True)
-        env = {
-            'VIRTUAL_ENV': virtual,
-            "PATH": ':'.join([join(virtual, "bin"), join(app, ".bin"),environ['PATH']])
+    env = {
+            'VIRTUAL_ENV': java_path,
+            "PATH": ':'.join([join(java_path, "bin"), join(app, ".bin"),environ['PATH']])
         }
-        if exists(env_file):
-            env.update(parse_settings(env_file, env))
-            echo("-----> Building Java Application")
-            call('gradle build', cwd=join(APP_ROOT, app), env=env, shell=True)
-            first_time = True
+    
+    if exists(env_file):
+        env.update(parse_settings(env_file, env))
+    
+    if not exists(java_path):
+        makedirs(java_path)
+
+    if not exists(build_path):
+        echo("-----> Building Java Application")
+        call('gradle build', cwd=join(APP_ROOT, app), env=env, shell=True)
+
     else:
-            if getmtime(build) > getmtime(target_path):
-                echo ("-----> Performing a clean build")
-                call('gradle clean build', cwd=join(APP_ROOT, app), env=env, shell=True)
+        echo("-----> Destroying previous builds")
+        echo("-----> Rebuilding Java Application")
+        call('gradle clean build', cwd=join(APP_ROOT, app), env=env, shell=True)
     
     return spawn_app(app, deltas)
 
 def deploy_java(app, deltas={}):
     """Deploy a Java application using Maven"""
-    # Check for if pom.xml exists or build.gradle
-    # Since gradle can build a variety of projects from scala, clojure etc, I think it is better to add a deploy_gradle function
     # TODO: Use jenv to isolate Java Application environments
 
-    virtual = join(ENV_ROOT, app)
+    java_path = join(ENV_ROOT, app)
     target_path = join(APP_ROOT, app, 'target')
     env_file = join(APP_ROOT, app, 'ENV')
     pom = join(APP_ROOT, app, 'pom.xml')
 
-    first_time = False
-    if not exists(target_path) or first_time == True:
-        venv = 'mkdir ' + virtual
-        call(venv, cwd=PIKU_ROOT, shell=True)
-        env = {
-            'VIRTUAL_ENV': virtual,
-            "PATH": ':'.join([join(virtual, "bin"), join(app, ".bin"),environ['PATH']])
+    env = {
+            'VIRTUAL_ENV': java_path,
+            "PATH": ':'.join([join(java_path, "bin"), join(app, ".bin"),environ['PATH']])
         }
-        if exists(env_file):
-            env.update(parse_settings(env_file, env))
-            echo("-----> Building Java Application")
-            call('mvn compile', cwd=join(APP_ROOT, app), env=env, shell=True)
-            # Compiles your java project according to pom.xml
-            echo("-----> Running Maven Tests")
-            call('mvn test', cwd=join(APP_ROOT, app), env=env, shell=True)
-            echo("-----> Tests Completed \n-----> Packaging Compiled Sources ")
-            call('mvn package', cwd=join(APP_ROOT, app), env=env, shell=True)
-            echo("-----> Finished Packaging && Now Verifying Compiled Packages")
-            call('mvn verify', cwd=join(APP_ROOT, app), env=env, shell=True)
-            echo("-----> Installing Application on local repository for future usage")
-            call('mvn install', cwd=join(APP_ROOT, app), env=env, shell=True)
-            echo('----->Successfully deployed your package on Maven Local Repository')
-            echo('-----> Deploying App to Maven Central Repository')
-            first_time = True
+    
+    if exists(env_file):
+        env.update(parse_settings(env_file, env))
+    
+    if not exists(java_path):
+        makedirs(java_path)
+
+    if not exists(target_path):
+        echo("-----> Building Java Application")
+        call('mvn package', cwd=join(APP_ROOT, app), env=env, shell=True)
+
     else:
-        if getmtime(pom) > getmtime(target_path):
-            
-            echo("-----> Destroying previous builds")
-            call('mvn clean', cwd=join(APP_ROOT, app), env=env, shell=True)
-            echo('-----> Starting new build')
-            call('mvn compile && mvn test && mvn package && mvn verify && mvn install && mvn deploy', cwd=join(APP_ROOT, app), env=env, shell=True)
+        echo("-----> Destroying previous builds")
+        echo("-----> Rebuilding Java Application")
+        call('mvn clean package', cwd=join(APP_ROOT, app), env=env, shell=True)
     
     return spawn_app(app, deltas)
 
