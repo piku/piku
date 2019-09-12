@@ -386,7 +386,7 @@ def deploy_gradle(app, deltas={}):
         call('gradle build', cwd=join(APP_ROOT, app), env=env, shell=True)
 
     else:
-        echo("-----> Destroying previous builds")
+        echo("-----> Removing previous builds")
         echo("-----> Rebuilding Java Application")
         call('gradle clean build', cwd=join(APP_ROOT, app), env=env, shell=True)
     
@@ -417,7 +417,7 @@ def deploy_java(app, deltas={}):
         call('mvn package', cwd=join(APP_ROOT, app), env=env, shell=True)
 
     else:
-        echo("-----> Destroying previous builds")
+        echo("-----> Removing previous builds")
         echo("-----> Rebuilding Java Application")
         call('mvn clean package', cwd=join(APP_ROOT, app), env=env, shell=True)
     
