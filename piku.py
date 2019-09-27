@@ -84,7 +84,9 @@ server {
     root ${ACME_WWW};
   }
 
-  return 301 https://$server_name$request_uri;
+  location / {
+    return 301 https://$server_name$request_uri;
+  }
 }
 
 server {
