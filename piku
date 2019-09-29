@@ -33,7 +33,10 @@ else
   out "App: $app"
   out
   case "$cmd" in
-    apps|setup|setup:ssh|"")
+    "")
+      ssh ${sshflags} "$server" "$@" | grep -v "INTERNAL"
+      ;;
+    apps|setup|setup:ssh)
       ssh ${sshflags} "$server" "$@"
       ;;
     *)
