@@ -39,6 +39,7 @@ if 'sbin' not in environ['PATH']:
 # === Globals - all tweakable settings are here ===
 
 PIKU_ROOT = environ.get('PIKU_ROOT', join(environ['HOME'],'.piku'))
+PIKU_BIN = join(environ['HOME'],'bin')
 PIKU_SCRIPT = realpath(__file__)
 APP_ROOT = abspath(join(PIKU_ROOT, "apps"))
 ENV_ROOT = abspath(join(PIKU_ROOT, "envs"))
@@ -51,6 +52,11 @@ UWSGI_ROOT = abspath(join(PIKU_ROOT, "uwsgi"))
 UWSGI_LOG_MAXSIZE = '1048576'
 ACME_ROOT = environ.get('ACME_ROOT', join(environ['HOME'],'.acme.sh'))
 ACME_WWW = abspath(join(PIKU_ROOT, "acme"))
+
+# === Make sure we can access piku user-installed binaries === #
+
+if PIKU_BIN not in environ['PATH']:
+    environ['PATH'] = PIKU_BIN + ":" + environ['PATH']
 
 # pylint: disable=anomalous-backslash-in-string
 NGINX_TEMPLATE = """
@@ -350,6 +356,9 @@ def do_deploy(app, deltas={}, newrev=None):
             elif 'static' in workers:
                 echo("-----> Static app detected.", fg='green')
                 settings.update(deploy_identity(app, deltas))
+            elif exists(join(app_path, 'project.clj')) and check_requirements(['java', 'lein']):
+                echo("-----> Clojure app detected.", fg='green' )
+                settings.update(deploy_clojure(app, deltas))
             else:
                 echo("-----> Could not detect runtime!", fg='red')
             # TODO: detect other runtimes
@@ -373,9 +382,9 @@ def deploy_gradle(app, deltas={}):
     build = join(APP_ROOT, app, 'build.gradle')
 
     env = {
-            'VIRTUAL_ENV': java_path,
-            "PATH": ':'.join([join(java_path, "bin"), join(app, ".bin"),environ['PATH']])
-        }
+        'VIRTUAL_ENV': java_path,
+        "PATH": ':'.join([join(java_path, "bin"), join(app, ".bin"),environ['PATH']])
+    }
     
     if exists(env_file):
         env.update(parse_settings(env_file, env))
@@ -404,9 +413,9 @@ def deploy_java(app, deltas={}):
     pom = join(APP_ROOT, app, 'pom.xml')
 
     env = {
-            'VIRTUAL_ENV': java_path,
-            "PATH": ':'.join([join(java_path, "bin"), join(app, ".bin"),environ['PATH']])
-        }
+        'VIRTUAL_ENV': java_path,
+        "PATH": ':'.join([join(java_path, "bin"), join(app, ".bin"),environ['PATH']])
+    }
     
     if exists(env_file):
         env.update(parse_settings(env_file, env))
@@ -425,6 +434,28 @@ def deploy_java(app, deltas={}):
     
     return spawn_app(app, deltas)
 
+def deploy_clojure(app, deltas={}):
+    """Deploy a Clojure Application"""
+
+    virtual = join(ENV_ROOT, app)
+    target_path = join(APP_ROOT, app, 'target')
+    env_file = join(APP_ROOT, app, 'ENV')
+    projectfile = join(APP_ROOT, app, 'project.clj')
+
+    if not exists(target_path):
+        makedirs(virtual)
+    env = {
+        'VIRTUAL_ENV': virtual,
+        "PATH": ':'.join([join(virtual, "bin"), join(app, ".bin"), environ['PATH']]),
+        "LEIN_HOME": environ.get('LEIN_HOME', join(environ['HOME'],'.lein')),
+    }
+    if exists(env_file):
+        env.update(parse_settings(env_file, env))
+    echo("-----> Building Clojure Application")
+    call('lein clean', cwd=join(APP_ROOT, app), env=env, shell=True)
+    call('lein uberjar', cwd=join(APP_ROOT, app), env=env, shell=True)
+
+    return spawn_app(app, deltas)
 
 
 def deploy_go(app, deltas={}):
