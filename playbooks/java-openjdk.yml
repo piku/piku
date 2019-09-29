@@ -1,0 +1,7 @@
+---
+- hosts: all
+  tasks:
+    - name: Install openjdk java packages
+      apt:
+        name: ["default-jre-headless", "default-jdk-headless", "maven"]
+
