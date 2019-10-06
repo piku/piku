@@ -340,20 +340,28 @@ def do_deploy(app, deltas={}, newrev=None):
                 settings.update(deploy_python(app, deltas))
             elif exists(join(app_path, 'package.json')):
                 echo("-----> Node app detected.", fg='green')
-                check_requirements(['nodejs', 'npm'])
-                settings.update(deploy_node(app, deltas))
+                if check_requirements(['nodejs', 'npm']):
+                    settings.update(deploy_node(app, deltas))
+                else:
+                    echo("-----> Missing requirements(binaries) to run the app. Install first!", fg='red')
             elif exists(join(app_path, 'pom.xml')):
                 echo("-----> Java app detected.", fg='green')
-                check_requirements(['java', 'mvn'])
-                settings.update(deploy_java(app, deltas))
+                if check_requirements(['java', 'mvn']):
+                    settings.update(deploy_java(app, deltas))
+                else:
+                    echo("-----> Missing requirements(binaries) to run the app. Install first!", fg='red')
             elif exists(join(app_path, 'build.gradle')):
                 echo("-----> Gradle Java app detected.", fg='green')
-                check_requirements(['java', 'gradle'])
-                settings.update(deploy_java(app, deltas))
+                if check_requirements(['java', 'gradle']):
+                    settings.update(deploy_java(app, deltas))
+                else:
+                    echo("-----> Missing requirements(binaries) to run the app. Install first!", fg='red')
             elif (exists(join(app_path, 'Godeps')) or len(glob(join(app_path,'*.go')))):
                 echo("-----> Go app detected.", fg='green')
-                check_requirements(['go'])
-                settings.update(deploy_go(app, deltas))
+                if check_requirements(['go']):
+                    settings.update(deploy_go(app, deltas))
+                else:
+                    echo("-----> Missing requirements(binaries) to run the app. Install first!", fg='red')
             elif 'release' in workers and 'web' in workers:
                 echo("-----> Generic app detected.", fg='green')
                 settings.update(deploy_identity(app, deltas))
@@ -362,8 +370,10 @@ def do_deploy(app, deltas={}, newrev=None):
                 settings.update(deploy_identity(app, deltas))
             elif exists(join(app_path, 'project.clj')):
                 echo("-----> Clojure app detected.", fg='green')
-                check_requirements(['java', 'lein'])
-                settings.update(deploy_clojure(app, deltas))
+                if check_requirements(['java', 'lein']):
+                    settings.update(deploy_clojure(app, deltas))
+                else:
+                    echo("-----> Missing requirements(binaries) to run the app. Install first!", fg='red')
             else:
                 echo("-----> Could not detect runtime!", fg='red')
             # TODO: detect other runtimes
