@@ -338,17 +338,21 @@ def do_deploy(app, deltas={}, newrev=None):
             if exists(join(app_path, 'requirements.txt')):
                 echo("-----> Python app detected.", fg='green')
                 settings.update(deploy_python(app, deltas))
-            elif exists(join(app_path, 'package.json')) and check_requirements(['nodejs', 'npm']):
+            elif exists(join(app_path, 'package.json')):
                 echo("-----> Node app detected.", fg='green')
+                check_requirements(['nodejs', 'npm'])
                 settings.update(deploy_node(app, deltas))
-            elif exists(join(app_path, 'pom.xml')) and check_requirements(['java', 'mvn']):
+            elif exists(join(app_path, 'pom.xml')):
                 echo("-----> Java app detected.", fg='green')
+                check_requirements(['java', 'mvn'])
                 settings.update(deploy_java(app, deltas))
-            elif exists(join(app_path, 'build.gradle')) and check_requirements(['java', 'gradle']):
+            elif exists(join(app_path, 'build.gradle')):
                 echo("-----> Gradle Java app detected.", fg='green')
+                check_requirements(['java', 'gradle'])
                 settings.update(deploy_java(app, deltas))
-            elif (exists(join(app_path, 'Godeps')) or len(glob(join(app_path,'*.go')))) and check_requirements(['go']):
+            elif (exists(join(app_path, 'Godeps')) or len(glob(join(app_path,'*.go')))):
                 echo("-----> Go app detected.", fg='green')
+                check_requirements(['go'])
                 settings.update(deploy_go(app, deltas))
             elif 'release' in workers and 'web' in workers:
                 echo("-----> Generic app detected.", fg='green')
@@ -356,8 +360,9 @@ def do_deploy(app, deltas={}, newrev=None):
             elif 'static' in workers:
                 echo("-----> Static app detected.", fg='green')
                 settings.update(deploy_identity(app, deltas))
-            elif exists(join(app_path, 'project.clj')) and check_requirements(['java', 'lein']):
-                echo("-----> Clojure app detected.", fg='green' )
+            elif exists(join(app_path, 'project.clj')):
+                echo("-----> Clojure app detected.", fg='green')
+                check_requirements(['java', 'lein'])
                 settings.update(deploy_clojure(app, deltas))
             else:
                 echo("-----> Could not detect runtime!", fg='red')
