@@ -46,7 +46,7 @@ main() {
   if [ "`command -v ansible-playbook`" = "" ]
   then
     echo " #> ansible-playbook binary not found. Installing it into ${PBD}."
-    pip install -q "ansible==2.7.10" >"${LOG}" 2>&1
+    pip install -q "ansible==2.7.10" >"${LOG}" 2>&1 || bail "Failed to install Ansible.\nSee ${LOG} for details (you may be missing a C compiler)."
   fi
 
   if [ "$1" = "" ]
