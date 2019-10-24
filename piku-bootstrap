@@ -21,6 +21,9 @@ main() {
     echo
   fi
 
+  # check git dependencies
+  command -v git > /dev/null || bail "This script depends on git. Please install it to continue.";
+
   # ensure we have a dir
   mkdir -p "${PBD}"
 
@@ -145,6 +148,11 @@ install_virtualenv() {
           cd "./.virtualenv-source" && \
           /usr/bin/env python setup.py build > ${LOG} 2>&1 ) \
           || bail_install;
+}
+
+bail() {
+  echo "$@"
+  exit 1;
 }
 
 main "$@"
