@@ -33,8 +33,7 @@ To use `piku` you need a VPS, Raspberry Pi, or other server bootstrapped with `p
 Once you've got a fresh server, download the [piku-bootstrap](./piku-bootstrap) shell script onto your local machine and run it:
 
 ```shell
-curl https://raw.githubusercontent.com/piku/piku/master/piku-bootstrap > piku-bootstrap && chmod 755 piku-bootstrap
-./piku-bootstrap
+curl https://piku.github.io/get | sh
 ```
 
 The first time it is run `piku-bootstrap` will install itself into `~/.piku-bootstrap` on your local machine and set up a virtualenv there with the dependencies it requires. It will only need to do this once.
@@ -42,7 +41,7 @@ The first time it is run `piku-bootstrap` will install itself into `~/.piku-boot
 The script will display a usage message and you can then bootstrap your server:
 
 ```shell
-./piku-bootstrap yourserver.net
+./piku-bootstrap root@yourserver.net
 ```
 
 If you put the `piku-bootstrap` script on your `PATH` somewhere, you can use it again to provision other servers in the future.
@@ -51,10 +50,10 @@ See below for instructions on [installing other custom dependencies](#installing
 
 ### `piku` client
 
-To make life easier you can also download the [piku](./piku) helper shell script and install it on your local.
+To make life easier you can also install the [piku](./piku) helper CLI. Install it into your path e.g. `~/bin` to run it from anywhere.
 
 ```shell
-curl https://raw.githubusercontent.com/piku/piku/master/piku > piku && chmod 755 piku
+./piku-bootstrap install-cli ~/bin
 ```
 
 This shell script makes working with `piku` remotes a bit simpler. If you have a git remote called `piku` in the current folder it will infer the remote server and app name and insert those into the remote piku commands. This allows you do execute commands like the following on your running remote app:
