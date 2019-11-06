@@ -54,6 +54,7 @@ main() {
     echo
     echo "Usage:"
     echo "       `basename $0` [USER@]HOST [PLAYBOOK] [ANSIBLE_ARGS...]"
+    echo "       `basename $0` install-cli DESTINATION"
     echo "       `basename $0` list-playbooks"
     echo "       `basename $0` update"
     echo
@@ -69,6 +70,9 @@ main() {
     echo
     echo " list-playbooks"
     echo "          List available built-in playbooks."
+    echo
+    echo " install-cli DESTINATION"
+    echo "          Install the 'piku' CLI helper to e.g. ~/bin."
     echo
     echo " update   Pull the piku repo to get the latest playbooks."
     echo
@@ -93,6 +97,15 @@ main() {
         echo "Updating piku repo."
         cd "${REPO}"
         git pull
+        ;;
+      install-cli)
+        if [ "$2" = "" ]
+        then
+          echo "Usage: piku-bootstrap install-cli ~/bin"
+        else
+          ln -s "${REPO}/piku" "$2"
+          echo "Installed piku cli to $2"
+        fi
         ;;
       list-playbooks)
         ls "${REPO}/playbooks"
