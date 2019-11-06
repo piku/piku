@@ -514,6 +514,9 @@ def deploy_node(app, deltas={}):
     if exists(env_file):
         env.update(parse_settings(env_file, env))
 
+    # include node binaries on our path
+    environ["PATH"] = env["PATH"]
+
     version = env.get("NODE_VERSION")
     node_binary = join(virtualenv_path, "bin", "node")
     installed = check_output("{} -v".format(node_binary), cwd=join(APP_ROOT, app), env=env, shell=True).decode("utf8").rstrip("\n") if exists(node_binary) else ""
