@@ -354,16 +354,16 @@ def do_deploy(app, deltas={}, newrev=None):
                 echo("-----> Go app detected.", fg='green')
                 check_requirements(['go'])
                 settings.update(deploy_go(app, deltas))
+            elif exists(join(app_path, 'project.clj')):
+                echo("-----> Clojure app detected.", fg='green')
+                check_requirements(['java', 'lein'])
+                settings.update(deploy_clojure(app, deltas))
             elif 'release' in workers and 'web' in workers:
                 echo("-----> Generic app detected.", fg='green')
                 settings.update(deploy_identity(app, deltas))
             elif 'static' in workers:
                 echo("-----> Static app detected.", fg='green')
                 settings.update(deploy_identity(app, deltas))
-            elif exists(join(app_path, 'project.clj')):
-                echo("-----> Clojure app detected.", fg='green')
-                check_requirements(['java', 'lein'])
-                settings.update(deploy_clojure(app, deltas))
             else:
                 echo("-----> Could not detect runtime!", fg='red')
             # TODO: detect other runtimes

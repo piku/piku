@@ -3,7 +3,7 @@
   tasks:
     - name: Install postgres
       apt:
-        name: ["postgresql", "python-psycopg2"]
+        name: ["postgresql", "python-psycopg2", "libpq-dev"]
 
     - name: Create piku postgres superuser
       become: true
