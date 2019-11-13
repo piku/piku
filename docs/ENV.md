@@ -4,6 +4,8 @@ You can configure deployment settings by placing special variables in an `ENV` f
 
 ## Runtime Settings
 
+* `AUTO_RESTART`: Piku will restart all workers every time the app is deployed.
+
 ### Python
 
 * `PYTHON_VERSION` (int): Forces Python 3
