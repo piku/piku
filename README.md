@@ -6,6 +6,8 @@ The tiniest Heroku/CloudFoundry-like PaaS you've ever seen.
 
 [![asciicast](https://asciinema.org/a/Ar31IoTkzsZmWWvlJll6p7haS.svg)](https://asciinema.org/a/Ar31IoTkzsZmWWvlJll6p7haS)
 
+### Documentation: [Procfile](docs/DESIGN.md#procfile-format) | [ENV](./docs/ENV.md) | [Examples](./examples/README.md)
+
 ## Using `piku`
 
 `piku` supports a Heroku-like workflow, like so:
@@ -18,7 +20,7 @@ The tiniest Heroku/CloudFoundry-like PaaS you've ever seen.
    * For Go, it defines a separate `GOPATH` for each app.
    * For Node, it installs whatever is in `package.json` into `node_modules`.
    * For Java, it builds your app depending on either `pom.xml` or `build.gradle` file.
-* It then looks at a `Procfile` and starts the relevant workers using [uWSGI][uwsgi] as a generic process manager.
+* It then looks at a [`Procfile` which is documented here](docs/DESIGN.md#procfile-format) and starts the relevant workers using [uWSGI][uwsgi] as a generic process manager.
 * You can optionally also specify a `release` worker which is run once when the app is deployed.
 * You can then remotely change application settings (`config:set`) or scale up/down worker processes (`ps:scale`).
 * You can also bake application settings into a file called [`ENV` which is documented here](./docs/ENV.md).
