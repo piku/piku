@@ -311,7 +311,10 @@ def check_requirements(binaries):
     if None in requirements:
         return False
     return True
-    
+
+def found_app(kind):
+    echo("-----> {} app detected.".format(kind), fg='green')
+    return True
 
 def do_deploy(app, deltas={}, newrev=None):
     """Deploy an app by resetting the work directory"""
@@ -335,35 +338,24 @@ def do_deploy(app, deltas={}, newrev=None):
         workers = parse_procfile(procfile)
         if workers and len(workers):
             settings = {}
-            if exists(join(app_path, 'requirements.txt')):
-                echo("-----> Python app detected.", fg='green')
+            if exists(join(app_path, 'requirements.txt')) and found_app("Python"):
                 settings.update(deploy_python(app, deltas))
-            elif exists(join(app_path, 'package.json')):
-                echo("-----> Node app detected.", fg='green')
-                check_requirements(['nodejs', 'npm'])
+            elif exists(join(app_path, 'package.json')) and found_app("Node") and (check_requirements(['nodejs', 'npm']) or check_requirements(['nodeenv'])):
                 settings.update(deploy_node(app, deltas))
-            elif exists(join(app_path, 'pom.xml')):
-                echo("-----> Java app detected.", fg='green')
-                check_requirements(['java', 'mvn'])
+            elif exists(join(app_path, 'pom.xml')) and found_app("Java Maven") and check_requirements(['java', 'mvn']):
                 settings.update(deploy_java(app, deltas))
-            elif exists(join(app_path, 'build.gradle')):
-                echo("-----> Gradle Java app detected.", fg='green')
-                check_requirements(['java', 'gradle'])
+            elif exists(join(app_path, 'build.gradle')) and found_app("Java Gradle") and check_requirements(['java', 'gradle']):
                 settings.update(deploy_java(app, deltas))
-            elif (exists(join(app_path, 'Godeps')) or len(glob(join(app_path,'*.go')))):
-                echo("-----> Go app detected.", fg='green')
-                check_requirements(['go'])
+            elif (exists(join(app_path, 'Godeps')) or len(glob(join(app_path,'*.go')))) and found_app("Go") and check_requirements(['go']):
                 settings.update(deploy_go(app, deltas))
+            elif exists(join(app_path, 'project.clj')) and found_app("Clojure Lein") and check_requirements(['java', 'lein']):
+                settings.update(deploy_clojure(app, deltas))
             elif 'release' in workers and 'web' in workers:
                 echo("-----> Generic app detected.", fg='green')
                 settings.update(deploy_identity(app, deltas))
             elif 'static' in workers:
                 echo("-----> Static app detected.", fg='green')
                 settings.update(deploy_identity(app, deltas))
-            elif exists(join(app_path, 'project.clj')):
-                echo("-----> Clojure app detected.", fg='green')
-                check_requirements(['java', 'lein'])
-                settings.update(deploy_clojure(app, deltas))
             else:
                 echo("-----> Could not detect runtime!", fg='red')
             # TODO: detect other runtimes
