@@ -1138,17 +1138,18 @@ def cmd_destroy(app):
     
 @piku.command("logs")
 @argument('app')
-def cmd_logs(app):
-    """Tail running logs, e.g: piku logs <app>"""
+@argument('process', nargs=1, default='*')
+def cmd_logs(app, process):
+    """Tail running logs, e.g: piku logs <app> [<process>]"""
     
     app = exit_if_invalid(app)
 
-    logfiles = glob(join(LOG_ROOT, app, '*.log'))
+    logfiles = glob(join(LOG_ROOT, app, process + '.*.log'))
     if len(logfiles):
         for line in multi_tail(app, logfiles):
             echo(line.strip(), fg='white')
     else:
-        echo("No logs found for app '{}'.".format(app), fg='yellow')
+        echo("No logs found for app '{}'.".format(app), fg='yellow')\
 
 
 @piku.command("ps")
@@ -1300,7 +1301,7 @@ def cmd_stop(app):
         
 # --- Internal commands ---
 
-@piku.command("git-hook")
+@piku.command("git-hook", hidden=True)
 @argument('app')
 def cmd_git_hook(app):
     """INTERNAL: Post-receive git hook"""
@@ -1320,7 +1321,7 @@ def cmd_git_hook(app):
         do_deploy(app, newrev=newrev)
 
 
-@piku.command("git-receive-pack")
+@piku.command("git-receive-pack", hidden=True)
 @argument('app')
 def cmd_git_receive_pack(app):
     """INTERNAL: Handle git pushes for an app"""
@@ -1344,7 +1345,7 @@ cat | PIKU_ROOT="{PIKU_ROOT:s}" {PIKU_SCRIPT:s} git-hook {app:s}""".format(**env
     call('git-shell -c "{}" '.format(argv[1] + " '{}'".format(app)), cwd=GIT_ROOT, shell=True)
 
 
-@piku.command("git-upload-pack")
+@piku.command("git-upload-pack", hidden=True)
 @argument('app')
 def cmd_git_receive_pack(app):
     """INTERNAL: Handle git upload pack for an app"""
