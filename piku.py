@@ -1149,7 +1149,7 @@ def cmd_logs(app, process):
         for line in multi_tail(app, logfiles):
             echo(line.strip(), fg='white')
     else:
-        echo("No logs found for app '{}'.".format(app), fg='yellow')\
+        echo("No logs found for app '{}'.".format(app), fg='yellow')
 
 
 @piku.command("ps")
