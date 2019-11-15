@@ -146,7 +146,6 @@ Commands:
   disable           Disable an application
   enable            Enable an application
   logs              Tail an application log
-  log               Tail an application log for a process
   ps                Show application worker count
   ps:scale          Show application configuration
   restart           Restart an application
