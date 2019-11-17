@@ -8,7 +8,8 @@ try:
 except AssertionError:
     exit("Piku requires Python 3.5 or above")
 
-from click import argument, command, group, get_current_context, option, secho as echo, pass_context
+from importlib import import_module
+from click import argument, command, group, get_current_context, option, secho as echo, pass_context, CommandCollection
 from collections import defaultdict, deque
 from datetime import datetime
 from fcntl import fcntl, F_SETFL, F_GETFL
@@ -17,11 +18,12 @@ from hashlib import md5
 from json import loads
 from multiprocessing import cpu_count
 from os import chmod, getgid, getuid, symlink, unlink, remove, stat, listdir, environ, makedirs, O_NONBLOCK
-from os.path import abspath, basename, dirname, exists, getmtime, join, realpath, splitext
+from os.path import abspath, basename, dirname, exists, getmtime, join, realpath, splitext, isdir
 from re import sub
 from shutil import copyfile, rmtree, which
 from socket import socket, AF_INET, SOCK_STREAM
 from sys import argv, stdin, stdout, stderr, version_info, exit
+from sys import path as sys_path
 from stat import S_IRUSR, S_IWUSR, S_IXUSR
 from subprocess import call, check_output, Popen, STDOUT, PIPE
 from tempfile import NamedTemporaryFile
@@ -41,6 +43,7 @@ if 'sbin' not in environ['PATH']:
 PIKU_ROOT = environ.get('PIKU_ROOT', join(environ['HOME'],'.piku'))
 PIKU_BIN = join(environ['HOME'],'bin')
 PIKU_SCRIPT = realpath(__file__)
+PLUGIN_ROOT = abspath(join(PIKU_ROOT, "plugins"))
 APP_ROOT = abspath(join(PIKU_ROOT, "apps"))
 ENV_ROOT = abspath(join(PIKU_ROOT, "envs"))
 GIT_ROOT = abspath(join(PIKU_ROOT, "repos"))
@@ -1357,6 +1360,19 @@ def cmd_git_receive_pack(app):
     # Handle the actual receive. We'll be called with 'git-hook' after it happens
     call('git-shell -c "{}" '.format(argv[1] + " '{}'".format(app)), cwd=GIT_ROOT, shell=True)
 
+def _get_plugin_commands(path):
+    sys_path.append(abspath(path))
+
+    cli_commands = []
+    for item in listdir(path):
+        module_path = join(path, item)
+        if not isdir(module_path):
+            continue
+        module = import_module(item)
+        if hasattr(module, 'cli_commands'):
+            cli_commands.append(module.cli_commands())
+
+    return cli_commands
 
 @piku.command("help")
 @pass_context
@@ -1366,4 +1382,7 @@ def cmd_help(ctx):
 
 
 if __name__ == '__main__':
-    piku()
+    cli_commands = _get_plugin_commands(path=PLUGIN_ROOT)
+    cli_commands.append(piku)
+    cli = CommandCollection(sources=cli_commands)
+    cli()
