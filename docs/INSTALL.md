@@ -145,8 +145,6 @@ Commands:
   destroy           Destroy an application
   disable           Disable an application
   enable            Enable an application
-  git-hook          INTERNAL: Post-receive git hook
-  git-receive-pack  INTERNAL: Handle git pushes for an app
   logs              Tail an application log
   ps                Show application worker count
   ps:scale          Show application configuration
