@@ -1005,7 +1005,8 @@ def list_apps():
     """List apps, e.g.: piku apps"""
     
     for a in listdir(APP_ROOT):
-        echo(a, fg='green')
+        config = glob(join(UWSGI_ENABLED, '{}*.ini'.format(a)))
+        echo((' ' if len(config) == 0 else '*') + a, fg='green')
 
 
 @piku.command("config")
