@@ -8,7 +8,7 @@ try:
 except AssertionError:
     exit("Piku requires Python 3.5 or above")
 
-from click import argument, command, group, get_current_context, option, secho as echo
+from click import argument, command, group, get_current_context, option, secho as echo, pass_context
 from collections import defaultdict, deque
 from datetime import datetime
 from fcntl import fcntl, F_SETFL, F_GETFL
@@ -986,7 +986,8 @@ def multi_tail(app, filenames, catch_up=20):
 
 # === CLI commands ===    
     
-@group()
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+@group(context_settings=CONTEXT_SETTINGS)
 def piku():
     """The smallest PaaS you've ever seen"""
     pass
@@ -1354,6 +1355,13 @@ def cmd_git_receive_pack(app):
     env.update(locals())
     # Handle the actual receive. We'll be called with 'git-hook' after it happens
     call('git-shell -c "{}" '.format(argv[1] + " '{}'".format(app)), cwd=GIT_ROOT, shell=True)
+
+
+@piku.command("help")
+@pass_context
+def cmd_help(ctx):
+    """display help for piku"""
+    echo(ctx.parent.get_help())
 
 
 if __name__ == '__main__':
