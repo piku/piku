@@ -23,7 +23,7 @@ from shutil import copyfile, rmtree, which
 from socket import socket, AF_INET, SOCK_STREAM
 from sys import argv, stdin, stdout, stderr, version_info, exit
 from stat import S_IRUSR, S_IWUSR, S_IXUSR
-from subprocess import call, check_output, Popen, STDOUT, PIPE 
+from subprocess import call, check_output, Popen, STDOUT, PIPE
 from tempfile import NamedTemporaryFile
 from traceback import format_exc
 from time import sleep
@@ -112,7 +112,7 @@ NGINX_COMMON_FRAGMENT = """
   # These are not required under systemd - enable for debugging only
   # access_log        $LOG_ROOT/$APP/access.log;
   # error_log         $LOG_ROOT/$APP/error.log;
-  
+
   # Enable gzip compression
   gzip on;
   gzip_proxied any;
@@ -121,7 +121,7 @@ NGINX_COMMON_FRAGMENT = """
   gzip_min_length 2048;
   gzip_vary on;
   gzip_disable "MSIE [1-6]\.(?!.*SV1)";
-  
+
   # set a custom header for requests
   add_header X-Deployed-By Piku;
 
@@ -193,7 +193,7 @@ INTERNAL_NGINX_UWSGI_SETTINGS = """
 
 def sanitize_app_name(app):
     """Sanitize the app name and build matching path"""
-    
+
     app = "".join(c for c in app if c.isalnum() or c in ('.','_')).rstrip().lstrip('/')
     return app
 
@@ -210,7 +210,7 @@ def exit_if_invalid(app):
 
 def get_free_port(address=""):
     """Find a free TCP port (entirely at random)"""
-    
+
     s = socket(AF_INET, SOCK_STREAM)
     s.bind((address,0))
     port = s.getsockname()[1]
@@ -220,7 +220,7 @@ def get_free_port(address=""):
 
 def write_config(filename, bag, separator='='):
     """Helper for writing out config files"""
-    
+
     with open(filename, 'w') as h:
         # pylint: disable=unused-variable
         for k, v in bag.items():
@@ -229,11 +229,11 @@ def write_config(filename, bag, separator='='):
 
 def setup_authorized_keys(ssh_fingerprint, script_path, pubkey):
     """Sets up an authorized_keys file to redirect SSH commands"""
-    
+
     authorized_keys = join(environ['HOME'],'.ssh','authorized_keys')
     if not exists(dirname(authorized_keys)):
         makedirs(dirname(authorized_keys))
-    # Restrict features and force all SSH commands to go through our script 
+    # Restrict features and force all SSH commands to go through our script
     with open(authorized_keys, 'a') as h:
         h.write("""command="FINGERPRINT={ssh_fingerprint:s} NAME=default {script_path:s} $SSH_ORIGINAL_COMMAND",no-agent-forwarding,no-user-rc,no-X11-forwarding,no-port-forwarding {pubkey:s}\n""".format(**locals()))
     chmod(dirname(authorized_keys), S_IRUSR | S_IWUSR | S_IXUSR)
@@ -242,7 +242,7 @@ def setup_authorized_keys(ssh_fingerprint, script_path, pubkey):
 
 def parse_procfile(filename):
     """Parses a Procfile and returns the worker types. Only one worker of each type is allowed."""
-    
+
     workers = {}
     if not exists(filename):
         return None
@@ -260,15 +260,15 @@ def parse_procfile(filename):
         if 'web' in workers:
             echo("Warning: found both 'wsgi' and 'web' workers, disabling 'web'", fg='yellow')
             del(workers['web'])
-    return workers 
+    return workers
 
 
 def expandvars(buffer, env, default=None, skip_escaped=False):
     """expand shell-style environment variables in a buffer"""
-    
+
     def replace_var(match):
         return env.get(match.group(2) or match.group(1), match.group(0) if default is None else default)
-    
+
     pattern = (r'(?<!\\)' if skip_escaped else '') + r'\$(\w+|\{([^}]*)\})'
     return sub(pattern, replace_var, buffer)
 
@@ -284,10 +284,10 @@ def command_output(cmd):
 
 def parse_settings(filename, env={}):
     """Parses a settings file and returns a dict with environment variables"""
-    
+
     if not exists(filename):
         return {}
-        
+
     with open(filename, 'r') as settings:
         for line in settings:
             if '#' == line[0] or len(line.strip()) == 0: # ignore comments and newlines
@@ -318,7 +318,7 @@ def found_app(kind):
 
 def do_deploy(app, deltas={}, newrev=None):
     """Deploy an app by resetting the work directory"""
-    
+
     app_path = join(APP_ROOT, app)
     procfile = join(app_path, 'Procfile')
     log_path = join(LOG_ROOT, app)
@@ -372,7 +372,7 @@ def do_deploy(app, deltas={}, newrev=None):
         echo("Error: app '{}' not found.".format(app), fg='red')
 
 def deploy_gradle(app, deltas={}):
-    """Deploy a Java application using Gradle"""  
+    """Deploy a Java application using Gradle"""
     java_path = join(ENV_ROOT, app)
     build_path = join(APP_ROOT, app, 'build')
     env_file = join(APP_ROOT, app, 'ENV')
@@ -382,10 +382,10 @@ def deploy_gradle(app, deltas={}):
         'VIRTUAL_ENV': java_path,
         "PATH": ':'.join([join(java_path, "bin"), join(app, ".bin"),environ['PATH']])
     }
-    
+
     if exists(env_file):
         env.update(parse_settings(env_file, env))
-    
+
     if not exists(java_path):
         makedirs(java_path)
 
@@ -397,7 +397,7 @@ def deploy_gradle(app, deltas={}):
         echo("-----> Removing previous builds")
         echo("-----> Rebuilding Java Application")
         call('gradle clean build', cwd=join(APP_ROOT, app), env=env, shell=True)
-    
+
     return spawn_app(app, deltas)
 
 def deploy_java(app, deltas={}):
@@ -413,10 +413,10 @@ def deploy_java(app, deltas={}):
         'VIRTUAL_ENV': java_path,
         "PATH": ':'.join([join(java_path, "bin"), join(app, ".bin"),environ['PATH']])
     }
-    
+
     if exists(env_file):
         env.update(parse_settings(env_file, env))
-    
+
     if not exists(java_path):
         makedirs(java_path)
 
@@ -428,7 +428,7 @@ def deploy_java(app, deltas={}):
         echo("-----> Removing previous builds")
         echo("-----> Rebuilding Java Application")
         call('mvn clean package', cwd=join(APP_ROOT, app), env=env, shell=True)
-    
+
     return spawn_app(app, deltas)
 
 def deploy_clojure(app, deltas={}):
@@ -465,7 +465,7 @@ def deploy_go(app, deltas={}):
     if not exists(go_path):
         echo("-----> Creating GOPATH for '{}'".format(app), fg='green')
         makedirs(go_path)
-        # copy across a pre-built GOPATH to save provisioning time 
+        # copy across a pre-built GOPATH to save provisioning time
         call('cp -a $HOME/gopath {}'.format(app), cwd=ENV_ROOT, shell=True)
         first_time = True
 
@@ -535,7 +535,7 @@ def deploy_node(app, deltas={}):
 
 def deploy_python(app, deltas={}):
     """Deploy a Python application"""
-    
+
     virtualenv_path = join(ENV_ROOT, app)
     requirements = join(APP_ROOT, app, 'requirements.txt')
     env_file = join(APP_ROOT, app, 'ENV')
@@ -573,7 +573,7 @@ def deploy_identity(app, deltas={}):
 
 def spawn_app(app, deltas={}):
     """Create all workers for an app"""
-    
+
     # pylint: disable=unused-variable
     app_path = join(APP_ROOT, app)
     procfile = join(app_path, 'Procfile')
@@ -630,12 +630,12 @@ def spawn_app(app, deltas={}):
             env['PORT'] = str(get_free_port())
             echo("-----> picking free port {PORT}".format(**env))
 
-        # Safe defaults for addressing     
+        # Safe defaults for addressing
         for k, v in safe_defaults.items():
             if k not in env:
                 echo("-----> nginx {k:s} set to {v}".format(**locals()))
                 env[k] = v
-                
+
         # Set up nginx if we have NGINX_SERVER_NAME set
         if 'NGINX_SERVER_NAME' in env:
             nginx = command_output("nginx -V")
@@ -645,13 +645,13 @@ def spawn_app(app, deltas={}):
             elif "--with-http_spdy_module" in nginx and "nginx/1.6.2" not in nginx: # avoid Raspbian bug
                 nginx_ssl += " spdy"
             nginx_conf = join(NGINX_ROOT,"{}.conf".format(app))
-        
-            env.update({ 
+
+            env.update({
                 'NGINX_SSL': nginx_ssl,
                 'NGINX_ROOT': NGINX_ROOT,
                 'ACME_WWW': ACME_WWW,
             })
-            
+
             # default to reverse proxying to the TCP port we picked
             env['INTERNAL_NGINX_UWSGI_SETTINGS'] = 'proxy_pass http://{BIND_ADDRESS:s}:{PORT:s};'.format(**env)
             if 'wsgi' in workers or 'jwsgi' in workers:
@@ -661,11 +661,11 @@ def spawn_app(app, deltas={}):
                 if 'PORT' in env:
                     del env['PORT']
             else:
-                env['NGINX_SOCKET'] = "{BIND_ADDRESS:s}:{PORT:s}".format(**env) 
+                env['NGINX_SOCKET'] = "{BIND_ADDRESS:s}:{PORT:s}".format(**env)
                 echo("-----> nginx will look for app '{}' on {}".format(app, env['NGINX_SOCKET']))
 
-        
-            domain = env['NGINX_SERVER_NAME'].split()[0]       
+
+            domain = env['NGINX_SERVER_NAME'].split()[0]
             key, crt = [join(NGINX_ROOT, "{}.{}".format(app,x)) for x in ['key','crt']]
             if exists(join(ACME_ROOT, "acme.sh")):
                 acme = ACME_ROOT
@@ -690,7 +690,7 @@ def spawn_app(app, deltas={}):
             if not exists(key) or stat(crt).st_size == 0:
                 echo("-----> generating self-signed certificate")
                 call('openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 -subj "/C=US/ST=NY/L=New York/O=Piku/OU=Self-Signed/CN={domain:s}" -keyout {key:s} -out {crt:s}'.format(**locals()), shell=True)
-            
+
             # restrict access to server from CloudFlare IP addresses
             acl = []
             if env.get('NGINX_CLOUDFLARE_ACL', 'false').lower() == 'true':
@@ -762,9 +762,9 @@ def spawn_app(app, deltas={}):
     # Configured worker count
     if exists(scaling):
         worker_count.update({k: int(v) for k,v in parse_procfile(scaling).items() if k in workers})
-    
+
     to_create = {}
-    to_destroy = {}    
+    to_destroy = {}
     for k, v in worker_count.items():
         to_create[k] = range(1,worker_count[k] + 1)
         if k in deltas and deltas[k]:
@@ -781,7 +781,7 @@ def spawn_app(app, deltas={}):
     # Save current settings
     write_config(live, env)
     write_config(scaling, worker_count, ':')
-    
+
     if env.get("AUTO_RESTART", False):
         config = glob(join(UWSGI_ENABLED, '{}*.ini'.format(app)))
         if len(config):
@@ -796,7 +796,7 @@ def spawn_app(app, deltas={}):
             if not exists(enabled):
                 echo("-----> spawning '{app:s}:{k:s}.{w:d}'".format(**locals()), fg='green')
                 spawn_worker(app, k, workers[k], env, w)
-        
+
     # Remove unnecessary workers (leave logfiles)
     for k, v in to_destroy.items():
         for w in v:
@@ -806,11 +806,11 @@ def spawn_app(app, deltas={}):
                 unlink(enabled)
 
     return env
-    
+
 
 def spawn_worker(app, kind, command, env, ordinal=1):
     """Set up and deploy a single worker of a given kind"""
-    
+
     # pylint: disable=unused-variable
     env['PROC_TYPE'] = kind
     env_path = join(ENV_ROOT, app)
@@ -873,7 +873,7 @@ def spawn_worker(app, kind, command, env, ordinal=1):
                 settings.extend([
                     ('plugin',  'asyncio_python3'),
                 ])
-            
+
 
         # If running under nginx, don't expose a port at all
         if 'NGINX_SERVER_NAME' in env:
@@ -896,10 +896,10 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         echo("-----> nginx serving static files only".format(**env), fg='yellow')
     else:
         settings.append(('attach-daemon', command))
-        
+
     if kind in ['wsgi', 'web']:
         settings.append(('log-format','%%(addr) - %%(user) [%%(ltime)] "%%(method) %%(uri) %%(proto)" %%(status) %%(size) "%%(referer)" "%%(uagent)" %%(msecs)ms'))
-        
+
     # remove unnecessary variables from the env in nginx.ini
     for k in ['NGINX_ACL']:
         if k in env:
@@ -933,7 +933,7 @@ def do_restart(app):
 
 def multi_tail(app, filenames, catch_up=20):
     """Tails multiple log files"""
-    
+
     # Seek helper
     def peek(handle):
         where = handle.tell()
@@ -946,17 +946,17 @@ def multi_tail(app, filenames, catch_up=20):
     inodes = {}
     files = {}
     prefixes = {}
-    
+
     # Set up current state for each log file
     for f in filenames:
         prefixes[f] = splitext(basename(f))[0]
         files[f] = open(f)
         inodes[f] = stat(f).st_ino
         files[f].seek(0, 2)
-        
+
     longest = max(map(len, prefixes.values()))
-    
-    # Grab a little history (if any) 
+
+    # Grab a little history (if any)
     for f in filenames:
         for line in deque(open(f), catch_up):
             yield "{} | {}".format(prefixes[f].ljust(longest), line)
@@ -971,7 +971,7 @@ def multi_tail(app, filenames, catch_up=20):
             else:
                 updated = True
                 yield "{} | {}".format(prefixes[f].ljust(longest), line)
-                
+
         if not updated:
             sleep(1)
             # Check if logs rotated
@@ -984,15 +984,15 @@ def multi_tail(app, filenames, catch_up=20):
                     filenames.remove(f)
 
 
-# === CLI commands ===    
-    
+# === CLI commands ===
+
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @group(context_settings=CONTEXT_SETTINGS)
 def piku():
     """The smallest PaaS you've ever seen"""
     pass
 
-    
+
 @piku.resultcallback()
 def cleanup(ctx):
     """Callback from command execution -- add debugging to taste"""
@@ -1004,7 +1004,7 @@ def cleanup(ctx):
 @piku.command("apps")
 def list_apps():
     """List apps, e.g.: piku apps"""
-    
+
     for a in listdir(APP_ROOT):
         running = len(glob(join(UWSGI_ENABLED, '{}*.ini'.format(a)))) != 0
         echo(('*' if running else ' ') + a, fg='green')
@@ -1014,9 +1014,9 @@ def list_apps():
 @argument('app')
 def cmd_config(app):
     """Show config, e.g.: piku config <app>"""
-    
+
     app = exit_if_invalid(app)
-    
+
     config_file = join(ENV_ROOT, app, 'ENV')
     if exists(config_file):
         echo(open(config_file).read().strip(), fg='white')
@@ -1029,9 +1029,9 @@ def cmd_config(app):
 @argument('setting')
 def cmd_config_get(app, setting):
     """e.g.: piku config:get <app> FOO"""
-    
+
     app = exit_if_invalid(app)
-    
+
     config_file = join(ENV_ROOT, app, 'ENV')
     if exists(config_file):
         env = parse_settings(config_file)
@@ -1046,9 +1046,9 @@ def cmd_config_get(app, setting):
 @argument('settings', nargs=-1)
 def cmd_config_set(app, settings):
     """e.g.: piku config:set <app> FOO=bar BAZ=quux"""
-    
+
     app = exit_if_invalid(app)
-    
+
     config_file = join(ENV_ROOT, app, 'ENV')
     env = parse_settings(config_file)
     for s in settings:
@@ -1068,9 +1068,9 @@ def cmd_config_set(app, settings):
 @argument('settings', nargs=-1)
 def cmd_config_unset(app, settings):
     """e.g.: piku config:unset <app> FOO"""
-    
+
     app = exit_if_invalid(app)
-    
+
     config_file = join(ENV_ROOT, app, 'ENV')
     env = parse_settings(config_file)
     for s in settings:
@@ -1085,7 +1085,7 @@ def cmd_config_unset(app, settings):
 @argument('app')
 def cmd_config_live(app):
     """e.g.: piku config:live <app>"""
-    
+
     app = exit_if_invalid(app)
 
     live_config = join(ENV_ROOT, app, 'LIVE_ENV')
@@ -1099,7 +1099,7 @@ def cmd_config_live(app):
 @argument('app')
 def cmd_deploy(app):
     """e.g.: piku deploy <app>"""
-    
+
     app = exit_if_invalid(app)
     do_deploy(app)
 
@@ -1108,9 +1108,9 @@ def cmd_deploy(app):
 @argument('app')
 def cmd_destroy(app):
     """e.g.: piku destroy <app>"""
-    
+
     app = exit_if_invalid(app)
-    
+
     for p in [join(x, app) for x in [APP_ROOT, GIT_ROOT, ENV_ROOT, LOG_ROOT]]:
         if exists(p):
             echo("Removing folder '{}'".format(p), fg='yellow')
@@ -1122,7 +1122,7 @@ def cmd_destroy(app):
             for f in g:
                 echo("Removing file '{}'".format(f), fg='yellow')
                 remove(f)
-                
+
     nginx_files = [join(NGINX_ROOT, "{}.{}".format(app,x)) for x in ['conf','sock','key','crt']]
     for f in nginx_files:
         if exists(f):
@@ -1137,13 +1137,13 @@ def cmd_destroy(app):
         echo("Removing file '{}'".format(acme_link), fg='yellow')
         unlink(acme_link)
 
-    
+
 @piku.command("logs")
 @argument('app')
 @argument('process', nargs=1, default='*')
 def cmd_logs(app, process):
     """Tail running logs, e.g: piku logs <app> [<process>]"""
-    
+
     app = exit_if_invalid(app)
 
     logfiles = glob(join(LOG_ROOT, app, process + '.*.log'))
@@ -1158,7 +1158,7 @@ def cmd_logs(app, process):
 @argument('app')
 def cmd_ps(app):
     """Show process count, e.g: piku ps <app>"""
-    
+
     app = exit_if_invalid(app)
 
     config_file = join(ENV_ROOT, app, 'SCALING')
@@ -1173,7 +1173,7 @@ def cmd_ps(app):
 @argument('settings', nargs=-1)
 def cmd_ps_scale(app, settings):
     """e.g.: piku ps:scale <app> <proc>=<count>"""
-    
+
     app = exit_if_invalid(app)
 
     config_file = join(ENV_ROOT, app, 'SCALING')
@@ -1210,13 +1210,13 @@ def cmd_run(app, cmd):
         fl = fcntl(f, F_GETFL)
         fcntl(f, F_SETFL, fl | O_NONBLOCK)
     p = Popen(' '.join(cmd), stdin=stdin, stdout=stdout, stderr=stderr, env=environ, cwd=join(APP_ROOT,app), shell=True)
-    p.communicate() 
+    p.communicate()
 
 @piku.command("restart")
 @argument('app')
 def cmd_restart(app):
     """Restart an app: piku restart <app>"""
-    
+
     app = exit_if_invalid(app)
 
     do_restart(app)
@@ -1227,13 +1227,13 @@ def cmd_setup():
     """Initialize environment"""
 
     echo("Running in Python {}".format(".".join(map(str,version_info))))
-    
+
     # Create required paths
     for p in [APP_ROOT, GIT_ROOT, ENV_ROOT, UWSGI_ROOT, UWSGI_AVAILABLE, UWSGI_ENABLED, LOG_ROOT, NGINX_ROOT]:
         if not exists(p):
             echo("Creating '{}'.".format(p), fg='green')
             makedirs(p)
-    
+
     # Set up the uWSGI emperor config
     settings = [
         ('chdir',           UWSGI_ROOT),
@@ -1299,19 +1299,19 @@ def cmd_stop(app):
             remove(c)
     else:
         echo("Error: app '{}' not deployed!".format(app), fg='red')
-        
-        
+
+
 # --- Internal commands ---
 
 @piku.command("git-hook", hidden=True)
 @argument('app')
 def cmd_git_hook(app):
     """INTERNAL: Post-receive git hook"""
-    
+
     app = sanitize_app_name(app)
     repo_path = join(GIT_ROOT, app)
     app_path = join(APP_ROOT, app)
-    
+
     for line in stdin:
         # pylint: disable=unused-variable
         oldrev, newrev, refname = line.strip().split(" ")
