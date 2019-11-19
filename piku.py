@@ -10,10 +10,8 @@ except AssertionError:
 
 from click import argument, command, group, get_current_context, option, secho as echo, pass_context
 from collections import defaultdict, deque
-from datetime import datetime
 from fcntl import fcntl, F_SETFL, F_GETFL
 from glob import glob
-from hashlib import md5
 from json import loads
 from multiprocessing import cpu_count
 from os import chmod, getgid, getuid, symlink, unlink, remove, stat, listdir, environ, makedirs, O_NONBLOCK
