@@ -1,2 +1,4 @@
 - name: Python style check
   uses: bulv1ne/python-style-check@v0.3
+- name: Black Code Formatter
+  uses: lgeiger/black-action@v1.0.1
