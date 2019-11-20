@@ -246,13 +246,17 @@ def parse_procfile(filename):
     workers = {}
     if not exists(filename):
         return None
+
     with open(filename, 'r') as procfile:
-        for line in procfile:
+        for line_number, line in enumerate(procfile):
+            line = line.strip()
+            if line.startswith("#") or not line:
+                continue
             try:
                 kind, command = map(lambda x: x.strip(), line.split(":", 1))
                 workers[kind] = command
             except:
-                echo("Warning: unrecognized Procfile entry '{}'".format(line), fg='yellow')
+                echo("Warning: unrecognized Procfile entry '{}' at line {}".format(line, line_number), fg='yellow')
     if len(workers) == 0:
         return {}
     # WSGI trumps regular web workers
