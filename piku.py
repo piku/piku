@@ -4,9 +4,9 @@
 
 try:
     from sys import version_info
-    assert version_info >= (3,5)
+    assert version_info >= (3,6)
 except AssertionError:
-    exit("Piku requires Python 3.5 or above")
+    exit("Piku requires Python 3.6 or above")
 
 from click import argument, command, group, get_current_context, option, secho as echo, pass_context
 from collections import defaultdict, deque
@@ -203,7 +203,7 @@ def exit_if_invalid(app):
 
     app = sanitize_app_name(app)
     if not exists(join(APP_ROOT, app)):
-        echo("Error: app '{}' not found.".format(app), fg='red')
+        echo(f"Error: app '{app}' not found.", fg='red')
         exit(1)
     return app
 
@@ -252,7 +252,7 @@ def parse_procfile(filename):
                 kind, command = map(lambda x: x.strip(), line.split(":", 1))
                 workers[kind] = command
             except:
-                echo("Warning: unrecognized Procfile entry '{}'".format(line), fg='yellow')
+                echo(f"Warning: unrecognized Procfile entry '{line}'", fg='yellow')
     if not len(workers):
         return {}
     # WSGI trumps regular web workers
@@ -296,7 +296,7 @@ def parse_settings(filename, env={}):
                 k, v = map(lambda x: x.strip(), line.split("=", 1))
                 env[k] = expandvars(v, env)
             except:
-                echo("Error: malformed setting '{}', ignoring file.".format(line), fg='red')
+                echo(f"Error: malformed setting '{line}', ignoring file.", fg='red')
                 return {}
     return env
 
@@ -304,7 +304,7 @@ def parse_settings(filename, env={}):
 def check_requirements(binaries):
     """Checks if all the binaries exist and are executable"""
 
-    echo("-----> Checking requirements: {}".format(binaries), fg='green')
+    echo(f"-----> Checking requirements: {binaries}", fg='green')
     requirements = list(map(which, binaries))
     echo(str(requirements))
 
@@ -313,7 +313,7 @@ def check_requirements(binaries):
     return True
 
 def found_app(kind):
-    echo("-----> {} app detected.".format(kind), fg='green')
+    echo(f"-----> {kind} app detected.", fg='green')
     return True
 
 def do_deploy(app, deltas={}, newrev=None):
@@ -327,10 +327,10 @@ def do_deploy(app, deltas={}, newrev=None):
 
     env = {'GIT_WORK_DIR': app_path}
     if exists(app_path):
-        echo("-----> Deploying app '{}'".format(app), fg='green')
+        echo(f"-----> Deploying app '{app}'", fg='green')
         call('git fetch --quiet', cwd=app_path, env=env, shell=True)
         if newrev:
-            call('git reset --hard {}'.format(newrev), cwd=app_path, env=env, shell=True)
+            call(f'git reset --hard {newrev}', cwd=app_path, env=env, shell=True)
         call('git submodule init', cwd=app_path, env=env, shell=True)
         call('git submodule update', cwd=app_path, env=env, shell=True)
         if not exists(log_path):
@@ -363,13 +363,13 @@ def do_deploy(app, deltas={}, newrev=None):
                 echo("-----> Releasing", fg='green')
                 retval = call(workers["release"], cwd=app_path, env=settings, shell=True)
                 if retval:
-                    echo("-----> Exiting due to release command error value: {}".format(retval))
+                    echo(f"-----> Exiting due to release command error value: {retval}")
                     exit(retval)
                 workers.pop("release", None)
         else:
-            echo("Error: Invalid Procfile for app '{}'.".format(app), fg='red')
+            echo(f"Error: Invalid Procfile for app '{app}'.", fg='red')
     else:
-        echo("Error: app '{}' not found.".format(app), fg='red')
+        echo(f"Error: app '{app}' not found.", fg='red')
 
 def deploy_gradle(app, deltas={}):
     """Deploy a Java application using Gradle"""
@@ -463,15 +463,15 @@ def deploy_go(app, deltas={}):
 
     first_time = False
     if not exists(go_path):
-        echo("-----> Creating GOPATH for '{}'".format(app), fg='green')
+        echo(f"-----> Creating GOPATH for '{app}'", fg='green')
         makedirs(go_path)
         # copy across a pre-built GOPATH to save provisioning time
-        call('cp -a $HOME/gopath {}'.format(app), cwd=ENV_ROOT, shell=True)
+        call(f'cp -a $HOME/gopath {app}', cwd=ENV_ROOT, shell=True)
         first_time = True
 
     if exists(deps):
         if first_time or getmtime(deps) > getmtime(go_path):
-            echo("-----> Running godep for '{}'".format(app), fg='green')
+            echo(f"-----> Running godep for '{app}'", fg='green')
             env = {
                 'GOPATH': '$HOME/gopath',
                 'GOROOT': '$HOME/go',
@@ -493,7 +493,7 @@ def deploy_node(app, deltas={}):
 
     first_time = False
     if not exists(node_path):
-        echo("-----> Creating node_modules for '{}'".format(app), fg='green')
+        echo(f"-----> Creating node_modules for '{app}'", fg='green')
         makedirs(node_path)
         first_time = True
 
@@ -511,22 +511,22 @@ def deploy_node(app, deltas={}):
 
     version = env.get("NODE_VERSION")
     node_binary = join(virtualenv_path, "bin", "node")
-    installed = check_output("{} -v".format(node_binary), cwd=join(APP_ROOT, app), env=env, shell=True).decode("utf8").rstrip("\n") if exists(node_binary) else ""
+    installed = check_output(f"{node_binary} -v", cwd=join(APP_ROOT, app), env=env, shell=True).decode("utf8").rstrip("\n") if exists(node_binary) else ""
 
     if version and check_requirements(['nodeenv']):
         if not installed.endswith(version):
-            started = glob(join(UWSGI_ENABLED, '{}*.ini'.format(app)))
+            started = glob(join(UWSGI_ENABLED, f'{app}*.ini'))
             if installed and len(started):
                 echo("Warning: Can't update node with app running. Stop the app & retry.", fg='yellow')
             else:
                 echo("-----> Installing node version '{NODE_VERSION:s}' using nodeenv".format(**env), fg='green')
                 call("nodeenv --prebuilt --node={NODE_VERSION:s} --clean-src --force {VIRTUAL_ENV:s}".format(**env), cwd=virtualenv_path, env=env, shell=True)
         else:
-            echo("-----> Node is installed at {}.".format(version))
+            echo(f"-----> Node is installed at {version}.")
 
     if exists(deps) and check_requirements(['npm']):
         if first_time or getmtime(deps) > getmtime(node_path):
-            echo("-----> Running npm for '{}'".format(app), fg='green')
+            echo(f"-----> Running npm for '{app}'", fg='green')
             symlink(node_path, node_path_tmp)
             call('npm install', cwd=join(APP_ROOT, app), env=env, shell=True)
             unlink(node_path_tmp)
@@ -550,7 +550,7 @@ def deploy_python(app, deltas={}):
 
     first_time = False
     if not exists(virtualenv_path):
-        echo("-----> Creating virtualenv for '{}'".format(app), fg='green')
+        echo(f"-----> Creating virtualenv for '{app}'", fg='green')
         makedirs(virtualenv_path)
         call('virtualenv --python=python{version:d} {app:s}'.format(**locals()), cwd=ENV_ROOT, shell=True)
         first_time = True
@@ -559,8 +559,8 @@ def deploy_python(app, deltas={}):
     exec(open(activation_script).read(), dict(__file__=activation_script))
 
     if first_time or getmtime(requirements) > getmtime(virtualenv_path):
-        echo("-----> Running pip for '{}'".format(app), fg='green')
-        call('pip install -r {}'.format(requirements), cwd=virtualenv_path, shell=True)
+        echo(f"-----> Running pip for '{app}'", fg='green')
+        call(f'pip install -r {requirements}', cwd=virtualenv_path, shell=True)
     return spawn_app(app, deltas)
 
 
@@ -644,7 +644,7 @@ def spawn_app(app, deltas={}):
                 nginx_ssl += " http2"
             elif "--with-http_spdy_module" in nginx and "nginx/1.6.2" not in nginx: # avoid Raspbian bug
                 nginx_ssl += " spdy"
-            nginx_conf = join(NGINX_ROOT,"{}.conf".format(app))
+            nginx_conf = join(NGINX_ROOT, f"{app}.conf")
 
             env.update({
                 'NGINX_SSL': nginx_ssl,
@@ -655,18 +655,18 @@ def spawn_app(app, deltas={}):
             # default to reverse proxying to the TCP port we picked
             env['INTERNAL_NGINX_UWSGI_SETTINGS'] = 'proxy_pass http://{BIND_ADDRESS:s}:{PORT:s};'.format(**env)
             if 'wsgi' in workers or 'jwsgi' in workers:
-                sock = join(NGINX_ROOT, "{}.sock".format(app))
+                sock = join(NGINX_ROOT, f"{app}.sock")
                 env['INTERNAL_NGINX_UWSGI_SETTINGS'] = expandvars(INTERNAL_NGINX_UWSGI_SETTINGS, env)
                 env['NGINX_SOCKET'] = env['BIND_ADDRESS'] = "unix://" + sock
                 if 'PORT' in env:
                     del env['PORT']
             else:
                 env['NGINX_SOCKET'] = "{BIND_ADDRESS:s}:{PORT:s}".format(**env)
-                echo("-----> nginx will look for app '{}' on {}".format(app, env['NGINX_SOCKET']))
+                echo(f"-----> nginx will look for app '{app}' on {env['NGINX_SOCKET']}")
 
 
             domain = env['NGINX_SERVER_NAME'].split()[0]
-            key, crt = [join(NGINX_ROOT, "{}.{}".format(app,x)) for x in ['key','crt']]
+            key, crt = [join(NGINX_ROOT, f"{app}.{x}") for x in ['key', 'crt']]
             if exists(join(ACME_ROOT, "acme.sh")):
                 acme = ACME_ROOT
                 www = ACME_WWW
@@ -698,18 +698,18 @@ def spawn_app(app, deltas={}):
                     cf = loads(urlopen('https://api.cloudflare.com/client/v4/ips').read().decode("utf-8"))
                     if cf['success'] == True:
                         for i in cf['result']['ipv4_cidrs']:
-                            acl.append("allow {};".format(i))
+                            acl.append(f"allow {i};")
                         for i in cf['result']['ipv6_cidrs']:
-                            acl.append("allow {};".format(i))
+                            acl.append(f"allow {i};")
                         # allow access from controlling machine
                         if 'SSH_CLIENT' in environ:
                             remote_ip = environ['SSH_CLIENT'].split()[0]
-                            echo("-----> Adding your IP ({}) to nginx ACL".format(remote_ip))
-                            acl.append("allow {};".format(remote_ip))
+                            echo(f"-----> Adding your IP ({remote_ip}) to nginx ACL")
+                            acl.append(f"allow {remote_ip};")
                         acl.extend(["allow 127.0.0.1;","deny all;"])
                 except Exception:
                     cf = defaultdict()
-                    echo("-----> Could not retrieve CloudFlare IP ranges: {}".format(format_exc()), fg="red")
+                    echo(f"-----> Could not retrieve CloudFlare IP ranges: {format_exc()}", fg="red")
 
             env['NGINX_ACL'] = " ".join(acl)
 
@@ -732,7 +732,7 @@ def spawn_app(app, deltas={}):
                             static_path = join(app_path, static_path)
                         env['INTERNAL_NGINX_STATIC_MAPPINGS'] = env['INTERNAL_NGINX_STATIC_MAPPINGS'] + expandvars(INTERNAL_NGINX_STATIC_MAPPING, locals())
                 except Exception as e:
-                    echo("Error {} in static path spec: should be /url1:path1[,/url2:path2], ignoring.".format(e))
+                    echo(f"Error {e} in static path spec: should be /url1:path1[,/url2:path2], ignoring.")
                     env['INTERNAL_NGINX_STATIC_MAPPINGS'] = ''
 
             env['INTERNAL_NGINX_CUSTOM_CLAUSES'] = expandvars(open(join(app_path, env["NGINX_INCLUDE_FILE"])).read(), env) if env.get("NGINX_INCLUDE_FILE") else ""
@@ -741,21 +741,21 @@ def spawn_app(app, deltas={}):
                 env['INTERNAL_NGINX_PORTMAP'] = expandvars(NGINX_PORTMAP_FRAGMENT, env)
             env['INTERNAL_NGINX_COMMON'] = expandvars(NGINX_COMMON_FRAGMENT, env)
 
-            echo("-----> nginx will map app '{}' to hostname '{}'".format(app, env['NGINX_SERVER_NAME']))
+            echo(f"-----> nginx will map app '{app}' to hostname '{env['NGINX_SERVER_NAME']}'")
             if('NGINX_HTTPS_ONLY' in env) or ('HTTPS_ONLY' in env):
                 buffer = expandvars(NGINX_HTTPS_ONLY_TEMPLATE, env)
-                echo("-----> nginx will redirect all requests to hostname '{}' to HTTPS".format(env['NGINX_SERVER_NAME']))
+                echo(f"-----> nginx will redirect all requests to hostname '{env['NGINX_SERVER_NAME']}' to HTTPS")
             else:
                 buffer = expandvars(NGINX_TEMPLATE, env)
             with open(nginx_conf, "w") as h:
                 h.write(buffer)
             # prevent broken config from breaking other deploys
             try:
-                nginx_config_test = str(check_output("nginx -t 2>&1 | grep {}".format(app), env=environ, shell=True))
+                nginx_config_test = str(check_output(f"nginx -t 2>&1 | grep {app}", env=environ, shell=True))
             except:
                 nginx_config_test = None
             if nginx_config_test:
-                echo("Error: [nginx config] {}".format(nginx_config_test), fg='red')
+                echo(f"Error: [nginx config] {nginx_config_test}", fg='red')
                 echo("Warning: removing broken nginx config.", fg='yellow')
                 unlink(nginx_conf)
 
@@ -783,7 +783,7 @@ def spawn_app(app, deltas={}):
     write_config(scaling, worker_count, ':')
 
     if env.get("AUTO_RESTART", False):
-        config = glob(join(UWSGI_ENABLED, '{}*.ini'.format(app)))
+        config = glob(join(UWSGI_ENABLED, f'{app}*.ini'))
         if len(config):
             echo("-----> Removing uwsgi configs to trigger auto-restart.")
             for c in config:
@@ -877,8 +877,8 @@ def spawn_worker(app, kind, command, env, ordinal=1):
 
         # If running under nginx, don't expose a port at all
         if 'NGINX_SERVER_NAME' in env:
-            sock = join(NGINX_ROOT, "{}.sock".format(app))
-            echo("-----> nginx will talk to uWSGI via {}".format(sock), fg='yellow')
+            sock = join(NGINX_ROOT, f"{app}.sock")
+            echo(f"-----> nginx will talk to uWSGI via {sock}", fg='yellow')
             settings.extend([
                 ('socket', sock),
                 ('chmod-socket', '664'),
@@ -920,15 +920,15 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         copyfile(available, enabled)
 
 def do_restart(app):
-    config = glob(join(UWSGI_ENABLED, '{}*.ini'.format(app)))
+    config = glob(join(UWSGI_ENABLED, f'{app}*.ini'))
 
     if len(config):
-        echo("Restarting app '{}'...".format(app), fg='yellow')
+        echo(f"Restarting app '{app}'...", fg='yellow')
         for c in config:
             remove(c)
         spawn_app(app)
     else:
-        echo("Error: app '{}' not deployed!".format(app), fg='red')
+        echo(f"Error: app '{app}' not deployed!", fg='red')
 
 
 def multi_tail(app, filenames, catch_up=20):
@@ -959,7 +959,7 @@ def multi_tail(app, filenames, catch_up=20):
     # Grab a little history (if any)
     for f in filenames:
         for line in deque(open(f), catch_up):
-            yield "{} | {}".format(prefixes[f].ljust(longest), line)
+            yield f"{prefixes[f].ljust(longest)} | {line}"
 
     while True:
         updated = False
@@ -970,7 +970,7 @@ def multi_tail(app, filenames, catch_up=20):
                 continue
             else:
                 updated = True
-                yield "{} | {}".format(prefixes[f].ljust(longest), line)
+                yield f"{prefixes[f].ljust(longest)} | {line}"
 
         if not updated:
             sleep(1)
@@ -1006,7 +1006,7 @@ def list_apps():
     """List apps, e.g.: piku apps"""
 
     for a in listdir(APP_ROOT):
-        running = len(glob(join(UWSGI_ENABLED, '{}*.ini'.format(a)))) != 0
+        running = len(glob(join(UWSGI_ENABLED, f'{a}*.ini'))) != 0
         echo(('*' if running else ' ') + a, fg='green')
 
 
@@ -1021,7 +1021,7 @@ def cmd_config(app):
     if exists(config_file):
         echo(open(config_file).read().strip(), fg='white')
     else:
-        echo("Warning: app '{}' not deployed, no config found.".format(app), fg='yellow')
+        echo(f"Warning: app '{app}' not deployed, no config found.", fg='yellow')
 
 
 @piku.command("config:get")
@@ -1036,9 +1036,9 @@ def cmd_config_get(app, setting):
     if exists(config_file):
         env = parse_settings(config_file)
         if setting in env:
-            echo("{}".format(env[setting]), fg='white')
+            echo(f"{env[setting]}", fg='white')
     else:
-        echo("Warning: no active configuration for '{}'".format(app))
+        echo(f"Warning: no active configuration for '{app}'")
 
 
 @piku.command("config:set")
@@ -1057,7 +1057,7 @@ def cmd_config_set(app, settings):
             env[k] = v
             echo("Setting {k:s}={v} for '{app:s}'".format(**locals()), fg='white')
         except:
-            echo("Error: malformed setting '{}'".format(s), fg='red')
+            echo(f"Error: malformed setting '{s}'", fg='red')
             return
     write_config(config_file, env)
     do_deploy(app)
@@ -1076,7 +1076,7 @@ def cmd_config_unset(app, settings):
     for s in settings:
         if s in env:
             del env[s]
-            echo("Unsetting {} for '{}'".format(s, app), fg='white')
+            echo(f"Unsetting {s} for '{app}'", fg='white')
     write_config(config_file, env)
     do_deploy(app)
 
@@ -1092,7 +1092,7 @@ def cmd_config_live(app):
     if exists(live_config):
         echo(open(live_config).read().strip(), fg='white')
     else:
-        echo("Warning: app '{}' not deployed, no config found.".format(app), fg='yellow')
+        echo(f"Warning: app '{app}' not deployed, no config found.", fg='yellow')
 
 
 @piku.command("deploy")
@@ -1113,28 +1113,28 @@ def cmd_destroy(app):
 
     for p in [join(x, app) for x in [APP_ROOT, GIT_ROOT, ENV_ROOT, LOG_ROOT]]:
         if exists(p):
-            echo("Removing folder '{}'".format(p), fg='yellow')
+            echo(f"Removing folder '{p}'", fg='yellow')
             rmtree(p)
 
-    for p in [join(x, '{}*.ini'.format(app)) for x in [UWSGI_AVAILABLE, UWSGI_ENABLED]]:
+    for p in [join(x, f'{app}*.ini') for x in [UWSGI_AVAILABLE, UWSGI_ENABLED]]:
         g = glob(p)
         if len(g):
             for f in g:
-                echo("Removing file '{}'".format(f), fg='yellow')
+                echo(f"Removing file '{f}'", fg='yellow')
                 remove(f)
 
-    nginx_files = [join(NGINX_ROOT, "{}.{}".format(app,x)) for x in ['conf','sock','key','crt']]
+    nginx_files = [join(NGINX_ROOT, f"{app}.{x}") for x in ['conf', 'sock', 'key', 'crt']]
     for f in nginx_files:
         if exists(f):
-            echo("Removing file '{}'".format(f), fg='yellow')
+            echo(f"Removing file '{f}'", fg='yellow')
             remove(f)
 
     acme_link = join(ACME_WWW, app)
     acme_certs = realpath(acme_link)
     if exists(acme_certs):
-        echo("Removing folder '{}'".format(acme_certs), fg='yellow')
+        echo(f"Removing folder '{acme_certs}'", fg='yellow')
         rmtree(acme_certs)
-        echo("Removing file '{}'".format(acme_link), fg='yellow')
+        echo(f"Removing file '{acme_link}'", fg='yellow')
         unlink(acme_link)
 
 
@@ -1151,7 +1151,7 @@ def cmd_logs(app, process):
         for line in multi_tail(app, logfiles):
             echo(line.strip(), fg='white')
     else:
-        echo("No logs found for app '{}'.".format(app), fg='yellow')
+        echo(f"No logs found for app '{app}'.", fg='yellow')
 
 
 @piku.command("ps")
@@ -1165,7 +1165,7 @@ def cmd_ps(app):
     if exists(config_file):
         echo(open(config_file).read().strip(), fg='white')
     else:
-        echo("Error: no workers found for app '{}'.".format(app), fg='red')
+        echo(f"Error: no workers found for app '{app}'.", fg='red')
 
 
 @piku.command("ps:scale")
@@ -1184,14 +1184,14 @@ def cmd_ps_scale(app, settings):
             k, v = map(lambda x: x.strip(), s.split("=", 1))
             c = int(v) # check for integer value
             if c < 0:
-                echo("Error: cannot scale type '{}' below 0".format(k), fg='red')
+                echo(f"Error: cannot scale type '{k}' below 0", fg='red')
                 return
             if k not in worker_count:
-                echo("Error: worker type '{}' not present in '{}'".format(k, app), fg='red')
+                echo(f"Error: worker type '{k}' not present in '{app}'", fg='red')
                 return
             deltas[k] = c - worker_count[k]
         except:
-            echo("Error: malformed setting '{}'".format(s), fg='red')
+            echo(f"Error: malformed setting '{s}'", fg='red')
             return
     do_deploy(app, deltas)
 
@@ -1226,12 +1226,12 @@ def cmd_restart(app):
 def cmd_setup():
     """Initialize environment"""
 
-    echo("Running in Python {}".format(".".join(map(str,version_info))))
+    echo(f"Running in Python {'.'.join(map(str, version_info))}")
 
     # Create required paths
     for p in [APP_ROOT, GIT_ROOT, ENV_ROOT, UWSGI_ROOT, UWSGI_AVAILABLE, UWSGI_ENABLED, LOG_ROOT, NGINX_ROOT]:
         if not exists(p):
-            echo("Creating '{}'.".format(p), fg='green')
+            echo(f"Creating '{p}'.", fg='green')
             makedirs(p)
 
     # Set up the uWSGI emperor config
@@ -1245,7 +1245,7 @@ def cmd_setup():
         ('uid',             getpwuid(getuid()).pw_name),
         ('gid',             getgrgid(getgid()).gr_name),
         ('enable-threads',  'true'),
-        ('threads',         '{}'.format(cpu_count() * 2)),
+        ('threads', f'{cpu_count() * 2}'),
     ]
     with open(join(UWSGI_ROOT,'uwsgi.ini'), 'w') as h:
         h.write('[uwsgi]\n')
@@ -1255,7 +1255,7 @@ def cmd_setup():
 
     # mark this script as executable (in case we were invoked via interpreter)
     if not(stat(PIKU_SCRIPT).st_mode & S_IXUSR):
-        echo("Setting '{}' as executable.".format(PIKU_SCRIPT), fg='yellow')
+        echo(f"Setting '{PIKU_SCRIPT}' as executable.", fg='yellow')
         chmod(PIKU_SCRIPT, stat(PIKU_SCRIPT).st_mode | S_IXUSR)
 
 
@@ -1269,10 +1269,10 @@ def cmd_setup_ssh(public_key_file):
             try:
                 fingerprint = str(check_output('ssh-keygen -lf ' + key_file, shell=True)).split(' ', 4)[1]
                 key = open(key_file, 'r').read().strip()
-                echo("Adding key '{}'.".format(fingerprint), fg='white')
+                echo(f"Adding key '{fingerprint}'.", fg='white')
                 setup_authorized_keys(fingerprint, PIKU_SCRIPT, key)
             except Exception:
-                echo("Error: invalid public key file '{}': {}".format(key_file, format_exc()), fg='red')
+                echo(f"Error: invalid public key file '{key_file}': {format_exc()}", fg='red')
         elif '-' == public_key_file:
             buffer = "".join(stdin.readlines())
             with NamedTemporaryFile(mode="w") as f:
@@ -1280,7 +1280,7 @@ def cmd_setup_ssh(public_key_file):
                 f.flush()
                 add_helper(f.name)
         else:
-            echo("Error: public key file '{}' not found.".format(key_file), fg='red')
+            echo(f"Error: public key file '{key_file}' not found.", fg='red')
 
     add_helper(public_key_file)
 
@@ -1291,14 +1291,14 @@ def cmd_stop(app):
     """Stop an app, e.g: piku stop <app>"""
 
     app = exit_if_invalid(app)
-    config = glob(join(UWSGI_ENABLED, '{}*.ini'.format(app)))
+    config = glob(join(UWSGI_ENABLED, f'{app}*.ini'))
 
     if len(config):
-        echo("Stopping app '{}'...".format(app), fg='yellow')
+        echo(f"Stopping app '{app}'...", fg='yellow')
         for c in config:
             remove(c)
     else:
-        echo("Error: app '{}' not deployed!".format(app), fg='red')
+        echo(f"Error: app '{app}' not deployed!", fg='red')
 
 
 # --- Internal commands ---
@@ -1317,9 +1317,9 @@ def cmd_git_hook(app):
         oldrev, newrev, refname = line.strip().split(" ")
         # Handle pushes
         if not exists(app_path):
-            echo("-----> Creating app '{}'".format(app), fg='green')
+            echo(f"-----> Creating app '{app}'", fg='green')
             makedirs(app_path)
-            call('git clone --quiet {} {}'.format(repo_path, app), cwd=APP_ROOT, shell=True)
+            call(f'git clone --quiet {repo_path} {app}', cwd=APP_ROOT, shell=True)
         do_deploy(app, newrev=newrev)
 
 
@@ -1344,7 +1344,7 @@ cat | PIKU_ROOT="{PIKU_ROOT:s}" {PIKU_SCRIPT:s} git-hook {app:s}""".format(**env
         # Make the hook executable by our user
         chmod(hook_path, stat(hook_path).st_mode | S_IXUSR)
     # Handle the actual receive. We'll be called with 'git-hook' after it happens
-    call('git-shell -c "{}" '.format(argv[1] + " '{}'".format(app)), cwd=GIT_ROOT, shell=True)
+    call('git-shell -c "{}" '.format(argv[1] + f" '{app}'"), cwd=GIT_ROOT, shell=True)
 
 
 @piku.command("git-upload-pack", hidden=True)
@@ -1355,7 +1355,7 @@ def cmd_git_receive_pack(app):
     env = globals()
     env.update(locals())
     # Handle the actual receive. We'll be called with 'git-hook' after it happens
-    call('git-shell -c "{}" '.format(argv[1] + " '{}'".format(app)), cwd=GIT_ROOT, shell=True)
+    call('git-shell -c "{}" '.format(argv[1] + f" '{app}'"), cwd=GIT_ROOT, shell=True)
 
 
 @piku.command("help")
