@@ -1,4 +1,16 @@
-- name: Python style check
-  uses: bulv1ne/python-style-check@v0.3
-- name: Black Code Formatter
-  uses: lgeiger/black-action@v1.0.1
+name: Python Testing
+
+on: [push]
+
+jobs:
+  name: Linting
+  runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.5, 3.6, 3.7, 3.8]
+    steps:
+    - name: Python style check
+      uses: bulv1ne/python-style-check@v0.3
+    - name: Black Code Formatter
+      uses: lgeiger/black-action@v1.0.1
