@@ -1,3 +1,2 @@
-- name: GitHub Action for pylint
-  uses: cclauss/GitHub-Action-for-pylint@0.7.0
-  args: "pip install -r requirements.txt ; pylint **/*.py"
+- name: Python style check
+  uses: bulv1ne/python-style-check@v0.3
