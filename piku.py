@@ -254,7 +254,7 @@ def parse_procfile(filename):
             try:
                 kind, command = map(lambda x: x.strip(), line.split(":", 1))
                 workers[kind] = command
-            except:
+            except Exception:
                 echo("Warning: unrecognized Procfile entry '{}' at line {}".format(line, line_number), fg='yellow')
     if len(workers) == 0:
         return {}
@@ -281,7 +281,7 @@ def command_output(cmd):
     try:
         env = environ
         return str(check_output(cmd, stderr=STDOUT, env=env, shell=True))
-    except:
+    except Exception:
         return ""
 
 
