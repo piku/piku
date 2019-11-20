@@ -298,7 +298,7 @@ def parse_settings(filename, env={}):
             try:
                 k, v = map(lambda x: x.strip(), line.split("=", 1))
                 env[k] = expandvars(v, env)
-            except:
+            except Exception:
                 echo("Error: malformed setting '{}', ignoring file.".format(line), fg='red')
                 return {}
     return env
@@ -328,8 +328,6 @@ def do_deploy(app, deltas={}, newrev=None):
     app_path = join(APP_ROOT, app)
     procfile = join(app_path, 'Procfile')
     log_path = join(LOG_ROOT, app)
-    env_file = join(APP_ROOT, app, 'ENV')
-    config_file = join(ENV_ROOT, app, 'ENV')
 
     env = {'GIT_WORK_DIR': app_path}
     if exists(app_path):
@@ -384,7 +382,6 @@ def deploy_gradle(app, deltas={}):
     java_path = join(ENV_ROOT, app)
     build_path = join(APP_ROOT, app, 'build')
     env_file = join(APP_ROOT, app, 'ENV')
-    build = join(APP_ROOT, app, 'build.gradle')
 
     env = {
         'VIRTUAL_ENV': java_path,
@@ -416,7 +413,6 @@ def deploy_java(app, deltas={}):
     java_path = join(ENV_ROOT, app)
     target_path = join(APP_ROOT, app, 'target')
     env_file = join(APP_ROOT, app, 'ENV')
-    pom = join(APP_ROOT, app, 'pom.xml')
 
     env = {
         'VIRTUAL_ENV': java_path,
@@ -447,7 +443,6 @@ def deploy_clojure(app, deltas={}):
     virtual = join(ENV_ROOT, app)
     target_path = join(APP_ROOT, app, 'target')
     env_file = join(APP_ROOT, app, 'ENV')
-    projectfile = join(APP_ROOT, app, 'project.clj')
 
     if not exists(target_path):
         makedirs(virtual)
@@ -710,7 +705,7 @@ def spawn_app(app, deltas={}):
             if env.get('NGINX_CLOUDFLARE_ACL', 'false').lower() == 'true':
                 try:
                     cf = loads(urlopen('https://api.cloudflare.com/client/v4/ips').read().decode("utf-8"))
-                    if cf['success'] == True:
+                    if cf['success'] is True:
                         for i in cf['result']['ipv4_cidrs']:
                             acl.append("allow {};".format(i))
                         for i in cf['result']['ipv6_cidrs']:
@@ -768,7 +763,7 @@ def spawn_app(app, deltas={}):
             # prevent broken config from breaking other deploys
             try:
                 nginx_config_test = str(check_output("nginx -t 2>&1 | grep {}".format(app), env=environ, shell=True))
-            except:
+            except Exception:
                 nginx_config_test = None
             if nginx_config_test:
                 echo("Error: [nginx config] {}".format(nginx_config_test), fg='red')
@@ -1075,7 +1070,7 @@ def cmd_config_set(app, settings):
             k, v = map(lambda x: x.strip(), s.split("=", 1))
             env[k] = v
             echo("Setting {k:s}={v} for '{app:s}'".format(**locals()), fg='white')
-        except:
+        except Exception:
             echo("Error: malformed setting '{}'".format(s), fg='red')
             return
     write_config(config_file, env)
@@ -1209,7 +1204,7 @@ def cmd_ps_scale(app, settings):
                 echo("Error: worker type '{}' not present in '{}'".format(k, app), fg='red')
                 return
             deltas[k] = c - worker_count[k]
-        except:
+        except Exception:
             echo("Error: malformed setting '{}'".format(s), fg='red')
             return
     do_deploy(app, deltas)
