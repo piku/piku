@@ -1129,6 +1129,13 @@ def cmd_destroy(app):
 
     app = exit_if_invalid(app)
 
+    started = glob(join(UWSGI_ENABLED, '{}*.ini'.format(app)))
+    static = glob(join(NGINX_ROOT, '{}*.conf'.format(app)))
+
+    if started or static:
+        echo("App {} is running, please stop first".format(app))
+        exit(1)
+
     for p in [join(x, app) for x in [APP_ROOT, GIT_ROOT, ENV_ROOT, LOG_ROOT]]:
         if exists(p):
             echo("Removing folder '{}'".format(p), fg='yellow')
