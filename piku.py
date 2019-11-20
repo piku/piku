@@ -119,6 +119,7 @@ NGINX_COMMON_FRAGMENT = """
   gzip_comp_level 7;
   gzip_min_length 2048;
   gzip_vary on;
+  gzip_disable "MSIE [1-6]\.(?!.*SV1)";
 
   # set a custom header for requests
   add_header X-Deployed-By Piku;
