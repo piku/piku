@@ -90,7 +90,7 @@ This separation makes it easier to cope with long/large deployments and restore 
 
 This diagram (available as a `dot` file in the `img` folder) outlines how its components interact:
 
-![](../img/piku.png
+![](../img/piku.png)
 
 [uwsgi]: https://github.com/unbit/uwsgi
 [emperor]: http://uwsgi-docs.readthedocs.org/en/latest/Emperor.html
