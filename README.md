@@ -8,6 +8,12 @@ The tiniest Heroku/CloudFoundry-like PaaS you've ever seen.
 
 ### Documentation: [Procfile](docs/DESIGN.md#procfile-format) | [ENV](./docs/ENV.md) | [Examples](./examples/README.md)
 
+## Goals and Motivation
+
+(New text being summarized and drafted in #134, soon to find its way here)
+
+I kept finding myself wanting an Heroku/CloudFoundry-like way to deploy stuff on a few remote ARM boards and [my Raspberry Pi cluster][raspi-cluster], but since [dokku][dokku] didn't work on ARM at the time and even `docker` can be overkill sometimes, I decided to roll my own.
+
 ## Using `piku`
 
 `piku` supports a Heroku-like workflow, like so:
@@ -103,67 +109,6 @@ You can also use `piku-bootstrap` to run your own Ansible playbooks like this:
 piku-bootstrap root@yourserver.net ./myplaybook.yml
 ```
 
-## Examples
-
-You can find examples for deploying various kinds of apps into a `piku` server in the [Examples folder](./examples).
-
-## Motivation
-
-I kept finding myself wanting an Heroku/CloudFoundry-like way to deploy stuff on a few remote ARM boards and [my Raspberry Pi cluster][raspi-cluster], but since [dokku][dokku] didn't work on ARM at the time and even `docker` can be overkill sometimes, I decided to roll my own.
-
-## Project Status/To Do:
-
-This is currently being used for production deployments of [my website](https://taoofmac.com) and a few other projects of mine that run on Azure and other IaaS providers. Regardless, there is still room for improvement:
-
-From the bottom up:
-
-- [ ] Prebuilt Raspbian image with everything baked in
-- [ ] `chroot`/namespace isolation (tentative)
-- [ ] Relay commands to other nodes
-- [ ] Proxy deployments to other nodes (build on one box, deploy to many)
-- [ ] Support Clojure/Java deployments through `boot` or `lein`
-- [ ] Sample Go app
-- [ ] Support Go deployments (in progress)
-- [ ] nginx SSL optimization/cypher suites, own certificates
-- [ ] Review deployment messages
-- [ ] WIP: Review docs/CLI command documentation (short descriptions done, need `help <cmd>` and better descriptions)
-- [ ] Lua/WSAPI support
-- [x] Support for Java Apps with maven/gradle (in progress through jwsgi, by @matrixjnr)
-- [x] Django and Wisp examples (by @chr15m)
-- [x] Project logo (by @chr15m)
-- [x] Various release/deployment improvements (by @chr15m)
-- [x] Support Node deployments (by @chr15m)
-- [x] Let's Encrypt support (by @chr15m)
-- [x] Allow setting `nginx` IP bindings in `ENV` file (`NGINX_IPV4_ADDRESS` and `NGINX_IPV6_ADDRESS`)
-- [x] Cleanups to remove 2.7 syntax internally
-- [x] Change to Python 3 runtime as default, with `PYTHON_VERSION = 2` as fallback
-- [x] Run in Python 3 only
-- [x] (experimental) REPL in `feature/repl`
-- [x] Python 3 support through `PYTHON_VERSION = 3`
-- [x] static URL mapping to arbitrary paths (hat tip to @carlosefr for `nginx` tuning)
-- [x] remote CLI (requires `ssh -t`)
-- [x] saner uWSGI logging
-- [x] `gevent` activated when `UWSGI_GEVENT = <integer>`
-- [x] enable CloudFlare ACL when `NGINX_CLOUDFLARE_ACL = True`
-- [x] Autodetect SPDY/HTTPv2 support and activate it
-- [x] Basic nginx SSL config with self-signed certificates and UNIX domain socket connection
-- [x] nginx support - creates an nginx config file if `NGINX_SERVER_NAME` is defined
-- [x] Testing with pre-packaged [uWSGI][uwsgi] versions on Debian Jessie (yes, it was painful)
-- [x] Support barebones binary deployments
-- [x] Complete installation instructions (see `INSTALL.md`, which also has a draft of Go installation steps)
-- [x] Installation helper/SSH key setup
-- [x] Worker scaling
-- [x] Remote CLI commands for changing/viewing applied/live settings
-- [x] Remote tailing of all logfiles for a single application
-- [x] HTTP port selection (and per-app environment variables)
-- [x] Sample Python app
-- [X] `Procfile` support (`wsgi` and `worker` processes for now, `web` processes being tested)
-- [x] Basic CLI commands to manage apps
-- [x] `virtualenv` isolation
-- [x] Support Python deployments
-- [x] Repo creation upon first push
-- [x] Basic understanding of [how `dokku` works](http://off-the-stack.moorman.nu/2013-11-23-how-dokku-works.html)
-
 ## Internals
 
 This is an illustrated example of how `piku` works for a Python deployment:
@@ -184,26 +129,6 @@ But there are already a few folk using `piku` on vanilla `x64` Linux without any
 ## Supported Runtimes
 
 `piku` currently supports deploying apps (and dependencies) written in Python, with Go, Clojure (Java) and Node (see [above](#project-statustodo)) in the works. But if it can be invoked from a shell, it can be run inside `piku`.
-
-## FAQ
-
-**Q:** Why `piku`?
-
-**A:** Partly because it's supposed to run on a [Pi][pi], because it's Japanese onomatopeia for 'twitch' or 'jolt', and because I know the name will annoy some of my friends.
-
-**Q:** Why Python/why not Go?
-
-**A:** I actually thought about doing this in Go right off the bat, but [click][click] is so cool and I needed to have [uWSGI][uwsgi] running anyway, so I caved in. But I'm very likely to take something like [suture](https://github.com/thejerf/suture) and port this across, doing away with [uWSGI][uwsgi] altogether.
-
-Go also (at the time) did not have a way to vendor dependencies that I was comfortable with, and that is also why Go support fell behind. Hopefully that will change soon.
-
-**Q:** Does it run under Python 3?
-
-**A:** Right now, it _only_ runs on Python 3, even though it can deploy apps written in both major versions. It began its development using 2.7 and using`click` for abstracting the simpler stuff, and I eventually switched over to 3.5 once it was supported in Debian Stretch and Raspbian since I wanted to make installing it on the Raspberry Pi as simple as possible.
-
-**Q:** Why not just use `dokku`?
-
-**A:** I used `dokku` daily for most of my personal stuff for a good while. But it relied on a number of `x64` containers that needed to be completely rebuilt for ARM, and when I decided I needed something like this (March 2016) that was barely possible - `docker` itself was not fully baked for ARM yet, and people were at the time trying to get `herokuish` and `buildstep` to build on ARM.
 
 [click]: http://click.pocoo.org
 [pi]: http://www.raspberrypi.org
