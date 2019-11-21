@@ -4,11 +4,12 @@ on: [push, pull_request]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
       matrix:
+        # This is currently overkill since we are targeting 3.5, but affords us visibility
+        # onto syntax changes in newer Pythons
         python-version: [3.5, 3.6, 3.7, 3.8]
 
     steps:
@@ -26,6 +27,10 @@ jobs:
         pip install flake8
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # --exit-zero treats all errors as warnings
-        # allow longer lines for inlining SSH entries and set a complexity threshold that will pass for now
+        # Notes: 
+        # --exit-zero treats all errors as warnings, but we don't use it anymore
+        # Allow longer lines for inlining SSH entries and set a complexity threshold that will pass for now
+        # Ignore W605 (https://lintlyci.github.io/Flake8Rules/rules/W605.html) because 
+        # flake8 does not understand escaping dots inside templates for nginx and SSH
+        # TODO: pare down complexity and line length as we shrink piku core
         flake8 . --ignore=W605 --count --max-complexity=60 --max-line-length=255 --statistics
