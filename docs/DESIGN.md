@@ -86,6 +86,12 @@ As to runtime isolation, `piku` only provides `virtualenv` support until 1.0. Py
 
 This separation makes it easier to cope with long/large deployments and restore apps to a pristine condition, since the app will only go live after the deployment clone is reset (via `git checkout -f`).
 
+## Components
+
+This diagram (available as a `dot` file in the `img` folder) outlines how its components interact:
+
+![](../img/piku.png
+
 [uwsgi]: https://github.com/unbit/uwsgi
 [emperor]: http://uwsgi-docs.readthedocs.org/en/latest/Emperor.html
 [12f]: http://12factor.net

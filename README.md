@@ -108,13 +108,6 @@ You can also use `piku-bootstrap` to run your own Ansible playbooks like this:
 ```shell
 piku-bootstrap root@yourserver.net ./myplaybook.yml
 ```
-
-## Internals
-
-This is an illustrated example of how `piku` works for a Python deployment:
-
-![](img/piku.png)
-
 ## Supported Platforms
 
 `piku` is intended to work in any POSIX-like environment where you have Python, [uWSGI][uwsgi] and SSH, i.e.: 
