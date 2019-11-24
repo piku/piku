@@ -24,11 +24,30 @@ else
   # gather SSH flags
   while [ "${1#\-}"x != "${1}x" ];
   do
-    sshflags="${sshflags} ${1}"
+    if expr "$1" : '-h\|--help' ;
+    then
+      cmd="help"
+    else
+      sshflags="${sshflags} ${1}"
+    fi;
     shift
   done
+
   # check the Piku command to be run
-  cmd="$1"
+  if [ "$#" -ge 1 ] ; then
+    cmd=${cmd:-$1}
+    shift 
+  fi
+
+  if [ "$cmd" = "help" ]; then
+    app="" # help dont need app name
+  fi
+
+  # avoid duplicated param
+  if [ ! -z "$app" ] && [ "$1" = "$app" ]; then
+    shift
+  fi
+
   out "Server: $server"
   out "App: $app"
   out
@@ -37,10 +56,9 @@ else
       ssh ${sshflags} "$server" "$@" | grep -v "INTERNAL"
       ;;
     apps|setup|setup:ssh)
-      ssh ${sshflags} "$server" "$@"
+      ssh ${sshflags} "$server" "$cmd"
       ;;
     *)
-      shift # remove cmd arg
       ssh ${sshflags} "$server" "$cmd" "$app" "$@"
       ;;
   esac
