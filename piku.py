@@ -4,9 +4,9 @@
 
 try:
     from sys import version_info
-    assert version_info >= (3, 4)
+    assert version_info >= (3, 5)
 except AssertionError:
-    exit("Piku requires Python 3.4 or above")
+    exit("Piku requires Python 3.5 or above")
 
 from collections import defaultdict, deque
 from fcntl import fcntl, F_SETFL, F_GETFL

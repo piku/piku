@@ -8,9 +8,9 @@ jobs:
     strategy:
       max-parallel: 3
       matrix:
-        # This is currently overkill since we are targeting 3.5+ with a support window back to 3.4, 
+        # This is currently overkill since we are targeting 3.5
         # but affords us visibility onto syntax changes in newer Pythons
-        python-version: [3.4, 3.5, 3.6, 3.7, 3.8]
+        python-version: [3.5, 3.6, 3.7, 3.8]
 
     steps:
     - uses: actions/checkout@v1
