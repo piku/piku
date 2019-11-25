@@ -43,20 +43,20 @@ packages:
 write_files:
   - path: /etc/nginx/sites-available/default
     content: |
-    server {
-        listen 80 default_server;
-        listen [::]:80 default_server;
-        root /var/www/html;
-        index index.html index.htm;
-        server_name _;
-        location / {
-            try_files $uri $uri/ =404;
-        }
-    }
-    include /home/piku/.piku/nginx/*.conf;
+      server {
+          listen 80 default_server;
+          listen [::]:80 default_server;
+          root /var/www/html;
+          index index.html index.htm;
+          server_name _;
+          location / {
+              try_files $uri $uri/ =404;
+          }
+      }
+      include /home/piku/.piku/nginx/*.conf;
   - path: /etc/incron.d/paas
     content: |
-        /home/piku/.piku/nginx IN_MODIFY,IN_NO_LOOP /bin/systemctl reload nginx
+      /home/piku/.piku/nginx IN_MODIFY,IN_NO_LOOP /bin/systemctl reload nginx
 
 runcmd:
   - timedatectl set-timezone Europe/Lisbon
