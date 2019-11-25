@@ -4,9 +4,9 @@
 
 try:
     from sys import version_info
-    assert version_info >= (3, 5)
+    assert version_info >= (3, 4)
 except AssertionError:
-    exit("Piku requires Python 3.5 or above")
+    exit("Piku requires Python 3.4 or above")
 
 from collections import defaultdict, deque
 from fcntl import fcntl, F_SETFL, F_GETFL
@@ -848,7 +848,7 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         ('logto', '{log_file:s}.{ordinal:d}.log'.format(**locals())),
         ('log-backupname', '{log_file:s}.{ordinal:d}.log.old'.format(**locals())),
     ]
-    
+
     # only add virtualenv to uwsgi if it's a real virtualenv
     if exists(join(env_path, "bin", "activate_this.py")):
         settings.append(('virtualenv', env_path))
