@@ -832,6 +832,8 @@ def spawn_worker(app, kind, command, env, ordinal=1):
 
     settings = [
         ('chdir', join(APP_ROOT, app)),
+        ('uid', getpwuid(getuid()).pw_name),
+        ('gid', getgrgid(getgid()).gr_name),
         ('master', 'true'),
         ('project', app),
         ('max-requests', env.get('UWSGI_MAX_REQUESTS', '1024')),
@@ -841,10 +843,12 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         ('enable-threads', env.get('UWSGI_ENABLE_THREADS', 'true').lower()),
         ('log-x-forwarded-for', env.get('UWSGI_LOG_X_FORWARDED_FOR', 'false').lower()),
         ('log-maxsize', env.get('UWSGI_LOG_MAXSIZE', UWSGI_LOG_MAXSIZE)),
+        ('logfile-chown', '%s:%s' % (getpwuid(getuid()).pw_name, getgrgid(getgid()).gr_name)),
+        ('logfile-chmod', '640'),
         ('logto', '{log_file:s}.{ordinal:d}.log'.format(**locals())),
         ('log-backupname', '{log_file:s}.{ordinal:d}.log.old'.format(**locals())),
     ]
-
+    
     # only add virtualenv to uwsgi if it's a real virtualenv
     if exists(join(env_path, "bin", "activate_this.py")):
         settings.append(('virtualenv', env_path))
