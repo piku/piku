@@ -29,7 +29,7 @@ from time import sleep
 from traceback import format_exc
 from urllib.request import urlopen
 
-from click import argument, command, group, get_current_context, option, secho as echo, pass_context, CommandCollection
+from click import argument, group, secho as echo, pass_context, CommandCollection
 
 # === Make sure we can access all system binaries ===
 
@@ -255,8 +255,8 @@ def parse_procfile(filename):
             if line.startswith("#") or not line:
                 continue
             try:
-                kind, command_line = map(lambda x: x.strip(), line.split(":", 1))
-                workers[kind] = command_line
+                kind, command = map(lambda x: x.strip(), line.split(":", 1))
+                workers[kind] = command
             except Exception:
                 echo("Warning: unrecognized Procfile entry '{}' at line {}".format(line, line_number), fg='yellow')
     if len(workers) == 0:
@@ -1379,6 +1379,7 @@ def cmd_git_upload_pack(app):
     # Handle the actual receive. We'll be called with 'git-hook' after it happens
     call('git-shell -c "{}" '.format(argv[1] + " '{}'".format(app)), cwd=GIT_ROOT, shell=True)
 
+
 def _get_plugin_commands(path):
     sys_path.append(abspath(path))
 
@@ -1395,6 +1396,7 @@ def _get_plugin_commands(path):
                     cli_commands.append(module.cli_commands())
 
     return cli_commands
+
 
 @piku.command("help")
 @pass_context
