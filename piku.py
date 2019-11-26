@@ -1389,11 +1389,13 @@ def _get_plugin_commands(path):
     if isdir(path):
         for item in listdir(path):
             module_path = join(path, item)
-            if not isdir(module_path):
-                continue
-            module = import_module(item)
-            if hasattr(module, 'cli_commands'):
-                cli_commands.append(module.cli_commands())
+            if isdir(module_path):
+                try:
+                    module = import_module(item)
+                except:
+                    module = None
+                if hasattr(module, 'cli_commands'):
+                    cli_commands.append(module.cli_commands())
 
     return cli_commands
 
