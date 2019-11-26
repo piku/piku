@@ -13,7 +13,7 @@ from fcntl import fcntl, F_SETFL, F_GETFL
 from glob import glob
 from json import loads
 from multiprocessing import cpu_count
-from os import chmod, getgid, getuid, symlink, unlink, remove, stat, listdir, environ, makedirs, O_NONBLOCK
+from os import chmod, getgid, getuid, getgrgid, symlink, unlink, remove, stat, listdir, environ, makedirs, O_NONBLOCK
 from os.path import abspath, basename, dirname, exists, getmtime, join, realpath, splitext
 from pwd import getpwuid
 from re import sub
