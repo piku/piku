@@ -9,7 +9,6 @@ except AssertionError:
     exit("Piku requires Python 3.5 or above")
 
 from importlib import import_module
-from click import argument, command, group, get_current_context, option, secho as echo, pass_context, CommandCollection
 from collections import defaultdict, deque
 from fcntl import fcntl, F_SETFL, F_GETFL
 from glob import glob
@@ -20,10 +19,8 @@ from os import chmod, getgid, getuid, symlink, unlink, remove, stat, listdir, en
 from os.path import abspath, basename, dirname, exists, getmtime, join, realpath, splitext, isdir
 from re import sub
 from shutil import copyfile, rmtree, which
-from socket import socket, AF_INET, SOCK_STREAM
 from sys import argv, stdin, stdout, stderr, version_info, exit, path as sys_path
 from pwd import getpwuid
-from shutil import copyfile, rmtree, which
 from socket import socket, AF_INET, SOCK_STREAM
 from stat import S_IRUSR, S_IWUSR, S_IXUSR
 from subprocess import call, check_output, Popen, STDOUT
@@ -32,7 +29,7 @@ from time import sleep
 from traceback import format_exc
 from urllib.request import urlopen
 
-from click import argument, group, secho as echo, pass_context
+from click import argument, command, group, get_current_context, option, secho as echo, pass_context, CommandCollection
 
 # === Make sure we can access all system binaries ===
 
@@ -258,8 +255,8 @@ def parse_procfile(filename):
             if line.startswith("#") or not line:
                 continue
             try:
-                kind, command = map(lambda x: x.strip(), line.split(":", 1))
-                workers[kind] = command
+                kind, command_line = map(lambda x: x.strip(), line.split(":", 1))
+                workers[kind] = command_line
             except Exception:
                 echo("Warning: unrecognized Procfile entry '{}' at line {}".format(line, line_number), fg='yellow')
     if len(workers) == 0:
