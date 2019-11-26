@@ -844,7 +844,7 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         ('log-maxsize', env.get('UWSGI_LOG_MAXSIZE', UWSGI_LOG_MAXSIZE)),
         ('logfile-chown', '%s:%s' % (getpwuid(getuid()).pw_name, getgrgid(getgid()).gr_name)),
         ('logfile-chmod', '640'),
-        ('logto', '{log_file:s}.{ordinal:d}.log'.format(**locals())),
+        ('logto2', '{log_file:s}.{ordinal:d}.log'.format(**locals())),
         ('log-backupname', '{log_file:s}.{ordinal:d}.log.old'.format(**locals())),
     ]
 
