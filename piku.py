@@ -1390,7 +1390,7 @@ def _get_plugin_commands(path):
             if isdir(module_path):
                 try:
                     module = import_module(item)
-                except:
+                except Exception:
                     module = None
                 if hasattr(module, 'cli_commands'):
                     cli_commands.append(module.cli_commands())
