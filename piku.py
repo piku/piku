@@ -11,7 +11,6 @@ except AssertionError:
 from collections import defaultdict, deque
 from fcntl import fcntl, F_SETFL, F_GETFL
 from glob import glob
-from grp import getgrgid
 from json import loads
 from multiprocessing import cpu_count
 from os import chmod, getgid, getuid, symlink, unlink, remove, stat, listdir, environ, makedirs, O_NONBLOCK
