@@ -10,9 +10,22 @@ The tiniest Heroku/CloudFoundry-like PaaS you've ever seen.
 
 ## Goals and Motivation
 
-(New text being summarized and drafted in #134, soon to find its way here)
-
 I kept finding myself wanting an Heroku/CloudFoundry-like way to deploy stuff on a few remote ARM boards and [my Raspberry Pi cluster][raspi-cluster], but since [dokku][dokku] didn't work on ARM at the time and even `docker` can be overkill sometimes, I decided to roll my own.
+
+### Core values
+
+ * Runs on low end devices.
+ * Accessible to hobbyists and K-12 schools.
+ * ~1000 lines readable code.
+ * Functional code style.
+ * Few (single?) dependencies.
+ * [12 factor app](https://12factor.net).
+ * Simplify user experience.
+ * Cover 80% of common use cases.
+ * Sensible defaults.
+ * Leverage distro packages.
+ * Leverage standard tooling (git, ssh, uwsgi).
+ * Preserve backwards compatibility where possible.
 
 ## Using `piku`
 
