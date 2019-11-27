@@ -12,10 +12,10 @@ from importlib import import_module
 from collections import defaultdict, deque
 from fcntl import fcntl, F_SETFL, F_GETFL
 from glob import glob
+from os import chmod, getgid, getuid, symlink, unlink, remove, stat, listdir, environ, makedirs, O_NONBLOCK
+from os.path import abspath, basename, dirname, exists, getmtime, join, realpath, splitext
 from grp import getgrgid
 from pwd import getpwuid
-from os.path import abspath, basename, dirname, exists, getmtime, join, realpath, splitext
-from os import chmod, getgid, getuid, symlink, unlink, remove, stat, listdir, environ, makedirs, O_NONBLOCK
 from re import sub
 from shutil import copyfile, rmtree, which
 from socket import socket, AF_INET, SOCK_STREAM
