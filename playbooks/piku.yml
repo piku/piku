@@ -4,7 +4,7 @@
   gather_facts: no
   pre_tasks:
     - name: Install python2 required by Ansible
-      raw: "( /usr/bin/python --version 2>&1 | grep -c 'Python' > /dev/null ) || apt-get update && apt-get -y install python"
+      raw: "( /usr/bin/python --version 2>&1 | grep -c 'Python' > /dev/null ) || ( apt-get update && apt-get -y install python )"
 
 - hosts: all
   become: yes

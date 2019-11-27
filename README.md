@@ -6,13 +6,26 @@ The tiniest Heroku/CloudFoundry-like PaaS you've ever seen.
 
 [![asciicast](https://asciinema.org/a/Ar31IoTkzsZmWWvlJll6p7haS.svg)](https://asciinema.org/a/Ar31IoTkzsZmWWvlJll6p7haS)
 
-### Documentation: [Procfile](docs/DESIGN.md#procfile-format) | [ENV](./docs/ENV.md) | [Examples](./examples/README.md) | [Roadmap](https://github.com/piku/piku/projects/2)
+### Documentation: [Using](#using-piku) | [Install](#install) | [Procfile](docs/DESIGN.md#procfile-format) | [ENV](./docs/ENV.md) | [Examples](./examples/README.md) | [Roadmap](https://github.com/piku/piku/projects/2) | [Contributing](./docs/CONTRIBUTING.md)
 
 ## Goals and Motivation
 
-(New text being summarized and drafted in #134, soon to find its way here)
-
 I kept finding myself wanting an Heroku/CloudFoundry-like way to deploy stuff on a few remote ARM boards and [my Raspberry Pi cluster][raspi-cluster], but since [dokku][dokku] didn't work on ARM at the time and even `docker` can be overkill sometimes, I decided to roll my own.
+
+### Core values
+
+ * Runs on low end devices.
+ * Accessible to hobbyists and K-12 schools.
+ * ~1000 lines readable code.
+ * Functional code style.
+ * Few (single?) dependencies.
+ * [12 factor app](https://12factor.net).
+ * Simplify user experience.
+ * Cover 80% of common use cases.
+ * Sensible defaults.
+ * Leverage distro packages.
+ * Leverage standard tooling (git, ssh, uwsgi).
+ * Preserve backwards compatibility where possible.
 
 ## Using `piku`
 
