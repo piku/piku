@@ -98,6 +98,16 @@ main() {
         cd "${REPO}"
         git pull
         ;;
+      first-run)
+        echo
+        echo " #> Success!"
+        echo
+        echo "The piku-bootstrap command is now installed in the current folder."
+        echo "Copy it somewhere on your PATH, like ~/bin/ to make it accessible from anywhere."
+        echo "Run 'piku-bootstrap install-cli DESTINATION' to install the piku helper."
+        echo "Run 'piku-bootstrap' with no arguments for help."
+        echo ""
+        ;;
       install-cli)
         if [ "$2" = "" ]
         then

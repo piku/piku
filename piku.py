@@ -12,18 +12,18 @@ from importlib import import_module
 from collections import defaultdict, deque
 from fcntl import fcntl, F_SETFL, F_GETFL
 from glob import glob
-from grp import getgrgid
 from json import loads
 from multiprocessing import cpu_count
 from os import chmod, getgid, getuid, symlink, unlink, remove, stat, listdir, environ, makedirs, O_NONBLOCK
 from os.path import abspath, basename, dirname, exists, getmtime, join, realpath, splitext, isdir
+from pwd import getpwuid
+from grp import getgrgid
 from re import sub
 from shutil import copyfile, rmtree, which
-from sys import argv, stdin, stdout, stderr, version_info, exit, path as sys_path
-from pwd import getpwuid
 from socket import socket, AF_INET, SOCK_STREAM
 from stat import S_IRUSR, S_IWUSR, S_IXUSR
 from subprocess import call, check_output, Popen, STDOUT
+from sys import argv, stdin, stdout, stderr, version_info, exit, path as sys_path
 from tempfile import NamedTemporaryFile
 from time import sleep
 from traceback import format_exc
@@ -847,7 +847,7 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         ('log-maxsize', env.get('UWSGI_LOG_MAXSIZE', UWSGI_LOG_MAXSIZE)),
         ('logfile-chown', '%s:%s' % (getpwuid(getuid()).pw_name, getgrgid(getgid()).gr_name)),
         ('logfile-chmod', '640'),
-        ('logto', '{log_file:s}.{ordinal:d}.log'.format(**locals())),
+        ('logto2', '{log_file:s}.{ordinal:d}.log'.format(**locals())),
         ('log-backupname', '{log_file:s}.{ordinal:d}.log.old'.format(**locals())),
     ]
 
