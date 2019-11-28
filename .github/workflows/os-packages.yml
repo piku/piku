@@ -1,0 +1,19 @@
+name: Test Against OS Packages
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 2
+      matrix:
+        distro: [buster]
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Test on ${{ matrix.distro }}
+      run: |
+        pwd
+        docker build .github/workflows/${{ matrix.distro }} -t local/${{ matrix.distro }}
+        docker run -it local/${{ matrix.distro }}
