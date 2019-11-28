@@ -18,7 +18,7 @@ I kept finding myself wanting an Heroku/CloudFoundry-like way to deploy stuff on
  * Accessible to hobbyists and K-12 schools.
  * ~1000 lines readable code.
  * Functional code style.
- * Few (single?) dependencies.
+ * Few (single?) dependencies, all of which are available as Debian/Ubuntu packages (Alpine and RHEL support is WIP)
  * [12 factor app](https://12factor.net).
  * Simplify user experience.
  * Cover 80% of common use cases.
