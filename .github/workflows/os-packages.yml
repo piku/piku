@@ -8,12 +8,11 @@ jobs:
     strategy:
       max-parallel: 2
       matrix:
-        distro: [buster]
+        distro: [ buster, bionic ]
 
     steps:
     - uses: actions/checkout@v1
     - name: Test on ${{ matrix.distro }}
       run: |
-        pwd
         docker build .github/workflows/${{ matrix.distro }} -t local/${{ matrix.distro }}
-        docker run local/${{ matrix.distro }}
+        docker run -v "$PWD":/run local/${{ matrix.distro }}
