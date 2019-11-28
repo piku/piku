@@ -1323,7 +1323,7 @@ def cmd_stop(app):
 
 # --- Internal commands ---
 
-@piku.command("git-hook", hidden=True)
+@piku.command("git-hook")
 @argument('app')
 def cmd_git_hook(app):
     """INTERNAL: Post-receive git hook"""
@@ -1343,7 +1343,7 @@ def cmd_git_hook(app):
         do_deploy(app, newrev=newrev)
 
 
-@piku.command("git-receive-pack", hidden=True)
+@piku.command("git-receive-pack")
 @argument('app')
 def cmd_git_receive_pack(app):
     """INTERNAL: Handle git pushes for an app"""
@@ -1367,7 +1367,7 @@ cat | PIKU_ROOT="{PIKU_ROOT:s}" {PIKU_SCRIPT:s} git-hook {app:s}""".format(**env
     call('git-shell -c "{}" '.format(argv[1] + " '{}'".format(app)), cwd=GIT_ROOT, shell=True)
 
 
-@piku.command("git-upload-pack", hidden=True)
+@piku.command("git-upload-pack")
 @argument('app')
 def cmd_git_upload_pack(app):
     """INTERNAL: Handle git upload pack for an app"""
