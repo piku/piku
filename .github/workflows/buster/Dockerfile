@@ -28,6 +28,9 @@ RUN apt-get update \
     uwsgi-plugin-python3 \
 && locale-gen en_US.UTF-8
 
+ENV LC_ALL=en_US.UTF-8
+ENV LANG=en_US.UTF-8
+
 VOLUME ["/run"]
 
 CMD ["/usr/bin/python3", "/run/piku.py"]
