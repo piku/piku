@@ -1,4 +1,4 @@
-name: Linting
+name: Basic Test Suite and Linting
 
 on: [push, pull_request]
 
