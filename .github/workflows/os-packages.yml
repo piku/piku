@@ -16,4 +16,4 @@ jobs:
       run: |
         pwd
         docker build .github/workflows/${{ matrix.distro }} -t local/${{ matrix.distro }}
-        docker run -it local/${{ matrix.distro }}
+        docker run local/${{ matrix.distro }}
