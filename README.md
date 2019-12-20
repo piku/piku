@@ -77,7 +77,7 @@ To make life easier you can also install the [piku](./piku) helper CLI. Install 
 ./piku-bootstrap install-cli ~/bin
 ```
 
-This shell script makes working with `piku` remotes a bit simpler. If you have a git remote called `piku` in the current folder it will infer the remote server and app name and insert those into the remote piku commands. This allows you do execute commands like the following on your running remote app:
+This shell script makes working with `piku` remotes a bit simpler. If you have a git remote called `piku` in the current folder it will infer the remote server and app name and insert those into the remote piku commands. This allows you to execute commands like the following on your running remote app:
 
 ```shell
 $ piku logs
