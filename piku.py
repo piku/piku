@@ -260,7 +260,7 @@ def parse_procfile(filename):
     if len(workers) == 0:
         return {}
     # WSGI trumps regular web workers
-    if 'wsgi' in workers or 'jwsgi' in workers:
+    if 'wsgi' in workers or 'jwsgi' in workers or 'rwsgi' in workers:
         if 'web' in workers:
             echo("Warning: found both 'wsgi' and 'web' workers, disabling 'web'", fg='yellow')
             del workers['web']
@@ -356,6 +356,8 @@ def do_deploy(app, deltas={}, newrev=None):
                 settings.update(deploy_go(app, deltas))
             elif exists(join(app_path, 'project.clj')) and found_app("Clojure Lein") and check_requirements(['java', 'lein']):
                 settings.update(deploy_clojure(app, deltas))
+            elif exists(join(app_path, 'Gemfile')) and found_app("Ruby Application") and check_requirements(['ruby', 'gem', 'bundle']):
+                settings.update(deploy_ruby(app, deltas))
             elif 'release' in workers and 'web' in workers:
                 echo("-----> Generic app detected.", fg='green')
                 settings.update(deploy_identity(app, deltas))
@@ -457,6 +459,33 @@ def deploy_clojure(app, deltas={}):
     echo("-----> Building Clojure Application")
     call('lein clean', cwd=join(APP_ROOT, app), env=env, shell=True)
     call('lein uberjar', cwd=join(APP_ROOT, app), env=env, shell=True)
+
+    return spawn_app(app, deltas)
+
+def deploy_ruby(app, deltas={}):
+    """Deploy a Ruby Application"""
+
+    virtual = join(ENV_ROOT, app)
+    env_file = join(APP_ROOT, app, 'ENV')
+
+    first_time = True
+
+    env = {
+        'VIRTUAL_ENV': virtual,
+        "PATH": ':'.join([join(virtual, "bin"), join(app, ".bin"), environ['PATH']]),
+    }
+    if exists(env_file):
+        env.update(parse_settings(env_file, env))
+    
+    if first_time == True:
+        echo("-----> Building Ruby Application")
+        call('bundle install', cwd=join(APP_ROOT, app), env=env, shell=True)
+        makedirs(virtual)
+        first_time = False
+    else:
+        echo("------> Rebuilding Ruby Application")
+        call("bundle clean", cwd=join(APP_ROOT, app), env=env, shell=True)
+        call("bundle install", cwd=join(APP_ROOT, app), env=env, shell=True)
 
     return spawn_app(app, deltas)
 
@@ -859,6 +888,15 @@ def spawn_worker(app, kind, command, env, ordinal=1):
             ('threads', env.get('UWSGI_THREADS', '4')),
             ('plugin', 'jvm'),
             ('plugin', 'jwsgi')
+        ])
+    
+    if kind == 'rwsgi': #could not come up with a better kind for ruby, web would work but that means loading the rack plugin in web.
+        settings.extend([
+            ('module', command),
+            ('threads', env.get('UWSGI_THREADS', '4')),
+            ('plugin', 'rack'),
+            ('plugin', 'rbrequire'),
+            ('plugin', 'post-buffering')
         ])
 
     python_version = int(env.get('PYTHON_VERSION', '3'))
