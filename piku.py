@@ -462,6 +462,7 @@ def deploy_clojure(app, deltas={}):
 
     return spawn_app(app, deltas)
 
+
 def deploy_ruby(app, deltas={}):
     """Deploy a Ruby Application"""
 
@@ -476,8 +477,8 @@ def deploy_ruby(app, deltas={}):
     }
     if exists(env_file):
         env.update(parse_settings(env_file, env))
-    
-    if first_time == True:
+
+    if first_time:
         echo("-----> Building Ruby Application")
         call('bundle install', cwd=join(APP_ROOT, app), env=env, shell=True)
         makedirs(virtual)
@@ -889,8 +890,9 @@ def spawn_worker(app, kind, command, env, ordinal=1):
             ('plugin', 'jvm'),
             ('plugin', 'jwsgi')
         ])
-    
-    if kind == 'rwsgi': #could not come up with a better kind for ruby, web would work but that means loading the rack plugin in web.
+
+    # could not come up with a better kind for ruby, web would work but that means loading the rack plugin in web.
+    if kind == 'rwsgi':
         settings.extend([
             ('module', command),
             ('threads', env.get('UWSGI_THREADS', '4')),
