@@ -1,4 +1,4 @@
-Django==2.1.11
+Django>=2.2.9
 pytz==2019.1
 sqlparse==0.3.0
 psycopg2-binary==2.8.3
