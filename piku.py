@@ -212,7 +212,7 @@ def get_free_port(address=""):
     """Find a free TCP port (entirely at random)"""
 
     s = socket(AF_INET, SOCK_STREAM)
-    s.bind((address, 0))
+    s.bind((address, 0)) # lgtm [py/bind-socket-all-network-interfaces]
     port = s.getsockname()[1]
     s.close()
     return port
