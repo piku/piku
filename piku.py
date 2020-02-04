@@ -212,7 +212,7 @@ def get_free_port(address=""):
     """Find a free TCP port (entirely at random)"""
 
     s = socket(AF_INET, SOCK_STREAM)
-    s.bind((address, 0)) # lgtm [py/bind-socket-all-network-interfaces]
+    s.bind((address, 0))  # lgtm [py/bind-socket-all-network-interfaces]
     port = s.getsockname()[1]
     s.close()
     return port
@@ -630,7 +630,7 @@ def spawn_app(app, deltas={}):
 
     # Override with custom settings (if any)
     if exists(settings):
-        env.update(parse_settings(settings, env))
+        env.update(parse_settings(settings, env))  # lgtm [py/modification-of-default-value]
 
     if 'web' in workers or 'wsgi' in workers or 'jwsgi' in workers or 'static' in workers:
         # Pick a port if none defined
@@ -811,7 +811,7 @@ def spawn_app(app, deltas={}):
 
     # Remove unnecessary workers (leave logfiles)
     for k, v in to_destroy.items():
-        for w in v:
+        for w in v:  # lgtm [py/unused-loop-variable]
             enabled = join(UWSGI_ENABLED, '{app:s}_{k:s}.{w:d}.ini'.format(**locals()))
             if exists(enabled):
                 echo("-----> terminating '{app:s}:{k:s}.{w:d}'".format(**locals()), fg='yellow')
