@@ -654,7 +654,7 @@ def spawn_app(app, deltas={}):
                 nginx_ssl += " spdy"
             nginx_conf = join(NGINX_ROOT, "{}.conf".format(app))
 
-            env.update({
+            env.update({  # lgtm [py/modification-of-default-value]
                 'NGINX_SSL': nginx_ssl,
                 'NGINX_ROOT': NGINX_ROOT,
                 'ACME_WWW': ACME_WWW,
