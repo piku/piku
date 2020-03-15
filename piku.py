@@ -969,7 +969,7 @@ def multi_tail(app, filenames, catch_up=20):
     # Set up current state for each log file
     for f in filenames:
         prefixes[f] = splitext(basename(f))[0]
-        ffiles[f] = open(f, "rt", encoding="utf-8", errors="ignore")
+        files[f] = open(f, "rt", encoding="utf-8", errors="ignore")
         inodes[f] = stat(f).st_ino
         files[f].seek(0, 2)
 
