@@ -121,6 +121,11 @@ You can also use `piku-bootstrap` to run your own Ansible playbooks like this:
 ```shell
 piku-bootstrap root@yourserver.net ./myplaybook.yml
 ```
+
+## Virtual Hosts
+
+If you are on a LAN and are accessing `piku` from macOS/iOS/Linux clients, you can try using [`piku/avahi-aliases`](https://github.com/piku/avahi-aliases) to announce different hosts via Avahi/mDNS/Bonjour.
+
 ## Supported Platforms
 
 `piku` is intended to work in any POSIX-like environment where you have Python, [uWSGI][uwsgi] and SSH, i.e.: 
