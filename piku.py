@@ -103,7 +103,6 @@ $INTERNAL_NGINX_COMMON
 NGINX_COMMON_FRAGMENT = """
   listen              $NGINX_IPV6_ADDRESS:$NGINX_SSL;
   listen              $NGINX_IPV4_ADDRESS:$NGINX_SSL;
-  ssl                 on;
   ssl_certificate     $NGINX_ROOT/$APP.crt;
   ssl_certificate_key $NGINX_ROOT/$APP.key;
   server_name         $NGINX_SERVER_NAME;
