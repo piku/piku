@@ -1393,5 +1393,23 @@ def cmd_help(ctx):
     echo(ctx.parent.get_help())
 
 
+@piku.command("update")
+def cmd_update():
+    """Update the piku cli"""
+    echo("Updating piku...")
+
+    with NamedTemporaryFile(mode="w") as f:
+        tempfile = f.name
+        cmd = """curl -sL -w %{{http_code}} https://raw.githubusercontent.com/piku/piku/master/piku.py -o {}""".format(tempfile)
+        response = check_output(cmd.split(' '), stderr=STDOUT)
+        http_code = response.decode('utf8').strip()
+        if http_code == "200":
+            copyfile(tempfile, PIKU_SCRIPT)
+            echo("Update successfully.")
+        else:
+            echo("Error updating piku cli.")
+    echo("Done.")
+
+
 if __name__ == '__main__':
     piku()
