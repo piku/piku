@@ -37,6 +37,7 @@ if 'sbin' not in environ['PATH']:
 
 # === Globals - all tweakable settings are here ===
 
+PIKU_RAW_SOURCE_URL = "https://raw.githubusercontent.com/piku/piku/master/piku.py"
 PIKU_ROOT = environ.get('PIKU_ROOT', join(environ['HOME'], '.piku'))
 PIKU_BIN = join(environ['HOME'], 'bin')
 PIKU_SCRIPT = realpath(__file__)
@@ -1400,14 +1401,14 @@ def cmd_update():
 
     with NamedTemporaryFile(mode="w") as f:
         tempfile = f.name
-        cmd = """curl -sL -w %{{http_code}} https://raw.githubusercontent.com/piku/piku/master/piku.py -o {}""".format(tempfile)
+        cmd = """curl -sL -w %{{http_code}} {} -o {}""".format(PIKU_RAW_SOURCE_URL, tempfile)
         response = check_output(cmd.split(' '), stderr=STDOUT)
         http_code = response.decode('utf8').strip()
         if http_code == "200":
             copyfile(tempfile, PIKU_SCRIPT)
-            echo("Update successfully.")
+            echo("Update successful.")
         else:
-            echo("Error updating piku cli.")
+            echo("Error updating piku - please check if {} is accessible from this machine.".format(PIKU_RAW_SOURCE_URL))
     echo("Done.")
 
 
