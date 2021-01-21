@@ -558,9 +558,12 @@ def deploy_python(app, deltas={}):
     version = int(env.get("PYTHON_VERSION", "3"))
 
     first_time = False
-    if not exists(virtualenv_path):
+    if not exists(join(virtualenv_path, "bin", "activate")):
         echo("-----> Creating virtualenv for '{}'".format(app), fg='green')
-        makedirs(virtualenv_path)
+        try:
+            makedirs(virtualenv_path)
+        except FileExistsError:
+            echo("-----> Env dir already exists: '{}'".format(app), fg='yellow')
         call('virtualenv --python=python{version:d} {app:s}'.format(**locals()), cwd=ENV_ROOT, shell=True)
         first_time = True
 
