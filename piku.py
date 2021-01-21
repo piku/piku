@@ -1029,7 +1029,7 @@ def cmd_apps():
     """List apps, e.g.: piku apps"""
     apps = listdir(APP_ROOT)
     if not apps:
-        echo("There is no application yet.")
+        echo("There are no applications deployed.")
         return
 
     for a in apps:
