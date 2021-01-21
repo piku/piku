@@ -1025,10 +1025,14 @@ def cleanup(ctx):
 # --- User commands ---
 
 @piku.command("apps")
-def list_apps():
+def cmd_apps():
     """List apps, e.g.: piku apps"""
+    apps = listdir(APP_ROOT)
+    if not apps:
+        echo("There is no application yet.")
+        return
 
-    for a in listdir(APP_ROOT):
+    for a in apps:
         running = len(glob(join(UWSGI_ENABLED, '{}*.ini'.format(a)))) != 0
         echo(('*' if running else ' ') + a, fg='green')
 
