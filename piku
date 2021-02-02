@@ -8,6 +8,11 @@
 
 remote=`git config --get remote.piku.url`
 
+if [ "$remote" = "" ]
+then
+  remote=$PIKU_SERVER
+fi
+
 out() { printf "%s\n" "$*" >&2; }
 
 out "Piku remote operator."
