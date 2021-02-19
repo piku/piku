@@ -11,7 +11,7 @@
   tasks:
     - name: Add piku user
       user:
-        name: piku
+        name: "{{ piku_user | default('piku', true)}}"
         password: !
         comment: PaaS access
         group: www-data
@@ -72,7 +72,7 @@
 
 - hosts: all
   become: yes
-  become_user: piku
+  become_user: "{{ piku_user | default('piku', true)}}"
   tasks:
     ### TODO: use pyenv like this instead
 
@@ -111,6 +111,11 @@
       shell: python3 ~/piku.py setup:ssh /tmp/id_rsa.pub
       args:
         creates: ~/.ssh/authorized_keys
+
+    - name: Clean temp key
+      file:
+        state: absent
+        path: /tmp/id_rsa.pub
 
     - name: Check if acme.sh is already installed
       stat:
