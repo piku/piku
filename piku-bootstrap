@@ -135,7 +135,7 @@ main() {
             echo "Using built-in playbook: ${playbook}"
             playbook="${builtin}"
           fi
-          PYTHONWARNINGS="ignore" ansible-playbook -i "${host}", "${playbook}" "$@"
+          PYTHONWARNINGS="ignore" ansible-playbook -i "${host}", "${playbook}" "$@" --extra-vars "piku_user=$PIKU_USER"
         else
           echo "${playbook} is not a valid playbook name."
         fi
