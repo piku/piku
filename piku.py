@@ -886,6 +886,7 @@ def spawn_worker(app, kind, command, env, ordinal=1):
             ('module', command),
             ('threads', env.get('UWSGI_THREADS', '4')),
         ])
+
         if python_version == 2:
             settings.extend([
                 ('plugin', 'python'),
@@ -896,17 +897,30 @@ def spawn_worker(app, kind, command, env, ordinal=1):
                     ('gevent', env['UWSGI_GEVENT']),
                 ])
             elif 'UWSGI_ASYNCIO' in env:
-                settings.extend([
-                    ('plugin', 'asyncio_python'),
-                ])
+                try:
+                    tasks = int(env['UWSGI_ASYNCIO'])
+                    settings.extend([
+                        ('plugin', 'asyncio_python'),
+                        ('async', tasks),
+                    ])
+                    echo("-----> uwsgi will support {} async tasks".format(tasks), fg='yellow')
+                except ValueError:
+                    echo("Error: malformed setting 'UWSGI_ASYNCIO', ignoring it.".format(), fg='red')
+
         elif python_version == 3:
             settings.extend([
                 ('plugin', 'python3'),
             ])
             if 'UWSGI_ASYNCIO' in env:
-                settings.extend([
-                    ('plugin', 'asyncio_python3'),
-                ])
+                try:
+                    tasks = int(env['UWSGI_ASYNCIO'])
+                    settings.extend([
+                        ('plugin', 'asyncio_python3'),
+                        ('async', tasks),
+                    ])
+                    echo("-----> uwsgi will support {} async tasks".format(tasks), fg='yellow')
+                except ValueError:
+                    echo("Error: malformed setting 'UWSGI_ASYNCIO', ignoring it.".format(), fg='red')
 
         # If running under nginx, don't expose a port at all
         if 'NGINX_SERVER_NAME' in env:
