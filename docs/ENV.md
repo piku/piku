@@ -32,6 +32,7 @@ You can configure deployment settings by placing special variables in an `ENV` f
 * `UWSGI_GEVENT`: enable the Python 2 `gevent` plugin
 * `UWSGI_ASYNCIO`: enable the Python 2/3 `asyncio` plugin
 * `UWSGI_INCLUDE_FILE`: a uwsgi config file in the app's dir to include - useful for including custom uwsgi directives.
+* `UWSGI_IDLE` (integer): set the `cheap`, `idle` and `die-on-idle` options to have workers spawned on demand and killed after _n_ seconds of inactivity.
 
 ## Nginx Settings
 
