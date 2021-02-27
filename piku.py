@@ -857,7 +857,7 @@ def spawn_worker(app, kind, command, env, ordinal=1):
     # only add virtualenv to uwsgi if it's a real virtualenv
     if exists(join(env_path, "bin", "activate_this.py")):
         settings.append(('virtualenv', env_path))
-        
+
     if 'UWSGI_IDLE' in env:
         try:
             idle_timeout = int(env['UWSGI_IDLE'])
@@ -870,7 +870,7 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         except Exception:
             echo("Error: malformed setting 'UWSGI_IDLE', ignoring it.".format(), fg='red')
             pass
-        
+
     if kind == 'jwsgi':
         settings.extend([
             ('module', command),
