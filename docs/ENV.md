@@ -30,7 +30,7 @@ You can configure deployment settings by placing special variables in an `ENV` f
 * `UWSGI_LOG_MAXSIZE` (integer): set the `log-maxsize`.
 * `UWSGI_LOG_X_FORWARDED_FOR` (boolean): set the `log-x-forwarded-for` option.
 * `UWSGI_GEVENT`: enable the Python 2 `gevent` plugin
-* `UWSGI_ASYNCIO`: enable the Python 2/3 `asyncio` plugin
+* `UWSGI_ASYNCIO` (integer): enable the Python 2/3 `asyncio` plugin and set the number of tasks
 * `UWSGI_INCLUDE_FILE`: a uwsgi config file in the app's dir to include - useful for including custom uwsgi directives.
 * `UWSGI_IDLE` (integer): set the `cheap`, `idle` and `die-on-idle` options to have workers spawned on demand and killed after _n_ seconds of inactivity.
 
