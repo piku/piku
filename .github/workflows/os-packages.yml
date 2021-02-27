@@ -6,9 +6,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
-      max-parallel: 2
+      max-parallel: 4
       matrix:
-        distro: [ buster, bionic ]
+        distro: [ buster, bionic, focal ]
 
     steps:
     - uses: actions/checkout@v1
