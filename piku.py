@@ -867,7 +867,7 @@ def spawn_worker(app, kind, command, env, ordinal=1):
                 ('die-on-idle', 'True')
             ])
             echo("-----> uwsgi will start workers on demand and kill them after {}s of inactivity".format(idle_timeout), fg='yellow')
-        except:
+        except Exception:
             echo("Error: malformed setting 'UWSGI_IDLE', ignoring it.".format(), fg='red')
             pass
         
