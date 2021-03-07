@@ -264,7 +264,7 @@ def parse_procfile(filename):
                     matches = match(CRON_REGEXP, command)
                     if matches:
                         for i in range(len(limits)):
-                            if int(matches[i + 1].replace("*/","").replace("*","1")) > limits[i]:
+                            if int(matches[i + 1].replace("*/", "").replace("*", "1")) > limits[i]:
                                 raise ValueError
                 workers[kind] = command
             except Exception:
@@ -883,7 +883,7 @@ def spawn_worker(app, kind, command, env, ordinal=1):
 
     if kind == 'cron':
         settings.extend([
-            ['cron', command.replace("*/", "-").replace("*","-1")],
+            ['cron', command.replace("*/", "-").replace("*", "-1")],
         ])
 
     if kind == 'jwsgi':
