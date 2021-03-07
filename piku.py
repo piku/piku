@@ -17,7 +17,7 @@ from os import chmod, getgid, getuid, symlink, unlink, remove, stat, listdir, en
 from os.path import abspath, basename, dirname, exists, getmtime, join, realpath, splitext
 from pwd import getpwuid
 from grp import getgrgid
-from re import sub
+from re import sub, match
 from shutil import copyfile, rmtree, which
 from socket import socket, AF_INET, SOCK_STREAM
 from stat import S_IRUSR, S_IWUSR, S_IXUSR
@@ -190,6 +190,8 @@ INTERNAL_NGINX_UWSGI_SETTINGS = """
     uwsgi_param SERVER_NAME $server_name;
 """
 
+CRON_REGEXP = "^((?:(?:\*\/)?\d+)|\*) ((?:(?:\*\/)?\d+)|\*) ((?:(?:\*\/)?\d+)|\*) ((?:(?:\*\/)?\d+)|\*) ((?:(?:\*\/)?\d+)|\*) (.*)$"
+
 
 # === Utility functions ===
 
@@ -256,9 +258,17 @@ def parse_procfile(filename):
                 continue
             try:
                 kind, command = map(lambda x: x.strip(), line.split(":", 1))
+                # Check for cron patterns
+                if kind == "cron":
+                    limits = [59, 24, 31, 12, 7]
+                    matches = match(CRON_REGEXP, command)
+                    if matches:
+                        for i in range(len(limits)):
+                            if int(matches[i+1].replace("*/","").replace("*","1")) > limits[i]:
+                                raise ValueError
                 workers[kind] = command
             except Exception:
-                echo("Warning: unrecognized Procfile entry '{}' at line {}".format(line, line_number), fg='yellow')
+                echo("Warning: misformatted Procfile entry '{}' at line {}".format(line, line_number), fg='yellow')
     if len(workers) == 0:
         return {}
     # WSGI trumps regular web workers
@@ -871,6 +881,11 @@ def spawn_worker(app, kind, command, env, ordinal=1):
             echo("Error: malformed setting 'UWSGI_IDLE', ignoring it.".format(), fg='red')
             pass
 
+    if kind == 'cron':
+        settings.extend([
+            ['cron', command.replace("*/", "-").replace("*","-1")],
+        ])
+
     if kind == 'jwsgi':
         settings.extend([
             ('module', command),
@@ -941,6 +956,8 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         settings.append(('attach-daemon', command))
     elif kind == 'static':
         echo("-----> nginx serving static files only".format(**env), fg='yellow')
+    elif kind == 'cron':
+        echo("-----> uwsgi scheduled cron for {command}".format(**locals()), fg='yellow')
     else:
         settings.append(('attach-daemon', command))
 
