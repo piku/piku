@@ -358,7 +358,7 @@ def do_deploy(app, deltas={}, newrev=None):
             if exists(join(app_path, 'requirements.txt')) and found_app("Python"):
                 settings.update(deploy_python(app, deltas))
             elif exists(join(app_path, 'package.json')) and found_app("Node") and (
-                    check_requirements(['nodejs', 'npm']) or check_requirements(['nodeenv'])):
+                    check_requirements(['nodejs', 'npm']) or check_requirements(['node', 'npm']) or check_requirements(['nodeenv'])):
                 settings.update(deploy_node(app, deltas))
             elif exists(join(app_path, 'pom.xml')) and found_app("Java Maven") and check_requirements(['java', 'mvn']):
                 settings.update(deploy_java(app, deltas))
