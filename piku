@@ -44,6 +44,9 @@ else
     apps|setup|setup:ssh)
       ssh ${sshflags} "$server" "$@"
       ;;
+    shell)
+      ssh -t "$server" run "$app" bash
+      ;;
     *)
       shift # remove cmd arg
       ssh ${sshflags} "$server" "$cmd" "$app" "$@"
