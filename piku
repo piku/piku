@@ -7,11 +7,7 @@
 # git config --get remote.paas.url
 
 remote=`git config --get remote.piku.url`
-
-if [ "$remote" = "" ]
-then
-  remote=$PIKU_SERVER
-fi
+remote=${remote:-"${PIKU_SERVER}:${PIKU_APP}"}
 
 out() { printf "%s\n" "$*" >&2; }
 
@@ -24,8 +20,8 @@ then
   out "Use PIKU_SERVER=piku@MYSERVER.NET or configure a git remote called 'piku'."
   out
 else
-  server=${PIKU_SERVER:-`echo $remote | cut -f1 -d":" 2>/dev/null`}
-  app=${PIKU_APP:-`echo $remote | cut -f2 -d":" 2>/dev/null`}
+  server=`echo "$remote" | cut -f1 -d":" 2>/dev/null`
+  app=`echo "$remote" | cut -f2 -d":" 2>/dev/null`
   # gather SSH flags
   while [ "${1#\-}"x != "${1}x" ];
   do
