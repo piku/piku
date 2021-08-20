@@ -1,3 +1,5 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 ![piku logo](./img/logo.png)
 
 The tiniest Heroku/CloudFoundry-like PaaS you've ever seen.
