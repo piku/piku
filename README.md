@@ -51,6 +51,11 @@ I kept finding myself wanting an Heroku/CloudFoundry-like way to deploy stuff on
 
 To use `piku` you need a VPS, Raspberry Pi, or other server bootstrapped with `piku`'s requirements. You can use a single server to run multiple `piku` apps.
 
+There are two main ways of deploying `piku` onto a new server:
+
+* Use `cloud-init` when creating a new virtual machine (check [this repository](https://github.com/piku/deploy-on-azure) for an example suitable for most public cloud providers)
+* Use `piku-bootstrap` to reconfigure a new or existing virtual machine
+
 **Warning**: You should use a fresh server or VPS instance without anything important running on it already, as `piku-bootstrap` will make changes to configuration files, running services, etc.
 
 Once you've got a fresh server, download the [piku-bootstrap](./piku-bootstrap) shell script onto your local machine and run it:
