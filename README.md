@@ -8,7 +8,7 @@ The tiniest Heroku/CloudFoundry-like PaaS you've ever seen.
 
 [![asciicast](https://asciinema.org/a/Ar31IoTkzsZmWWvlJll6p7haS.svg)](https://asciinema.org/a/Ar31IoTkzsZmWWvlJll6p7haS)
 
-### Documentation: [Using](#using-piku) | [Install](#install) | [Procfile](docs/DESIGN.md#procfile-format) | [ENV](./docs/ENV.md) | [Examples](./examples/README.md) | [Roadmap](https://github.com/piku/piku/projects/2) | [Contributing](./docs/CONTRIBUTING.md)
+### Documentation: [Using](#using-piku) | [Install](#install) | [Procfile](docs/DESIGN.md#procfile-format) | [ENV](./docs/ENV.md) | [Examples](./examples/README.md) | [Roadmap](https://github.com/piku/piku/projects/2) | [Contributing](./docs/CONTRIBUTING.md) | [LinuxConf Talk](https://www.youtube.com/watch?v=ec-GoDukHWk) | [Fast Web App Tutorial](https://github.com/piku/webapp-tutorial)
 
 ## Goals and Motivation
 
