@@ -990,6 +990,7 @@ def spawn_worker(app, kind, command, env, ordinal=1):
             settings.extend([
                 ('http', '{BIND_ADDRESS:s}:{PORT:s}'.format(**env)),
                 ('http-use-socket', '{BIND_ADDRESS:s}:{PORT:s}'.format(**env)),
+                ('http-socket', '{BIND_ADDRESS:s}:{PORT:s}'.format(**env)),
             ])
     elif kind == 'web':
         echo("-----> nginx will talk to the 'web' process via {BIND_ADDRESS:s}:{PORT:s}".format(**env), fg='yellow')
