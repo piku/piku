@@ -53,7 +53,7 @@ To use `piku` you need a VPS, Raspberry Pi, or other server bootstrapped with `p
 
 There are two main ways of deploying `piku` onto a new server:
 
-* Use `cloud-init` when creating a new virtual machine (check [this repository](https://github.com/piku/deploy-on-azure) for an example suitable for most public cloud providers)
+* Use `cloud-init` when creating a new virtual machine or barebones automated deploy (check [this repository](https://github.com/piku/cloud-init) for examples)
 * Use `piku-bootstrap` to reconfigure a new or existing virtual machine
 
 **Warning**: You should use a fresh server or VPS instance without anything important running on it already, as `piku-bootstrap` will make changes to configuration files, running services, etc.
