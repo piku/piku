@@ -717,7 +717,9 @@ def spawn_app(app, deltas={}):
                 env['NGINX_SOCKET'] = "{BIND_ADDRESS:s}:{PORT:s}".format(**env)
                 echo("-----> nginx will look for app '{}' on {}".format(app, env['NGINX_SOCKET']))
 
-            domain = env['NGINX_SERVER_NAME'].split()[0]
+            domains = env['NGINX_SERVER_NAME'].split()
+            domain = domains[0]
+            issuefile = join(ACME_ROOT, domain, "issued-" + "-".join(domains))
             key, crt = [join(NGINX_ROOT, "{}.{}".format(app, x)) for x in ['key', 'crt']]
             if exists(join(ACME_ROOT, "acme.sh")):
                 acme = ACME_ROOT
@@ -729,13 +731,18 @@ def spawn_app(app, deltas={}):
                     buffer = expandvars(NGINX_ACME_FIRSTRUN_TEMPLATE, env)
                     with open(nginx_conf, "w") as h:
                         h.write(buffer)
-                if not exists(key) or not exists(join(ACME_ROOT, domain, domain + ".key")):
+                if not exists(key) or not exists(issuefile):
                     echo("-----> getting letsencrypt certificate")
-                    call('{acme:s}/acme.sh --issue -d {domain:s} -w {www:s}'.format(**locals()), shell=True)
-                    call('{acme:s}/acme.sh --install-cert -d {domain:s} --key-file {key:s} --fullchain-file {crt:s}'.format(
+                    certlist = " ".join(["-d {}".format(d) for d in domains])
+                    call('{acme:s}/acme.sh --issue {certlist:s} -w {www:s}'.format(**locals()), shell=True)
+                    call('{acme:s}/acme.sh --install-cert {certlist:s} --key-file {key:s} --fullchain-file {crt:s}'.format(
                         **locals()), shell=True)
                     if exists(join(ACME_ROOT, domain)) and not exists(join(ACME_WWW, app)):
                         symlink(join(ACME_ROOT, domain), join(ACME_WWW, app))
+                    try:
+                        symlink("/dev/null", issuefile)
+                    except Exception:
+                        pass
                 else:
                     echo("-----> letsencrypt certificate already installed")
 
@@ -798,10 +805,10 @@ def spawn_app(app, deltas={}):
                 env['INTERNAL_NGINX_PORTMAP'] = expandvars(NGINX_PORTMAP_FRAGMENT, env)
             env['INTERNAL_NGINX_COMMON'] = expandvars(NGINX_COMMON_FRAGMENT, env)
 
-            echo("-----> nginx will map app '{}' to hostname '{}'".format(app, env['NGINX_SERVER_NAME']))
+            echo("-----> nginx will map app '{}' to hostname(s) '{}'".format(app, env['NGINX_SERVER_NAME']))
             if ('NGINX_HTTPS_ONLY' in env) or ('HTTPS_ONLY' in env):
                 buffer = expandvars(NGINX_HTTPS_ONLY_TEMPLATE, env)
-                echo("-----> nginx will redirect all requests to hostname '{}' to HTTPS".format(env['NGINX_SERVER_NAME']))
+                echo("-----> nginx will redirect all requests to hostname(s) '{}' to HTTPS".format(env['NGINX_SERVER_NAME']))
             else:
                 buffer = expandvars(NGINX_TEMPLATE, env)
             with open(nginx_conf, "w") as h:
