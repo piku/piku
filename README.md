@@ -54,34 +54,14 @@ To use `piku` you need a VPS, Raspberry Pi, or other server bootstrapped with `p
 There are two main ways of deploying `piku` onto a new server:
 
 * Use `cloud-init` when creating a new virtual machine or barebones automated deploy (check [this repository](https://github.com/piku/cloud-init) for examples)
-* Use `piku-bootstrap` to reconfigure a new or existing virtual machine
-
-**Warning**: You should use a fresh server or VPS instance without anything important running on it already, as `piku-bootstrap` will make changes to configuration files, running services, etc.
-
-Once you've got a fresh server, download the [piku-bootstrap](./piku-bootstrap) shell script onto your local machine and run it:
-
-```shell
-curl https://piku.github.io/get | sh
-```
-
-The first time it is run `piku-bootstrap` will install itself into `~/.piku-bootstrap` on your local machine and set up a virtualenv there with the dependencies it requires. It will only need to do this once.
-
-The script will display a usage message and you can then bootstrap your server:
-
-```shell
-./piku-bootstrap root@yourserver.net
-```
-
-If you put the `piku-bootstrap` script on your `PATH` somewhere, you can use it again to provision other servers in the future.
-
-See below for instructions on [installing other custom dependencies](#installing-other-dependencies) that your apps might need like a database etc.
+* Use `[piku-bootstrap](https://github.com/piku/piku-bootstrap)` to reconfigure a new or existing Ubuntu virtual machine
 
 ### `piku` client
 
 To make life easier you can also install the [piku](./piku) helper CLI. Install it into your path e.g. `~/bin` to run it from anywhere.
 
 ```shell
-./piku-bootstrap install-cli ~/bin
+curl https://raw.githubusercontent.com/piku/piku/master/piku > ~/bin/piku && chmod 755 ~/bin/piku
 ```
 
 This shell script makes working with `piku` remotes a bit simpler. If you have a git remote called `piku` in the current folder it will infer the remote server and app name and insert those into the remote piku commands. This allows you to execute commands like the following on your running remote app:
@@ -110,24 +90,6 @@ data  ENV  index.html  package.json  package-lock.json  Procfile  server.wisp
 ```
 
 Tip: If you put this `piku` script on your `PATH` you can use the `piku` command across multiple apps on your local.
-
-### Installing other dependencies
-
-`piku-bootstrap` uses Ansible internally and it comes with several extra built-in playbooks which you can use to bootstrap common components onto your `piku` server.
-
-Use `piku-bootstrap list-playbooks` to show a list of built-in playbooks, and then to install one add it as an argument to the bootstrap command.
-
-For example, to deploy `nodeenv` onto your server:
-
-```shell
-piku-bootstrap root@yourserver.net nodeenv.yml
-```
-
-You can also use `piku-bootstrap` to run your own Ansible playbooks like this:
-
-```shell
-piku-bootstrap root@yourserver.net ./myplaybook.yml
-```
 
 ## Virtual Hosts
 
