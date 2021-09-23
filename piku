@@ -35,7 +35,9 @@ else
   out
   case "$cmd" in
     "")
-      ssh ${sshflags} "$server" "$@" | grep -v "INTERNAL"
+      ssh -o LogLevel=QUIET ${sshflags} "$server" "$@" | grep -v "INTERNAL"
+      echo "  shell             Local command to start an SSH session in the remote."
+      echo "  init              Local command to download an example ENV and Procfile."
       ;;
     apps|setup|setup:ssh)
       ssh ${sshflags} "$server" "$@"
