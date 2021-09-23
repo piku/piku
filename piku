@@ -6,10 +6,24 @@
 # git config --get remote.piku.url
 # git config --get remote.paas.url
 
-remote=`git config --get remote.piku.url`
-remote=${remote:-"${PIKU_SERVER}:${PIKU_APP}"}
+gitremote=`git config --get remote.piku.url`
+remote=${gitremote:-"${PIKU_SERVER}:${PIKU_APP}"}
+
+githome="https://raw.githubusercontent.com/piku/piku/master/"
 
 out() { printf "%s\n" "$*" >&2; }
+
+if [ "$1" = "init" ]
+then
+  [ -f "ENV" ] && echo "ENV file already exists." || ( curl -s "${githome}examples/README.md" > ENV && echo "Wrote ./ENV file." )
+  [ -f "Procfile" ] && echo "Procfile already exists." || ( curl -s "${githome}examples/Procfile" > Procfile && echo "Wrote ./Procfile." )
+  if [ "$gitremote" = "" ]
+  then
+    echo "Now set up your piku remote for this app:"
+    echo "git remote add piku piku@HOSTNAME:APPNAME"
+  fi
+  exit
+fi
 
 out "Piku remote operator."
 

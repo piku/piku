@@ -75,11 +75,21 @@ $ piku destroy
 $ piku # <- will show help for the remote app
 ```
 
+Run `piku` on it's own to see the available remote and local commands.
+
+You can use the `init` command to download an example Procfile and ENV file into the current folder:
+
+```shell
+$ piku init
+Wrote ./ENV file.
+Wrote ./Procfile.
+```
+
 You can pass flags through to the underlying SSH command, for example `-t` to run interactive commands remotely, and `-A` to proxy authentication credentials in order to do remote git pulls.
 
 Here is an example of using the `-t` flag to obtain a `bash` shell in the app directory of one of your Piku apps:
 
-```
+```shell
 $ piku -t run bash
 Piku remote operator.
 Server: piku@cloud.mccormickit.com
