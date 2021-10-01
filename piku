@@ -15,7 +15,7 @@ out() { printf "%s\n" "$*" >&2; }
 
 if [ "$1" = "init" ]
 then
-  [ -f "ENV" ] && echo "ENV file already exists." || ( curl -s "${githome}examples/README.md" > ENV && echo "Wrote ./ENV file." )
+  [ -f "ENV" ] && echo "ENV file already exists." || ( curl -s "${githome}examples/ENV" > ENV && echo "Wrote ./ENV file." )
   [ -f "Procfile" ] && echo "Procfile already exists." || ( curl -s "${githome}examples/Procfile" > Procfile && echo "Wrote ./Procfile." )
   if [ "$gitremote" = "" ]
   then
