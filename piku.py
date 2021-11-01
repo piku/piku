@@ -363,7 +363,7 @@ def do_deploy(app, deltas={}, newrev=None):
             elif exists(join(app_path, 'pom.xml')) and found_app("Java Maven") and check_requirements(['java', 'mvn']):
                 settings.update(deploy_java(app, deltas))
             elif exists(join(app_path, 'build.gradle')) and found_app("Java Gradle") and check_requirements(['java', 'gradle']):
-                settings.update(deploy_java(app, deltas))
+                settings.update(deploy_gradle(app, deltas))
             elif (exists(join(app_path, 'Godeps')) or len(glob(join(app_path, '*.go')))) and found_app("Go") and check_requirements(['go']):
                 settings.update(deploy_go(app, deltas))
             elif exists(join(app_path, 'project.clj')) and found_app("Clojure Lein") and check_requirements(['java', 'lein']):
