@@ -361,9 +361,9 @@ def do_deploy(app, deltas={}, newrev=None):
                     check_requirements(['nodejs', 'npm']) or check_requirements(['node', 'npm']) or check_requirements(['nodeenv'])):
                 settings.update(deploy_node(app, deltas))
             elif exists(join(app_path, 'pom.xml')) and found_app("Java Maven") and check_requirements(['java', 'mvn']):
-                settings.update(deploy_java(app, deltas))
+                settings.update(deploy_java_maven(app, deltas))
             elif exists(join(app_path, 'build.gradle')) and found_app("Java Gradle") and check_requirements(['java', 'gradle']):
-                settings.update(deploy_java(app, deltas))
+                settings.update(deploy_java_gradle(app, deltas))
             elif (exists(join(app_path, 'Godeps')) or len(glob(join(app_path, '*.go')))) and found_app("Go") and check_requirements(['go']):
                 settings.update(deploy_go(app, deltas))
             elif exists(join(app_path, 'project.clj')) and found_app("Clojure Lein") and check_requirements(['java', 'lein']):
@@ -392,7 +392,7 @@ def do_deploy(app, deltas={}, newrev=None):
         echo("Error: app '{}' not found.".format(app), fg='red')
 
 
-def deploy_gradle(app, deltas={}):
+def deploy_java_gradle(app, deltas={}):
     """Deploy a Java application using Gradle"""
     java_path = join(ENV_ROOT, app)
     build_path = join(APP_ROOT, app, 'build')
@@ -421,7 +421,7 @@ def deploy_gradle(app, deltas={}):
     return spawn_app(app, deltas)
 
 
-def deploy_java(app, deltas={}):
+def deploy_java_maven(app, deltas={}):
     """Deploy a Java application using Maven"""
     # TODO: Use jenv to isolate Java Application environments
 
