@@ -4,7 +4,7 @@ You can configure deployment settings by placing special variables in an `ENV` f
 
 ## Runtime Settings
 
-* `PIKU_AUTO_RESTART` (boolean, defaults to `true`): Piku will restart all workers every time the app is deployed.
+* `PIKU_AUTO_RESTART` (boolean, defaults to `true`): Piku will restart all workers every time the app is deployed. You can set it to `0`/`false` if you prefer to deploy first and then restart your workers separately.
 
 ### Python
 
