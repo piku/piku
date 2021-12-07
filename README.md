@@ -10,6 +10,12 @@ The tiniest Heroku/CloudFoundry-like PaaS you've ever seen.
 
 ### Documentation: [Using](#using-piku) | [Install](#install) | [Procfile](docs/DESIGN.md#procfile-format) | [ENV](./docs/ENV.md) | [Examples](./examples/README.md) | [Roadmap](https://github.com/piku/piku/projects/2) | [Contributing](./docs/CONTRIBUTING.md) | [LinuxConf Talk](https://www.youtube.com/watch?v=ec-GoDukHWk) | [Fast Web App Tutorial](https://github.com/piku/webapp-tutorial)
 
+## Requirements / Deprecation Notice
+
+`piku` currently requires Python 3.5 or above, but will move to require 3.8+ sometime in 2022 since that is the baseline Python 3 version in Ubuntu LTS 20.04 and Debian 11 has already moved on to 3.9. 
+
+The current plan is to throw up a warning for older runtimes and do regression testing for 3.7, 3.8, 3.9 and 3.10 (replacing the current bracket of tests from 3.5 to 3.8)
+
 ## Goals and Motivation
 
 I kept finding myself wanting an Heroku/CloudFoundry-like way to deploy stuff on a few remote ARM boards and [my Raspberry Pi cluster][raspi-cluster], but since [dokku][dokku] didn't work on ARM at the time and even `docker` can be overkill sometimes, I decided to roll my own.
