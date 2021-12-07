@@ -10,7 +10,7 @@ jobs:
       matrix:
         # This is currently overkill since we are targeting 3.5
         # but affords us visibility onto syntax changes in newer Pythons
-        python-version: [3.5, 3.6, 3.7, 3.8, 3.9, 3.10]
+        python-version: [3.5, 3.6, 3.7, 3.8, 3.9, 3.10.0]
 
     steps:
     - uses: actions/checkout@v1
