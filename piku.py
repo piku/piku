@@ -72,7 +72,7 @@ server {
     root ${ACME_WWW};
   }
 
-$INTERNAL_NGINX_COMMON
+$PIKU_INTERNAL_NGINX_COMMON
 }
 """
 
@@ -96,7 +96,7 @@ server {
 }
 
 server {
-$INTERNAL_NGINX_COMMON
+$PIKU_INTERNAL_NGINX_COMMON
 }
 """
 # pylint: enable=anomalous-backslash-in-string
@@ -124,18 +124,18 @@ NGINX_COMMON_FRAGMENT = """
   # set a custom header for requests
   add_header X-Deployed-By Piku;
 
-  $INTERNAL_NGINX_CUSTOM_CLAUSES
+  $PIKU_INTERNAL_NGINX_CUSTOM_CLAUSES
 
-  $INTERNAL_NGINX_STATIC_MAPPINGS
+  $PIKU_INTERNAL_NGINX_STATIC_MAPPINGS
 
-  $INTERNAL_NGINX_BLOCK_GIT
+  $PIKU_INTERNAL_NGINX_BLOCK_GIT
 
-  $INTERNAL_NGINX_PORTMAP
+  $PIKU_INTERNAL_NGINX_PORTMAP
 """
 
 NGINX_PORTMAP_FRAGMENT = """
   location    / {
-    $INTERNAL_NGINX_UWSGI_SETTINGS
+    $PIKU_INTERNAL_NGINX_UWSGI_SETTINGS
     proxy_http_version 1.1;
     proxy_set_header Upgrade $http_upgrade;
     proxy_set_header Connection "upgrade";
@@ -161,7 +161,7 @@ server {
 }
 """
 
-INTERNAL_NGINX_STATIC_MAPPING = """
+PIKU_INTERNAL_NGINX_STATIC_MAPPING = """
   location $static_url {
       sendfile on;
       sendfile_max_chunk 1m;
@@ -173,7 +173,7 @@ INTERNAL_NGINX_STATIC_MAPPING = """
   }
 """
 
-INTERNAL_NGINX_UWSGI_SETTINGS = """
+PIKU_INTERNAL_NGINX_UWSGI_SETTINGS = """
     uwsgi_pass $APP;
     uwsgi_param QUERY_STRING $query_string;
     uwsgi_param REQUEST_METHOD $request_method;
@@ -706,10 +706,10 @@ def spawn_app(app, deltas={}):
             })
 
             # default to reverse proxying to the TCP port we picked
-            env['INTERNAL_NGINX_UWSGI_SETTINGS'] = 'proxy_pass http://{BIND_ADDRESS:s}:{PORT:s};'.format(**env)
+            env['PIKU_INTERNAL_NGINX_UWSGI_SETTINGS'] = 'proxy_pass http://{BIND_ADDRESS:s}:{PORT:s};'.format(**env)
             if 'wsgi' in workers or 'jwsgi' in workers:
                 sock = join(NGINX_ROOT, "{}.sock".format(app))
-                env['INTERNAL_NGINX_UWSGI_SETTINGS'] = expandvars(INTERNAL_NGINX_UWSGI_SETTINGS, env)
+                env['PIKU_INTERNAL_NGINX_UWSGI_SETTINGS'] = expandvars(PIKU_INTERNAL_NGINX_UWSGI_SETTINGS, env)
                 env['NGINX_SOCKET'] = env['BIND_ADDRESS'] = "unix://" + sock
                 if 'PORT' in env:
                     del env['PORT']
@@ -775,9 +775,9 @@ def spawn_app(app, deltas={}):
 
             env['NGINX_ACL'] = " ".join(acl)
 
-            env['INTERNAL_NGINX_BLOCK_GIT'] = "" if env.get('NGINX_ALLOW_GIT_FOLDERS') else "location ~ /\.git { deny all; }"
+            env['PIKU_INTERNAL_NGINX_BLOCK_GIT'] = "" if env.get('NGINX_ALLOW_GIT_FOLDERS') else "location ~ /\.git { deny all; }"
 
-            env['INTERNAL_NGINX_STATIC_MAPPINGS'] = ''
+            env['PIKU_INTERNAL_NGINX_STATIC_MAPPINGS'] = ''
 
             # Get a mapping of /url:path1,/url2:path2
             static_paths = env.get('NGINX_STATIC_PATHS', '')
@@ -792,18 +792,18 @@ def spawn_app(app, deltas={}):
                         static_url, static_path = item.split(':')
                         if static_path[0] != '/':
                             static_path = join(app_path, static_path)
-                        env['INTERNAL_NGINX_STATIC_MAPPINGS'] = env['INTERNAL_NGINX_STATIC_MAPPINGS'] + expandvars(
-                            INTERNAL_NGINX_STATIC_MAPPING, locals())
+                        env['PIKU_INTERNAL_NGINX_STATIC_MAPPINGS'] = env['PIKU_INTERNAL_NGINX_STATIC_MAPPINGS'] + expandvars(
+                            PIKU_INTERNAL_NGINX_STATIC_MAPPING, locals())
                 except Exception as e:
                     echo("Error {} in static path spec: should be /url1:path1[,/url2:path2], ignoring.".format(e))
-                    env['INTERNAL_NGINX_STATIC_MAPPINGS'] = ''
+                    env['PIKU_INTERNAL_NGINX_STATIC_MAPPINGS'] = ''
 
-            env['INTERNAL_NGINX_CUSTOM_CLAUSES'] = expandvars(open(join(app_path, env["NGINX_INCLUDE_FILE"])).read(),
+            env['PIKU_INTERNAL_NGINX_CUSTOM_CLAUSES'] = expandvars(open(join(app_path, env["NGINX_INCLUDE_FILE"])).read(),
                                                               env) if env.get("NGINX_INCLUDE_FILE") else ""
-            env['INTERNAL_NGINX_PORTMAP'] = ""
+            env['PIKU_INTERNAL_NGINX_PORTMAP'] = ""
             if 'web' in workers or 'wsgi' in workers or 'jwsgi' in workers:
-                env['INTERNAL_NGINX_PORTMAP'] = expandvars(NGINX_PORTMAP_FRAGMENT, env)
-            env['INTERNAL_NGINX_COMMON'] = expandvars(NGINX_COMMON_FRAGMENT, env)
+                env['PIKU_INTERNAL_NGINX_PORTMAP'] = expandvars(NGINX_PORTMAP_FRAGMENT, env)
+            env['PIKU_INTERNAL_NGINX_COMMON'] = expandvars(NGINX_COMMON_FRAGMENT, env)
 
             echo("-----> nginx will map app '{}' to hostname(s) '{}'".format(app, env['NGINX_SERVER_NAME']))
             if ('NGINX_HTTPS_ONLY' in env) or ('HTTPS_ONLY' in env):
@@ -839,7 +839,7 @@ def spawn_app(app, deltas={}):
 
     # Cleanup env
     for k, v in list(env.items()):
-        if k.startswith('INTERNAL_'):
+        if k.startswith('PIKU_INTERNAL_'):
             del env[k]
 
     # Save current settings
