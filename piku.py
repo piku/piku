@@ -846,7 +846,7 @@ def spawn_app(app, deltas={}):
     write_config(live, env)
     write_config(scaling, worker_count, ':')
 
-    if env.get("AUTO_RESTART", False):
+    if env.get('PIKU_AUTO_RESTART', 'true').lower() not in ['0', 'false']:
         config = glob(join(UWSGI_ENABLED, '{}*.ini'.format(app)))
         if len(config):
             echo("-----> Removing uwsgi configs to trigger auto-restart.")
