@@ -798,8 +798,7 @@ def spawn_app(app, deltas={}):
                     echo("Error {} in static path spec: should be /url1:path1[,/url2:path2], ignoring.".format(e))
                     env['PIKU_INTERNAL_NGINX_STATIC_MAPPINGS'] = ''
 
-            env['PIKU_INTERNAL_NGINX_CUSTOM_CLAUSES'] = expandvars(open(join(app_path, env["NGINX_INCLUDE_FILE"])).read(),
-                                                              env) if env.get("NGINX_INCLUDE_FILE") else ""
+            env['PIKU_INTERNAL_NGINX_CUSTOM_CLAUSES'] = expandvars(open(join(app_path, env["NGINX_INCLUDE_FILE"])).read(), env) if env.get("NGINX_INCLUDE_FILE") else ""
             env['PIKU_INTERNAL_NGINX_PORTMAP'] = ""
             if 'web' in workers or 'wsgi' in workers or 'jwsgi' in workers:
                 env['PIKU_INTERNAL_NGINX_PORTMAP'] = expandvars(NGINX_PORTMAP_FRAGMENT, env)
