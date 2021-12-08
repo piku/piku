@@ -42,7 +42,7 @@ PIKU_RAW_SOURCE_URL = "https://raw.githubusercontent.com/piku/piku/master/piku.p
 PIKU_ROOT = environ.get('PIKU_ROOT', join(environ['HOME'], '.piku'))
 PIKU_BIN = join(environ['HOME'], 'bin')
 PIKU_SCRIPT = realpath(__file__)
-PLUGIN_ROOT = abspath(join(PIKU_ROOT, "plugins"))
+PIKU_PLUGIN_ROOT = abspath(join(PIKU_ROOT, "plugins"))
 APP_ROOT = abspath(join(PIKU_ROOT, "apps"))
 ENV_ROOT = abspath(join(PIKU_ROOT, "envs"))
 GIT_ROOT = abspath(join(PIKU_ROOT, "repos"))
@@ -1524,7 +1524,7 @@ def cmd_update():
 
 
 if __name__ == '__main__':
-    cli_commands = _get_plugin_commands(path=PLUGIN_ROOT)
+    cli_commands = _get_plugin_commands(path=PIKU_PLUGIN_ROOT)
     cli_commands.append(piku)
     cli = CommandCollection(sources=cli_commands)
     cli()
