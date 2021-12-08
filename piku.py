@@ -8,13 +8,14 @@ try:
 except AssertionError:
     exit("Piku requires Python 3.5 or above")
 
+from importlib import import_module
 from collections import defaultdict, deque
 from fcntl import fcntl, F_SETFL, F_GETFL
 from glob import glob
 from json import loads
 from multiprocessing import cpu_count
 from os import chmod, getgid, getuid, symlink, unlink, remove, stat, listdir, environ, makedirs, O_NONBLOCK
-from os.path import abspath, basename, dirname, exists, getmtime, join, realpath, splitext
+from os.path import abspath, basename, dirname, exists, getmtime, join, realpath, splitext, isdir
 from pwd import getpwuid
 from grp import getgrgid
 from re import sub, match
@@ -22,13 +23,13 @@ from shutil import copyfile, rmtree, which
 from socket import socket, AF_INET, SOCK_STREAM
 from stat import S_IRUSR, S_IWUSR, S_IXUSR
 from subprocess import call, check_output, Popen, STDOUT
-from sys import argv, stdin, stdout, stderr, version_info, exit
+from sys import argv, stdin, stdout, stderr, version_info, exit, path as sys_path
 from tempfile import NamedTemporaryFile
 from time import sleep
 from traceback import format_exc
 from urllib.request import urlopen
 
-from click import argument, group, secho as echo, pass_context
+from click import argument, group, secho as echo, pass_context, CommandCollection
 
 # === Make sure we can access all system binaries ===
 
@@ -41,6 +42,7 @@ PIKU_RAW_SOURCE_URL = "https://raw.githubusercontent.com/piku/piku/master/piku.p
 PIKU_ROOT = environ.get('PIKU_ROOT', join(environ['HOME'], '.piku'))
 PIKU_BIN = join(environ['HOME'], 'bin')
 PIKU_SCRIPT = realpath(__file__)
+PLUGIN_ROOT = abspath(join(PIKU_ROOT, "plugins"))
 APP_ROOT = abspath(join(PIKU_ROOT, "apps"))
 ENV_ROOT = abspath(join(PIKU_ROOT, "envs"))
 GIT_ROOT = abspath(join(PIKU_ROOT, "repos"))
@@ -1478,6 +1480,24 @@ def cmd_git_upload_pack(app):
     call('git-shell -c "{}" '.format(argv[1] + " '{}'".format(app)), cwd=GIT_ROOT, shell=True)
 
 
+def _get_plugin_commands(path):
+    sys_path.append(abspath(path))
+
+    cli_commands = []
+    if isdir(path):
+        for item in listdir(path):
+            module_path = join(path, item)
+            if isdir(module_path):
+                try:
+                    module = import_module(item)
+                except Exception:
+                    module = None
+                if hasattr(module, 'cli_commands'):
+                    cli_commands.append(module.cli_commands())
+
+    return cli_commands
+
+
 @piku.command("help")
 @pass_context
 def cmd_help(ctx):
@@ -1504,4 +1524,7 @@ def cmd_update():
 
 
 if __name__ == '__main__':
-    piku()
+    cli_commands = _get_plugin_commands(path=PLUGIN_ROOT)
+    cli_commands.append(piku)
+    cli = CommandCollection(sources=cli_commands)
+    cli()
