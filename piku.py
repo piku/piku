@@ -200,7 +200,7 @@ CRON_REGEXP = "^((?:(?:\*\/)?\d+)|\*) ((?:(?:\*\/)?\d+)|\*) ((?:(?:\*\/)?\d+)|\*
 def sanitize_app_name(app):
     """Sanitize the app name and build matching path"""
 
-    app = "".join(c for c in app if c.isalnum() or c in ('.', '_')).rstrip().lstrip('/')
+    app = "".join(c for c in app if c.isalnum() or c in ('.', '_', '-')).rstrip().lstrip('/')
     return app
 
 
