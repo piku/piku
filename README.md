@@ -61,8 +61,8 @@ To use `piku` you need a VPS, Raspberry Pi, or other server bootstrapped with `p
 
 There are two main ways of deploying `piku` onto a new server:
 
-* Use `cloud-init` when creating a new virtual machine or barebones automated deploy (check [this repository](https://github.com/piku/cloud-init) for examples)
 * Use [`piku-bootstrap`](https://github.com/piku/piku-bootstrap) to reconfigure a new or existing Ubuntu virtual machine
+* Use `cloud-init` when creating a new virtual machine or barebones automated deployment (check [this repository](https://github.com/piku/cloud-init) for examples)
 
 ### `piku` client
 
