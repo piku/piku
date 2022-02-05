@@ -43,7 +43,7 @@ I kept finding myself wanting an Heroku/CloudFoundry-like way to deploy stuff on
 
 * Create a `git` SSH remote pointing to your `piku` server with the app name as repo name.
   `git remote add piku piku@yourserver:appname`.
-* Push your code: `git push piku master`.
+* Push your code: `git push piku master` (or if you want to push a different branch than the current one use `git push piku release-branch-name`).
 * `piku` determines the runtime and installs the dependencies for your app (building whatever's required).
    * For Python, it segregates each app's dependencies into a `virtualenv`.
    * For Go, it defines a separate `GOPATH` for each app.
