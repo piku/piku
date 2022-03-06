@@ -359,6 +359,8 @@ def do_deploy(app, deltas={}, newrev=None):
             settings = {}
             if exists(join(app_path, 'requirements.txt')) and found_app("Python"):
                 settings.update(deploy_python(app, deltas))
+            elif exists(join(app_path, 'Gemfile')) and found_app("Ruby Application") and check_requirements(['ruby', 'gem', 'bundle']):
+                settings.update(deploy_ruby(app, deltas))
             elif exists(join(app_path, 'package.json')) and found_app("Node") and (
                     check_requirements(['nodejs', 'npm']) or check_requirements(['node', 'npm']) or check_requirements(['nodeenv'])):
                 settings.update(deploy_node(app, deltas))
@@ -370,8 +372,6 @@ def do_deploy(app, deltas={}, newrev=None):
                 settings.update(deploy_go(app, deltas))
             elif exists(join(app_path, 'project.clj')) and found_app("Clojure Lein") and check_requirements(['java', 'lein']):
                 settings.update(deploy_clojure(app, deltas))
-            elif exists(join(app_path, 'Gemfile')) and found_app("Ruby Application") and check_requirements(['ruby', 'gem', 'bundle']):
-                settings.update(deploy_ruby(app, deltas))
             elif 'release' in workers and 'web' in workers:
                 echo("-----> Generic app detected.", fg='green')
                 settings.update(deploy_identity(app, deltas))
