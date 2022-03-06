@@ -483,8 +483,6 @@ def deploy_ruby(app, deltas={}):
     virtual = join(ENV_ROOT, app)
     env_file = join(APP_ROOT, app, 'ENV')
 
-    first_time = True
-
     env = {
         'VIRTUAL_ENV': virtual,
         "PATH": ':'.join([join(virtual, "bin"), join(app, ".bin"), environ['PATH']]),
@@ -492,15 +490,13 @@ def deploy_ruby(app, deltas={}):
     if exists(env_file):
         env.update(parse_settings(env_file, env))
 
-    if first_time:
+    if not exists(virtual):
         echo("-----> Building Ruby Application")
-        call('bundle install', cwd=join(APP_ROOT, app), env=env, shell=True)
         makedirs(virtual)
-        first_time = False
     else:
         echo("------> Rebuilding Ruby Application")
-        call("bundle clean", cwd=join(APP_ROOT, app), env=env, shell=True)
-        call("bundle install", cwd=join(APP_ROOT, app), env=env, shell=True)
+
+    call('bundle install', cwd=join(APP_ROOT, app), env=env, shell=True)
 
     return spawn_app(app, deltas)
 
