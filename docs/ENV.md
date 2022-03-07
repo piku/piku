@@ -42,3 +42,7 @@ You can configure deployment settings by placing special variables in an `ENV` f
 * `NGINX_HTTPS_ONLY`: tell nginx to auto-redirect non-SSL traffic to SSL site
 * `NGINX_INCLUDE_FILE`: a file in the app's dir to include in nginx config `server` section - useful for including custom nginx directives.
 * `NGINX_ALLOW_GIT_FOLDERS`: (boolean) allow access to `.git` folders (default: false, blocked)
+
+## Acme Settings
+
+* `ACME_ROOT_CA`: set the certificate authority that Acme should use to generate public ssl certificates (string, default: `letsencrypt.org`)
