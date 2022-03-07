@@ -54,7 +54,7 @@ UWSGI_ROOT = abspath(join(PIKU_ROOT, "uwsgi"))
 UWSGI_LOG_MAXSIZE = '1048576'
 ACME_ROOT = environ.get('ACME_ROOT', join(environ['HOME'], '.acme.sh'))
 ACME_WWW = abspath(join(PIKU_ROOT, "acme"))
-ROOT_CA = environ.get('ROOT_CA', 'letsencrypt.org')
+ACME_ROOT_CA = environ.get('ACME_ROOT_CA', 'letsencrypt.org')
 
 # === Make sure we can access piku user-installed binaries === #
 
@@ -727,7 +727,7 @@ def spawn_app(app, deltas={}):
             if exists(join(ACME_ROOT, "acme.sh")):
                 acme = ACME_ROOT
                 www = ACME_WWW
-                root_ca = ROOT_CA
+                root_ca = ACME_ROOT_CA
                 # if this is the first run there will be no nginx conf yet
                 # create a basic conf stub just to serve the acme auth
                 if not exists(nginx_conf):
