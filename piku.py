@@ -54,6 +54,7 @@ UWSGI_ROOT = abspath(join(PIKU_ROOT, "uwsgi"))
 UWSGI_LOG_MAXSIZE = '1048576'
 ACME_ROOT = environ.get('ACME_ROOT', join(environ['HOME'], '.acme.sh'))
 ACME_WWW = abspath(join(PIKU_ROOT, "acme"))
+ACME_ROOT_CA = environ.get('ACME_ROOT_CA', 'letsencrypt.org')
 
 # === Make sure we can access piku user-installed binaries === #
 
@@ -722,6 +723,7 @@ def spawn_app(app, deltas={}):
             if exists(join(ACME_ROOT, "acme.sh")):
                 acme = ACME_ROOT
                 www = ACME_WWW
+                root_ca = ACME_ROOT_CA
                 # if this is the first run there will be no nginx conf yet
                 # create a basic conf stub just to serve the acme auth
                 if not exists(nginx_conf):
@@ -732,7 +734,7 @@ def spawn_app(app, deltas={}):
                 if not exists(key) or not exists(issuefile):
                     echo("-----> getting letsencrypt certificate")
                     certlist = " ".join(["-d {}".format(d) for d in domains])
-                    call('{acme:s}/acme.sh --issue {certlist:s} -w {www:s}'.format(**locals()), shell=True)
+                    call('{acme:s}/acme.sh --issue {certlist:s} -w {www:s} --server {root_ca:s}}'.format(**locals()), shell=True)
                     call('{acme:s}/acme.sh --install-cert {certlist:s} --key-file {key:s} --fullchain-file {crt:s}'.format(
                         **locals()), shell=True)
                     if exists(join(ACME_ROOT, domain)) and not exists(join(ACME_WWW, app)):
