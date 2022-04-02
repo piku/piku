@@ -359,6 +359,8 @@ def do_deploy(app, deltas={}, newrev=None):
             settings = {}
             if exists(join(app_path, 'requirements.txt')) and found_app("Python"):
                 settings.update(deploy_python(app, deltas))
+            elif exists(join(app_path, 'Gemfile')) and found_app("Ruby Application") and check_requirements(['ruby', 'gem', 'bundle']):
+                settings.update(deploy_ruby(app, deltas))
             elif exists(join(app_path, 'package.json')) and found_app("Node") and (
                     check_requirements(['nodejs', 'npm']) or check_requirements(['node', 'npm']) or check_requirements(['nodeenv'])):
                 settings.update(deploy_node(app, deltas))
@@ -370,8 +372,6 @@ def do_deploy(app, deltas={}, newrev=None):
                 settings.update(deploy_go(app, deltas))
             elif exists(join(app_path, 'project.clj')) and found_app("Clojure Lein") and check_requirements(['java', 'lein']):
                 settings.update(deploy_clojure(app, deltas))
-            elif exists(join(app_path, 'Gemfile')) and found_app("Ruby Application") and check_requirements(['ruby', 'gem', 'bundle']):
-                settings.update(deploy_ruby(app, deltas))
             elif 'release' in workers and 'web' in workers:
                 echo("-----> Generic app detected.", fg='green')
                 settings.update(deploy_identity(app, deltas))
@@ -483,8 +483,6 @@ def deploy_ruby(app, deltas={}):
     virtual = join(ENV_ROOT, app)
     env_file = join(APP_ROOT, app, 'ENV')
 
-    first_time = True
-
     env = {
         'VIRTUAL_ENV': virtual,
         "PATH": ':'.join([join(virtual, "bin"), join(app, ".bin"), environ['PATH']]),
@@ -492,15 +490,13 @@ def deploy_ruby(app, deltas={}):
     if exists(env_file):
         env.update(parse_settings(env_file, env))
 
-    if first_time:
+    if not exists(virtual):
         echo("-----> Building Ruby Application")
-        call('bundle install', cwd=join(APP_ROOT, app), env=env, shell=True)
         makedirs(virtual)
-        first_time = False
     else:
         echo("------> Rebuilding Ruby Application")
-        call("bundle clean", cwd=join(APP_ROOT, app), env=env, shell=True)
-        call("bundle install", cwd=join(APP_ROOT, app), env=env, shell=True)
+
+    call('bundle install', cwd=join(APP_ROOT, app), env=env, shell=True)
 
     return spawn_app(app, deltas)
 
@@ -679,7 +675,7 @@ def spawn_app(app, deltas={}):
     if exists(settings):
         env.update(parse_settings(settings, env))  # lgtm [py/modification-of-default-value]
 
-    if 'web' in workers or 'wsgi' in workers or 'jwsgi' in workers or 'static' in workers:
+    if 'web' in workers or 'wsgi' in workers or 'jwsgi' in workers or 'static' in workers or 'rwsgi' in workers:
         # Pick a port if none defined
         if 'PORT' not in env:
             env['PORT'] = str(get_free_port())
@@ -802,7 +798,7 @@ def spawn_app(app, deltas={}):
 
             env['PIKU_INTERNAL_NGINX_CUSTOM_CLAUSES'] = expandvars(open(join(app_path, env["NGINX_INCLUDE_FILE"])).read(), env) if env.get("NGINX_INCLUDE_FILE") else ""
             env['PIKU_INTERNAL_NGINX_PORTMAP'] = ""
-            if 'web' in workers or 'wsgi' in workers or 'jwsgi' in workers:
+            if 'web' in workers or 'wsgi' in workers or 'jwsgi' in workers or 'rwsgi' in workers:
                 env['PIKU_INTERNAL_NGINX_PORTMAP'] = expandvars(NGINX_PORTMAP_FRAGMENT, env)
             env['PIKU_INTERNAL_NGINX_COMMON'] = expandvars(NGINX_COMMON_FRAGMENT, env)
 
