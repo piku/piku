@@ -16,8 +16,6 @@ The tiniest Heroku/CloudFoundry-like PaaS you've ever seen.
 
 The current plan is to throw up a warning for older runtimes and do regression testing for 3.7, 3.8, 3.9 and 3.10 (replacing the current bracket of tests from 3.5 to 3.8)
 
-> **Note:** `piku` currently does not run on Debian 11 (`bullseye`) since the `incron` package has been removed from the distro. We are evaluating using [a custom `systemd.path` unit](https://www.freedesktop.org/software/systemd/man/systemd.path.html) (and accepting contributions for it).
-
 ## Goals and Motivation
 
 I kept finding myself wanting an Heroku/CloudFoundry-like way to deploy stuff on a few remote ARM boards and [my Raspberry Pi cluster][raspi-cluster], but since [dokku][dokku] didn't work on ARM at the time and even `docker` can be overkill sometimes, I decided to roll my own.

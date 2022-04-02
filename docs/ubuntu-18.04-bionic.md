@@ -10,7 +10,7 @@ Before installing `piku`, you need to install the following packages:
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y build-essential certbot git incron \
+sudo apt-get install -y build-essential certbot git \
     libjpeg-dev libxml2-dev libxslt1-dev zlib1g-dev nginx \
     python-certbot-nginx python-dev python-pip python-virtualenv \
     python3-dev python3-pip python3-click python3-virtualenv \
@@ -79,13 +79,17 @@ server {
 include /home/PAAS_USERNAME/.piku/nginx/*.conf;
 ```
 
-## `incron` Configuration
-
-To detect configuration changes and tell `nginx` to activate new `piku` sites, we use `incron`. Create `/etc/incron.d/paas` with the following contents:
+## Set up systemd.path to reload nginx upon config changes
 
 ```bash
-# replace `PAAS_USERNAME` with the username you created.
-/home/PAAS_USERNAME/.piku/nginx IN_MODIFY,IN_NO_LOOP /bin/systemctl reload nginx
+# Set up systemd.path to reload nginx upon config changes
+sudo cp ./piku-nginx.{path, service} /etc/systemd/system/
+sudo systemctl enable piku-nginx.{path,service}
+sudo systemctl start piku-nginx.path
+# Check the status of piku-nginx.service
+systemctl status piku-nginx.path # should return `Active: active (waiting)`
+# Restart NGINX
+sudo systemctl restart nginx
 ```
 
 ## Notes

@@ -18,7 +18,6 @@ RUN apt-get update \
     git \
     build-essential \ 
     git \
-    incron \
     nginx \
     python3-pip \
     python3-click \

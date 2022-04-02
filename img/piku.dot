@@ -3,7 +3,7 @@ digraph G {
     graph [ dpi = 300 ]; 
     bgcolor=transparent;
     truecolor=true;
-    {rank=same;sshd;uwsgie;nginx;incron;}
+    {rank=same;sshd;uwsgie;nginx;}
     //rankdir=LR;
     subgraph uwsgi_tree {
         uwsgie [label="uwsgi" style=filled fillcolor=white fontname="Arial"];
@@ -45,11 +45,5 @@ digraph G {
         nginx_confd [label="master\nnginx.conf" shape=note style=filled fillcolor=white fontname="Arial"];
         nginx->nginx_confd [arrowhead=none style=dashed];
         nginx_confd->nginx_conf [arrowhead=none style=dashed];
-    }
-    subgraph incron_tree {
-        incron [fontname="Arial" style=filled fillcolor=white];
-        nginx_conf -> incron [label="watch", style="dotted", fontname="Arial" weight=0]; 
-        incron -> nginx [label="reload" style="dotted" fontname="Arial" weight=0];
-        incron->nginx_conf [style=invis];
     }
 }
