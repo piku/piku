@@ -227,12 +227,15 @@ sudo service uwsgi-piku start
 *PLEASE NOTE:* There is a bug in `nginx` 1.6.2 under Raspbian 8 that causes it to try to allocate around a gigabyte of RAM when using SSL with SPDY. I seriously recommend using Ubuntu instead, if you can, or disabling SSL altogether.
 
 ```bash
-sudo apt-get install nginx incron
 # Set up nginx to pick up our config files
 sudo cp /tmp/nginx.default.dist /etc/nginx/sites-available/default
-# Set up incron to reload nginx upon config changes
-sudo cp /tmp/incron.dist /etc/incron.d/piku
-sudo systemctl restart incron
+# Set up systemd.path to reload nginx upon config changes
+sudo cp ./piku-nginx.{path, service} /etc/systemd/system/
+sudo systemctl enable piku-nginx.{path,service}
+sudo systemctl start piku-nginx.path
+# Check the status of piku-nginx.service
+systemctl status piku-nginx.path # should return `Active: active (waiting)`
+# Restart NGINX
 sudo systemctl restart nginx
 ```
 

@@ -48,7 +48,7 @@ As of April 2016, the shipping versions with Raspbian are recent enough to run `
 
 ```bash
 # as 'pi' user
-sudo apt install -y python-virtualenv python-pip git uwsgi uwsgi-plugin-python incron nginx
+sudo apt install -y python-virtualenv python-pip git uwsgi uwsgi-plugin-python nginx
 sudo pip install -U click
 sudo reboot
 ```
@@ -61,7 +61,7 @@ Clone the [piku repo](https://github.com/piku/piku) somewhere and copy files to 
 
 ```bash
 # as yourself in your desktop/laptop computer
-scp piku.py uwsgi-piku.service nginx.default.dist incron.dist pi@your_machine:/tmp
+scp piku.py uwsgi-piku.service nginx.default.dist pi@your_machine:/tmp
 scp your_public_ssh_key.pub pi@your_machine:/tmp
 ```
 
@@ -80,12 +80,16 @@ sudo systemctl enable uwsgi-piku
 Prepare nginx:
 
 ```bash
-sudo apt-get install nginx incron
+sudo apt-get install nginx
 # Set up nginx to pick up our config files
 sudo cp /tmp/nginx.default.dist /etc/nginx/sites-available/default
-# Set up incron to reload nginx upon config changes
-sudo cp /tmp/incron.dist /etc/incron.d/piku
-sudo systemctl restart incron
+# Set up systemd.path to reload nginx upon config changes
+sudo cp ./piku-nginx.{path, service} /etc/systemd/system/
+sudo systemctl enable piku-nginx.{path,service}
+sudo systemctl start piku-nginx.path
+# Check the status of piku-nginx.service
+systemctl status piku-nginx.path # should return `Active: active (waiting)`
+# Restart NGINX
 sudo systemctl restart nginx
 ```
 
