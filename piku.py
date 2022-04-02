@@ -534,7 +534,8 @@ def deploy_node(app, deltas={}):
 
     virtualenv_path = join(ENV_ROOT, app)
     node_path = join(ENV_ROOT, app, "node_modules")
-    node_path_tmp = join(APP_ROOT, app, "node_modules")
+    node_modules_symlink = join(APP_ROOT, app, "node_modules")
+    npm_prefix = abspath(join(node_path, ".."))
     env_file = join(APP_ROOT, app, 'ENV')
     deps = join(APP_ROOT, app, 'package.json')
 
@@ -547,7 +548,7 @@ def deploy_node(app, deltas={}):
     env = {
         'VIRTUAL_ENV': virtualenv_path,
         'NODE_PATH': node_path,
-        'NPM_CONFIG_PREFIX': abspath(join(node_path, "..")),
+        'NPM_CONFIG_PREFIX': npm_prefix,
         "PATH": ':'.join([join(virtualenv_path, "bin"), join(node_path, ".bin"), environ['PATH']])
     }
     if exists(env_file):
@@ -575,10 +576,11 @@ def deploy_node(app, deltas={}):
 
     if exists(deps) and check_requirements(['npm']):
         if first_time or getmtime(deps) > getmtime(node_path):
+            copyfile(join(APP_ROOT, app, 'package.json'), join(ENV_ROOT, app, 'package.json'))
+            if not exists(node_modules_symlink):
+                symlink(node_path, node_modules_symlink)
             echo("-----> Running npm for '{}'".format(app), fg='green')
-            symlink(node_path, node_path_tmp)
-            call('npm install', cwd=join(APP_ROOT, app), env=env, shell=True)
-            unlink(node_path_tmp)
+            call('npm install --prefix {} --package-lock=false'.format(npm_prefix), cwd=join(APP_ROOT, app), env=env, shell=True)
     return spawn_app(app, deltas)
 
 
