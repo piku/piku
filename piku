@@ -53,7 +53,7 @@ else
       echo "  shell             Local command to start an SSH session in the remote."
       echo "  init              Local command to download an example ENV and Procfile."
       ;;
-    apps|setup|setup:ssh)
+    apps|setup|setup:ssh|update)
       ssh ${sshflags} "$server" "$@"
       ;;
     shell)
