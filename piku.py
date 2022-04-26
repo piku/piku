@@ -118,7 +118,7 @@ NGINX_COMMON_FRAGMENT = """
   # Enable gzip compression
   gzip on;
   gzip_proxied any;
-  gzip_types text/plain text/xml text/css application/x-javascript text/javascript application/xml+rss application/atom+xml;
+  gzip_types text/plain text/xml text/css text/javascript text/js application/x-javascript application/javascript application/json application/xml+rss application/atom+xml image/svg+xml;
   gzip_comp_level 7;
   gzip_min_length 2048;
   gzip_vary on;
