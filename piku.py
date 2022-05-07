@@ -692,6 +692,10 @@ def spawn_app(app, deltas={}):
 
         # Set up nginx if we have NGINX_SERVER_NAME set
         if 'NGINX_SERVER_NAME' in env:
+            # Hack to get around ClickCommand
+            env['NGINX_SERVER_NAME'] = env['NGINX_SERVER_NAME'].split(',')
+            env['NGINX_SERVER_NAME'] = ' '.join(env['NGINX_SERVER_NAME'])
+
             nginx = command_output("nginx -V")
             nginx_ssl = "443 ssl"
             if "--with-http_v2_module" in nginx:
