@@ -736,7 +736,7 @@ def spawn_app(app, deltas={}):
                 if not exists(key) or not exists(issuefile):
                     echo("-----> getting letsencrypt certificate")
                     certlist = " ".join(["-d {}".format(d) for d in domains])
-                    call('{acme:s}/acme.sh --issue {certlist:s} -w {www:s} --server {root_ca:s}}'.format(**locals()), shell=True)
+                    call('{acme:s}/acme.sh --issue {certlist:s} -w {www:s} --server {root_ca:s}'.format(**locals()), shell=True)
                     call('{acme:s}/acme.sh --install-cert {certlist:s} --key-file {key:s} --fullchain-file {crt:s}'.format(
                         **locals()), shell=True)
                     if exists(join(ACME_ROOT, domain)) and not exists(join(ACME_WWW, app)):
