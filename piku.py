@@ -1110,7 +1110,7 @@ def piku():
     pass
 
 
-@piku.resultcallback()
+@piku.result_callback()
 def cleanup(ctx):
     """Callback from command execution -- add debugging to taste"""
     pass
