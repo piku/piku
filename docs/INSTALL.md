@@ -57,9 +57,9 @@ sudo pip3 install -U click virtualenv
 
 These may or may not be installed already (`click` usually isn't). For Raspbian Wheezy this is the preferred approach, since current `apt` packages are fairly outdated.
 
-## Intialization
+## Initialization
 
-To set everthing up, type `python piku.py setup`:
+To set everything up, type `python piku.py setup`:
 
 ```bash
 sudo su - piku
