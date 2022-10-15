@@ -1109,7 +1109,8 @@ def piku():
     """The smallest PaaS you've ever seen"""
     pass
 
-piku.rc = getattr(piku, "resultcallback") or getattr(piku, "result_callback")
+piku.rc = getattr(piku, "resultcallback", None) or\
+          getattr(piku, "result_callback", None)
 
 @piku.rc()
 def cleanup(ctx):
