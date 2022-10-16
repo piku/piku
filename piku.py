@@ -1110,8 +1110,7 @@ def piku():
     pass
 
 
-piku.rc = getattr(piku, "resultcallback", None) or\
-          getattr(piku, "result_callback", None)
+piku.rc = getattr(piku, "resultcallback", None) or getattr(piku, "result_callback", None)
 
 
 @piku.rc()
