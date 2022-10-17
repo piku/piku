@@ -2,7 +2,7 @@
 
 ![piku logo](./img/logo.png)
 
-The tiniest Heroku/CloudFoundry-like PaaS you've ever seen.
+The tiniest Heroku/CloudFoundry-like PaaS you've ever seen. **Seldom updated because it is _stable_** and used in production daily by several people.
 
 `piku`, inspired by [dokku][dokku], allows you do `git push` deployments to your own servers.
 
@@ -10,11 +10,11 @@ The tiniest Heroku/CloudFoundry-like PaaS you've ever seen.
 
 ### Documentation: [Using](#using-piku) | [Install](#install) | [Procfile](docs/DESIGN.md#procfile-format) | [ENV](./docs/ENV.md) | [Examples](./examples/README.md) | [Roadmap](https://github.com/piku/piku/projects/2) | [Contributing](./docs/CONTRIBUTING.md) | [LinuxConf Talk](https://www.youtube.com/watch?v=ec-GoDukHWk) | [Fast Web App Tutorial](https://github.com/piku/webapp-tutorial)
 
-## Requirements / Deprecation Notices
+## Project Activity / Deprecation Notices
 
-`piku` currently requires Python 3.5 or above, but will move to require 3.8+ sometime in 2022 since that is the baseline Python 3 version in Ubuntu LTS 20.04 and Debian 11 has already moved on to 3.9. 
+**`piku` is considered STABLE**. It is actively maintained, but "actively" here means the feature set is pretty much done, so it is only updated when new runtimes are added or reproducible bugs crop up.
 
-The current plan is to throw up a warning for older runtimes and do regression testing for 3.7, 3.8, 3.9 and 3.10 (replacing the current bracket of tests from 3.5 to 3.8)
+It currently requires Python 3.5 or above, but will move to require 3.8+ sometime in late 2022 since that was the baseline Python 3 version in Ubuntu LTS 20.04 and Debian 11 has already moved on to 3.9. Since most of its users run it on LTS distributions, there is no rush to introduce disruption. The current plan is to throw up a warning for older runtimes and do regression testing for 3.7, 3.8, 3.9 and 3.10 (replacing the current bracket of tests from 3.5 to 3.8), and make sure we also cover Ubuntu 22.04, Debian 11 and Fedora 36+.
 
 ## Goals and Motivation
 

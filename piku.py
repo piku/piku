@@ -494,6 +494,7 @@ def deploy_ruby(app, deltas={}):
     if not exists(virtual):
         echo("-----> Building Ruby Application")
         makedirs(virtual)
+        call('bundle config set --local path $VIRTUAL_ENV', cwd=join(APP_ROOT, app), env=env, shell=True)
     else:
         echo("------> Rebuilding Ruby Application")
 

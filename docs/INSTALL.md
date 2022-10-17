@@ -4,17 +4,18 @@ As of June 2018, these documents are being split off into distribution-specific 
 
 > Please use distro-specific instructions whenever possible, since there have been recent improvements in `uwsgi` packaging that greatly simplify installation. 
 
-Also, `piku` now **requires Python 3**.
+Also, `piku` now **requires Python 3** and a Linux distribution that runs `systemd`, such as Raspbian Jessie/Debian 8+/Ubuntu
 
 These generic installation notes should cover most Debian Linux variants (on any architecture). Very minor changes should be required to deploy on RHEL variants like CentOS, and there is specific emphasis on Raspbian because that's the typical deployment target.
 
 You can, however, run `piku` on any POSIX-like environment where you have Python, [uWSGI][uwsgi] and SSH.
 
-For installation, you only require `root`/`sudo` access and the following three files:
+For installation, you only require `root`/`sudo` access and the following files:
 
 * `piku.py`
-* `uwsgi-piku.service` (this one is for `systemd` systems such as Raspbian Jessie/Debian 8)
-* `uwsgi-piku.dist` (this one should only be necessary on older systems)
+* `uwsgi-piku.service`
+* `piku-nginx.path`
+* `piku-nginx.service`
 
 Copy them across to the machine you'll be using as a server before you get started with the rest.
 
@@ -57,9 +58,9 @@ sudo pip3 install -U click virtualenv
 
 These may or may not be installed already (`click` usually isn't). For Raspbian Wheezy this is the preferred approach, since current `apt` packages are fairly outdated.
 
-## Intialization
+## Initialization
 
-To set everthing up, type `python piku.py setup`:
+To set everything up, type `python piku.py setup`:
 
 ```bash
 sudo su - piku
