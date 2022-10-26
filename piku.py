@@ -1111,7 +1111,10 @@ def piku():
     pass
 
 
-@piku.resultcallback()
+piku.rc = getattr(piku, "resultcallback", None) or getattr(piku, "result_callback", None)
+
+
+@piku.rc()
 def cleanup(ctx):
     """Callback from command execution -- add debugging to taste"""
     pass
