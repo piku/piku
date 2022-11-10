@@ -16,6 +16,7 @@ For installation, you only require `root`/`sudo` access and the following files:
 * `uwsgi-piku.service`
 * `piku-nginx.path`
 * `piku-nginx.service`
+* `nginx-default.dist`
 
 Copy them across to the machine you'll be using as a server before you get started with the rest.
 
@@ -228,6 +229,7 @@ sudo service uwsgi-piku start
 *PLEASE NOTE:* There is a bug in `nginx` 1.6.2 under Raspbian 8 that causes it to try to allocate around a gigabyte of RAM when using SSL with SPDY. I seriously recommend using Ubuntu instead, if you can, or disabling SSL altogether.
 
 ```bash
+sudo apt-get install nginx
 # Set up nginx to pick up our config files
 sudo cp /tmp/nginx.default.dist /etc/nginx/sites-available/default
 # Set up systemd.path to reload nginx upon config changes
