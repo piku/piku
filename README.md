@@ -14,7 +14,7 @@ The tiniest Heroku/CloudFoundry-like PaaS you've ever seen. **Seldom updated bec
 
 **`piku` is considered STABLE**. It is actively maintained, but "actively" here means the feature set is pretty much done, so it is only updated when new runtimes are added or reproducible bugs crop up.
 
-It currently requires Python 3.5 or above, but will move to require 3.8+ sometime in late 2022 since that was the baseline Python 3 version in Ubuntu LTS 20.04 and Debian 11 has already moved on to 3.9. Since most of its users run it on LTS distributions, there is no rush to introduce disruption. The current plan is to throw up a warning for older runtimes and do regression testing for 3.7, 3.8, 3.9 and 3.10 (replacing the current bracket of tests from 3.5 to 3.8), and make sure we also cover Ubuntu 22.04, Debian 11 and Fedora 36+.
+It currently requires Python 3.5 or above, but will move to require 3.8+ sometime in late 2022/early 2023 since that was the baseline Python 3 version in Ubuntu LTS 20.04 and Debian 11 has already moved on to 3.9. Since most of its users run it on LTS distributions, there is no rush to introduce disruption. The current plan is to throw up a warning for older runtimes and do regression testing for 3.7, 3.8, 3.9 and 3.10 (replacing the current bracket of tests from 3.5 to 3.8), and make sure we also cover Ubuntu 22.04, Debian 11 and Fedora 36+.
 
 ## Goals and Motivation
 
