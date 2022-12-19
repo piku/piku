@@ -20,6 +20,7 @@ You can configure deployment settings by placing special variables in an `ENV` f
 
 * `BIND_ADDRESS`: IP address to which your app will bind (typically `127.0.0.1`)
 * `PORT`: TCP port for your app to listen in (if deploying your own web listener).
+* `DISABLE_IPV6` (boolean): if set to `true`, it will remove IPv6-specific items from the `nginx` config, which will accept only IPv4 connections
 
 ## uWSGI Settings
 
