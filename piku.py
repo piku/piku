@@ -813,7 +813,7 @@ def spawn_app(app, deltas={}):
             env['PIKU_INTERNAL_NGINX_COMMON'] = expandvars(NGINX_COMMON_FRAGMENT, env)
 
             echo("-----> nginx will map app '{}' to hostname(s) '{}'".format(app, env['NGINX_SERVER_NAME']))
-            if ('NGINX_HTTPS_ONLY' in env) or ('HTTPS_ONLY' in env):
+            if env.get('NGINX_HTTPS_ONLY', 'false').lower() == 'true':
                 buffer = expandvars(NGINX_HTTPS_ONLY_TEMPLATE, env)
                 echo("-----> nginx will redirect all requests to hostname(s) '{}' to HTTPS".format(env['NGINX_SERVER_NAME']))
             else:
