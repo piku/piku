@@ -684,11 +684,15 @@ def spawn_app(app, deltas={}):
         if 'PORT' not in env:
             env['PORT'] = str(get_free_port())
             echo("-----> picking free port {PORT}".format(**env))
+        
+        if env.get('DISABLE_IPV6', 'false').lower() == 'true':
+            safe_defaults.pop('NGINX_IPV6_ADDRESS', None)
+            echo("-----> nginx will NOT use IPv6".format(**locals()))
 
         # Safe defaults for addressing
         for k, v in safe_defaults.items():
             if k not in env:
-                echo("-----> nginx {k:s} set to {v}".format(**locals()))
+                echo("-----> nginx {k:s} will be set to {v}".format(**locals()))
                 env[k] = v
 
         # Set up nginx if we have NGINX_SERVER_NAME set
@@ -764,8 +768,9 @@ def spawn_app(app, deltas={}):
                     if cf['success'] is True:
                         for i in cf['result']['ipv4_cidrs']:
                             acl.append("allow {};".format(i))
-                        for i in cf['result']['ipv6_cidrs']:
-                            acl.append("allow {};".format(i))
+                        if env.get('DISABLE_IPV6', 'false').lower() == 'false':
+                            for i in cf['result']['ipv6_cidrs']:
+                                acl.append("allow {};".format(i))
                         # allow access from controlling machine
                         if 'SSH_CLIENT' in environ:
                             remote_ip = environ['SSH_CLIENT'].split()[0]
@@ -813,6 +818,11 @@ def spawn_app(app, deltas={}):
                 echo("-----> nginx will redirect all requests to hostname(s) '{}' to HTTPS".format(env['NGINX_SERVER_NAME']))
             else:
                 buffer = expandvars(NGINX_TEMPLATE, env)
+
+            # remove all references to IPv6 listeners (for enviroments where it's disabled)
+            if env.get('DISABLE_IPV6', 'false').lower() == 'true':
+                buffer = '\n'.join([line for line in buffer.split('\n') if 'NGINX_IPV6' not in line])
+
             with open(nginx_conf, "w") as h:
                 h.write(buffer)
             # prevent broken config from breaking other deploys
@@ -1110,15 +1120,12 @@ def piku():
     """The smallest PaaS you've ever seen"""
     pass
 
-
-piku.rc = getattr(piku, "resultcallback", None) or getattr(piku, "result_callback", None)
-
+piku.rc = getattr(piku, "result_callback", None) or getattr(piku, "resultcallback", None) 
 
 @piku.rc()
 def cleanup(ctx):
     """Callback from command execution -- add debugging to taste"""
     pass
-
 
 # --- User commands ---
 
