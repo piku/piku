@@ -40,7 +40,7 @@ You can configure deployment settings by placing special variables in an `ENV` f
 * `NGINX_SERVER_NAME`: set the virtual host name associated with your app
 * `NGINX_CLOUDFLARE_ACL` (boolean): activate an ACL allowing access only from Cloudflare IPs
 * `NGINX_STATIC_PATHS`: set an array of `/url:path` values
-* `NGINX_HTTPS_ONLY` (boolean, defaults to false): tell nginx to auto-redirect non-SSL traffic to SSL site
+* `NGINX_HTTPS_ONLY` (boolean, defaults to false): tell nginx to auto-redirect non-SSL traffic to SSL site. **NOTE:** if used with CloudFlare, it will cause an infinite redirect loop - you will need to add a CloudFlare Page Rule to "Always Use HTTPS" for your server (`domain.name/*` to match all URLs).
 * `NGINX_INCLUDE_FILE`: a file in the app's dir to include in nginx config `server` section - useful for including custom nginx directives.
 * `NGINX_ALLOW_GIT_FOLDERS`: (boolean) allow access to `.git` folders (default: false, blocked)
 
