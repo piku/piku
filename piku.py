@@ -1309,32 +1309,38 @@ def cmd_destroy(app):
 
     app = exit_if_invalid(app)
 
-    # leave DATA_ROOT, since apps may create hard to reproduce data
-    for p in [join(x, app) for x in [APP_ROOT, CACHE_ROOT, GIT_ROOT, ENV_ROOT, LOG_ROOT]]:
+    # leave DATA_ROOT, since apps may create hard to reproduce data,
+    # and CACHE_ROOT, since `nginx` will set permissions to protect it
+    for p in [join(x, app) for x in [APP_ROOT, GIT_ROOT, ENV_ROOT, LOG_ROOT]]:
         if exists(p):
-            echo("Removing folder '{}'".format(p), fg='yellow')
+            echo("--> Removing folder '{}'".format(p), fg='yellow')
             rmtree(p)
 
     for p in [join(x, '{}*.ini'.format(app)) for x in [UWSGI_AVAILABLE, UWSGI_ENABLED]]:
         g = glob(p)
         if len(g) > 0:
             for f in g:
-                echo("Removing file '{}'".format(f), fg='yellow')
+                echo("--> Removing file '{}'".format(f), fg='yellow')
                 remove(f)
 
     nginx_files = [join(NGINX_ROOT, "{}.{}".format(app, x)) for x in ['conf', 'sock', 'key', 'crt']]
     for f in nginx_files:
         if exists(f):
-            echo("Removing file '{}'".format(f), fg='yellow')
+            echo("--> Removing file '{}'".format(f), fg='yellow')
             remove(f)
 
     acme_link = join(ACME_WWW, app)
     acme_certs = realpath(acme_link)
     if exists(acme_certs):
-        echo("Removing folder '{}'".format(acme_certs), fg='yellow')
+        echo("--> Removing folder '{}'".format(acme_certs), fg='yellow')
         rmtree(acme_certs)
-        echo("Removing file '{}'".format(acme_link), fg='yellow')
+        echo("--> Removing file '{}'".format(acme_link), fg='yellow')
         unlink(acme_link)
+
+    # These come last to make sure they're visible    
+    for p in [join(x, app) for x in [DATA_ROOT, CACHE_ROOT]]:
+        if exists(p):
+            echo("==> Preserving folder '{}'".format(p), fg='red')
 
 
 @piku.command("logs")
