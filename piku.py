@@ -823,10 +823,10 @@ def spawn_app(app, deltas={}):
                 cache_time = 8
             cache_time = str(cache_time) + "h"
             try:
-                cache_expiry = int(env.get('NGINX_CACHE_EXPIRY', '7'))
+                cache_expiry = int(env.get('NGINX_CACHE_EXPIRY', '1'))
             except:
-                echo("=====> Invalid cache expiry, defaulting to 7 (days)")
-                cache_expiry = 7
+                echo("=====> Invalid cache expiry, defaulting to 1 (days)")
+                cache_expiry = 1
             cache_expiry = str(cache_expiry) + "d"
 
             cache_prefixes = env.get('NGINX_CACHE_PREFIXES', '')
