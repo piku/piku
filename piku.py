@@ -176,7 +176,7 @@ PIKU_INTERNAL_NGINX_STATIC_MAPPING = """
 """
 
 PIKU_INTERNAL_PROXY_CACHE_PATH = """
-uwsgi_cache_path $cache_path levels=1:2 keys_zone=$app:20m inactive=$cache_days max_size=$cache_size use_temp_path=off;
+uwsgi_cache_path $cache_path levels=1:2 keys_zone=$app:20m inactive=$cache_expiry max_size=$cache_size use_temp_path=off;
 """
 
 PIKU_INTERNAL_NGINX_CACHE_MAPPING = """
@@ -184,7 +184,7 @@ PIKU_INTERNAL_NGINX_CACHE_MAPPING = """
         uwsgi_cache $APP;
         uwsgi_cache_min_uses 1;
         uwsgi_cache_key $host$uri;
-        uwsgi_cache_valid 200 304 4h;
+        uwsgi_cache_valid 200 304 $cache_hours;
         uwsgi_cache_valid 301 307 4h;
         uwsgi_cache_valid 500 502 503 504 0s;
         uwsgi_cache_valid any 72h;
@@ -814,12 +814,20 @@ def spawn_app(app, deltas={}):
                 cache_size = int(env.get('NGINX_CACHE_SIZE', '1'))
             except:
                 echo("=====> Invalid cache size, defaulting to 1GB")
+                cache_size = 1
             cache_size = str(cache_size) + "g"
             try:
-                cache_days = int(env.get('NGINX_CACHE_DAYS', '7'))
+                cache_hours = int(env.get('NGINX_CACHE_TIME', '8'))
             except:
-                echo("=====> Invalid cache expiry, defaulting to 7 days")
-            cache_days = str(cache_days) + "d"
+                echo("=====> Invalid cache time, defaulting to 8 (hours)")
+                cache_hours = 8
+            cache_hours = str(cache_hours) + "h"
+            try:
+                cache_expiry = int(env.get('NGINX_CACHE_EXPIRY', '7'))
+            except:
+                echo("=====> Invalid cache expiry, defaulting to 7 (days)")
+                cache_expiry = 7
+            cache_expiry = str(cache_expiry) + "d"
 
             cache_prefixes = env.get('NGINX_CACHE_PREFIXES', '')
             cache_path = env.get('NGINX_CACHE_PATH', default_cache_path)
@@ -836,7 +844,7 @@ def spawn_app(app, deltas={}):
                         else:
                             prefixes.append(item)
                     cache_prefixes = "|".join(prefixes)
-                    echo("-----> nginx will cache /({}) prefixes up to {} or {} of disk space.".format(cache_prefixes, cache_days, cache_size))
+                    echo("-----> nginx will cache /({}) prefixes up to {} or {} of disk space.".format(cache_prefixes, cache_expiry, cache_size))
                     env['PIKU_INTERNAL_PROXY_CACHE_PATH'] = expandvars(
                         PIKU_INTERNAL_PROXY_CACHE_PATH, locals())
                     env['PIKU_INTERNAL_NGINX_CACHE_MAPPINGS'] = expandvars(
