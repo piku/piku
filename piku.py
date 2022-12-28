@@ -184,7 +184,7 @@ PIKU_INTERNAL_NGINX_CACHE_MAPPING = """
         uwsgi_cache $APP;
         uwsgi_cache_min_uses 1;
         uwsgi_cache_key $host$uri;
-        uwsgi_cache_valid 200 304 $cache_hours;
+        uwsgi_cache_valid 200 304 $cache_time;
         uwsgi_cache_valid 301 307 4h;
         uwsgi_cache_valid 500 502 503 504 0s;
         uwsgi_cache_valid any 72h;
@@ -817,11 +817,11 @@ def spawn_app(app, deltas={}):
                 cache_size = 1
             cache_size = str(cache_size) + "g"
             try:
-                cache_hours = int(env.get('NGINX_CACHE_TIME', '8'))
+                cache_time = int(env.get('NGINX_CACHE_TIME', '8'))
             except:
                 echo("=====> Invalid cache time, defaulting to 8 (hours)")
-                cache_hours = 8
-            cache_hours = str(cache_hours) + "h"
+                cache_time = 8
+            cache_time = str(cache_time) + "h"
             try:
                 cache_expiry = int(env.get('NGINX_CACHE_EXPIRY', '7'))
             except:
