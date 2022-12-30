@@ -44,10 +44,12 @@ PIKU_BIN = join(environ['HOME'], 'bin')
 PIKU_SCRIPT = realpath(__file__)
 PIKU_PLUGIN_ROOT = abspath(join(PIKU_ROOT, "plugins"))
 APP_ROOT = abspath(join(PIKU_ROOT, "apps"))
+DATA_ROOT = abspath(join(PIKU_ROOT, "data"))
 ENV_ROOT = abspath(join(PIKU_ROOT, "envs"))
 GIT_ROOT = abspath(join(PIKU_ROOT, "repos"))
 LOG_ROOT = abspath(join(PIKU_ROOT, "logs"))
 NGINX_ROOT = abspath(join(PIKU_ROOT, "nginx"))
+CACHE_ROOT = abspath(join(PIKU_ROOT, "cache"))
 UWSGI_AVAILABLE = abspath(join(PIKU_ROOT, "uwsgi-available"))
 UWSGI_ENABLED = abspath(join(PIKU_ROOT, "uwsgi-enabled"))
 UWSGI_ROOT = abspath(join(PIKU_ROOT, "uwsgi"))
@@ -63,6 +65,7 @@ if PIKU_BIN not in environ['PATH']:
 
 # pylint: disable=anomalous-backslash-in-string
 NGINX_TEMPLATE = """
+$PIKU_INTERNAL_PROXY_CACHE_PATH
 upstream $APP {
   server $NGINX_SOCKET;
 }
@@ -74,12 +77,12 @@ server {
     allow all;
     root ${ACME_WWW};
   }
-
 $PIKU_INTERNAL_NGINX_COMMON
 }
 """
 
 NGINX_HTTPS_ONLY_TEMPLATE = """
+$PIKU_INTERNAL_PROXY_CACHE_PATH
 upstream $APP {
   server $NGINX_SOCKET;
 }
@@ -110,7 +113,6 @@ NGINX_COMMON_FRAGMENT = """
   ssl_certificate     $NGINX_ROOT/$APP.crt;
   ssl_certificate_key $NGINX_ROOT/$APP.key;
   server_name         $NGINX_SERVER_NAME;
-
   # These are not required under systemd - enable for debugging only
   # access_log        $LOG_ROOT/$APP/access.log;
   # error_log         $LOG_ROOT/$APP/error.log;
@@ -123,16 +125,13 @@ NGINX_COMMON_FRAGMENT = """
   gzip_min_length 2048;
   gzip_vary on;
   gzip_disable "MSIE [1-6]\.(?!.*SV1)";
-
   # set a custom header for requests
   add_header X-Deployed-By Piku;
 
   $PIKU_INTERNAL_NGINX_CUSTOM_CLAUSES
-
   $PIKU_INTERNAL_NGINX_STATIC_MAPPINGS
-
+  $PIKU_INTERNAL_NGINX_CACHE_MAPPINGS
   $PIKU_INTERNAL_NGINX_BLOCK_GIT
-
   $PIKU_INTERNAL_NGINX_PORTMAP
 """
 
@@ -176,6 +175,26 @@ PIKU_INTERNAL_NGINX_STATIC_MAPPING = """
   }
 """
 
+PIKU_INTERNAL_PROXY_CACHE_PATH = """
+uwsgi_cache_path $cache_path levels=1:2 keys_zone=$app:20m inactive=$cache_time_expiry max_size=$cache_size use_temp_path=off;
+"""
+
+PIKU_INTERNAL_NGINX_CACHE_MAPPING = """
+    location ~* ^/($cache_prefixes) {
+        uwsgi_cache $APP;
+        uwsgi_cache_min_uses 1;
+        uwsgi_cache_key $host$uri;
+        uwsgi_cache_valid 200 304 $cache_time_content;
+        uwsgi_cache_valid 301 307 $cache_time_redirects;
+        uwsgi_cache_valid 500 502 503 504 0s;
+        uwsgi_cache_valid any $cache_time_any;
+        uwsgi_hide_header Cache-Control;
+        add_header Cache-Control "public, max-age=$cache_time_control";
+        add_header X-Cache $upstream_cache_status;
+        $PIKU_INTERNAL_NGINX_UWSGI_SETTINGS
+    }
+"""
+
 PIKU_INTERNAL_NGINX_UWSGI_SETTINGS = """
     uwsgi_pass $APP;
     uwsgi_param QUERY_STRING $query_string;
@@ -194,7 +213,6 @@ PIKU_INTERNAL_NGINX_UWSGI_SETTINGS = """
 """
 
 CRON_REGEXP = "^((?:(?:\*\/)?\d+)|\*) ((?:(?:\*\/)?\d+)|\*) ((?:(?:\*\/)?\d+)|\*) ((?:(?:\*\/)?\d+)|\*) ((?:(?:\*\/)?\d+)|\*) (.*)$"
-
 
 # === Utility functions ===
 
@@ -774,7 +792,7 @@ def spawn_app(app, deltas={}):
                         # allow access from controlling machine
                         if 'SSH_CLIENT' in environ:
                             remote_ip = environ['SSH_CLIENT'].split()[0]
-                            echo("-----> Adding your IP ({}) to nginx ACL".format(remote_ip))
+                            echo("-----> nginx ACL will include your IP ({})".format(remote_ip))
                             acl.append("allow {};".format(remote_ip))
                         acl.extend(["allow 127.0.0.1;", "deny all;"])
                 except Exception:
@@ -785,9 +803,82 @@ def spawn_app(app, deltas={}):
 
             env['PIKU_INTERNAL_NGINX_BLOCK_GIT'] = "" if env.get('NGINX_ALLOW_GIT_FOLDERS') else "location ~ /\.git { deny all; }"
 
+            env['PIKU_INTERNAL_PROXY_CACHE_PATH'] = ''
+            env['PIKU_INTERNAL_NGINX_CACHE_MAPPINGS'] = ''
+
+            # Get a mapping of /prefix1,/prefix2
+            default_cache_path = join(CACHE_ROOT, app)
+            if not exists(default_cache_path):
+                makedirs(default_cache_path)
+            try:
+                cache_size = int(env.get('NGINX_CACHE_SIZE', '1'))
+            except:
+                echo("=====> Invalid cache size, defaulting to 1GB")
+                cache_size = 1
+            cache_size = str(cache_size) + "g"
+            try:
+                cache_time_control = int(env.get('NGINX_CACHE_CONTROL', '3600'))
+            except:
+                echo("=====> Invalid time for cache control, defaulting to 3600s")
+                cache_time_control = 3600
+            cache_time_control = str(cache_time_control)
+            try:
+                cache_time_content = int(env.get('NGINX_CACHE_TIME', '3600'))
+            except:
+                echo("=====> Invalid cache time for content, defaulting to 3600s")
+                cache_time_content = 3600
+            cache_time_content = str(cache_time_content) + "s"
+            try:
+                cache_time_redirects = int(env.get('NGINX_CACHE_REDIRECTS', '3600'))
+            except:
+                echo("=====> Invalid cache time for redirects, defaulting to 3600s")
+                cache_time_redirects = 3600
+            cache_time_redirects = str(cache_time_redirects) + "s"
+            try:
+                cache_time_any = int(env.get('NGINX_CACHE_ANY', '3600'))
+            except:
+                echo("=====> Invalid cache expiry fallback, defaulting to 3600s")
+                cache_time_any = 3600
+            cache_time_any = str(cache_time_any) + "s"
+            try:
+                cache_time_expiry = int(env.get('NGINX_CACHE_EXPIRY', '86400'))
+            except:
+                echo("=====> Invalid cache expiry, defaulting to 86400s")
+                cache_time_expiry = 86400
+            cache_time_expiry = str(cache_time_expiry) + "s"
+            cache_prefixes = env.get('NGINX_CACHE_PREFIXES', '')
+            cache_path = env.get('NGINX_CACHE_PATH', default_cache_path)
+            if not exists(cache_path):
+                echo("=====> Cache path {} does not exist, using default {}, be aware of disk usage.".format(cache_path, default_cache_path))
+                cache_path = env.get(default_cache_path)
+            if len(cache_prefixes):
+                prefixes = [] # this will turn into part of /(path1|path2|path3)
+                try:
+                    items = cache_prefixes.split(',')
+                    for item in items:
+                        if item[0] == '/':
+                            prefixes.append(item[1:])
+                        else:
+                            prefixes.append(item)
+                    cache_prefixes = "|".join(prefixes)
+                    echo("-----> nginx will cache /({}) prefixes up to {} or {} of disk space, with the following timings:".format(cache_prefixes, cache_time_expiry, cache_size))
+                    echo("-----> nginx will cache content for {}.".format(cache_time_content))
+                    echo("-----> nginx will cache redirects for {}.".format(cache_time_redirects))
+                    echo("-----> nginx will cache everything else for {}.".format(cache_time_any))
+                    echo("-----> nginx will send caching headers asking for {} seconds of public caching.".format(cache_time_control))
+                    env['PIKU_INTERNAL_PROXY_CACHE_PATH'] = expandvars(
+                        PIKU_INTERNAL_PROXY_CACHE_PATH, locals())
+                    env['PIKU_INTERNAL_NGINX_CACHE_MAPPINGS'] = expandvars(
+                        PIKU_INTERNAL_NGINX_CACHE_MAPPING, locals())
+                    env['PIKU_INTERNAL_NGINX_CACHE_MAPPINGS'] = expandvars(
+                        env['PIKU_INTERNAL_NGINX_CACHE_MAPPINGS'], env)
+                except Exception as e:
+                    echo("Error {} in cache path spec: should be /prefix1:[,/prefix2], ignoring.".format(e))
+                    env['PIKU_INTERNAL_NGINX_CACHE_MAPPINGS'] = ''
+
             env['PIKU_INTERNAL_NGINX_STATIC_MAPPINGS'] = ''
 
-            # Get a mapping of /url:path1,/url2:path2
+            # Get a mapping of /prefix1:path1,/prefix2:path2
             static_paths = env.get('NGINX_STATIC_PATHS', '')
             # prepend static worker path if present
             if 'static' in workers:
@@ -800,10 +891,11 @@ def spawn_app(app, deltas={}):
                         static_url, static_path = item.split(':')
                         if static_path[0] != '/':
                             static_path = join(app_path, static_path)
+                        echo("-----> nginx will map {} to {}.".format(static_url, static_path))
                         env['PIKU_INTERNAL_NGINX_STATIC_MAPPINGS'] = env['PIKU_INTERNAL_NGINX_STATIC_MAPPINGS'] + expandvars(
                             PIKU_INTERNAL_NGINX_STATIC_MAPPING, locals())
                 except Exception as e:
-                    echo("Error {} in static path spec: should be /url1:path1[,/url2:path2], ignoring.".format(e))
+                    echo("Error {} in static path spec: should be /prefix1:path1[,/prefix2:path2], ignoring.".format(e))
                     env['PIKU_INTERNAL_NGINX_STATIC_MAPPINGS'] = ''
 
             env['PIKU_INTERNAL_NGINX_CUSTOM_CLAUSES'] = expandvars(open(join(app_path, env["NGINX_INCLUDE_FILE"])).read(), env) if env.get("NGINX_INCLUDE_FILE") else ""
@@ -822,6 +914,9 @@ def spawn_app(app, deltas={}):
             # remove all references to IPv6 listeners (for enviroments where it's disabled)
             if env.get('DISABLE_IPV6', 'false').lower() == 'true':
                 buffer = '\n'.join([line for line in buffer.split('\n') if 'NGINX_IPV6' not in line])
+            # change any unecessary uWSGI specific directives to standard proxy ones
+            if 'wsgi' not in workers and 'jwsgi' not in workers:
+                buffer = buffer.replace("uwsgi_", "proxy_")
 
             with open(nginx_conf, "w") as h:
                 h.write(buffer)
@@ -1243,31 +1338,38 @@ def cmd_destroy(app):
 
     app = exit_if_invalid(app)
 
+    # leave DATA_ROOT, since apps may create hard to reproduce data,
+    # and CACHE_ROOT, since `nginx` will set permissions to protect it
     for p in [join(x, app) for x in [APP_ROOT, GIT_ROOT, ENV_ROOT, LOG_ROOT]]:
         if exists(p):
-            echo("Removing folder '{}'".format(p), fg='yellow')
+            echo("--> Removing folder '{}'".format(p), fg='yellow')
             rmtree(p)
 
     for p in [join(x, '{}*.ini'.format(app)) for x in [UWSGI_AVAILABLE, UWSGI_ENABLED]]:
         g = glob(p)
         if len(g) > 0:
             for f in g:
-                echo("Removing file '{}'".format(f), fg='yellow')
+                echo("--> Removing file '{}'".format(f), fg='yellow')
                 remove(f)
 
     nginx_files = [join(NGINX_ROOT, "{}.{}".format(app, x)) for x in ['conf', 'sock', 'key', 'crt']]
     for f in nginx_files:
         if exists(f):
-            echo("Removing file '{}'".format(f), fg='yellow')
+            echo("--> Removing file '{}'".format(f), fg='yellow')
             remove(f)
 
     acme_link = join(ACME_WWW, app)
     acme_certs = realpath(acme_link)
     if exists(acme_certs):
-        echo("Removing folder '{}'".format(acme_certs), fg='yellow')
+        echo("--> Removing folder '{}'".format(acme_certs), fg='yellow')
         rmtree(acme_certs)
-        echo("Removing file '{}'".format(acme_link), fg='yellow')
+        echo("--> Removing file '{}'".format(acme_link), fg='yellow')
         unlink(acme_link)
+
+    # These come last to make sure they're visible    
+    for p in [join(x, app) for x in [DATA_ROOT, CACHE_ROOT]]:
+        if exists(p):
+            echo("==> Preserving folder '{}'".format(p), fg='red')
 
 
 @piku.command("logs")
@@ -1362,7 +1464,7 @@ def cmd_setup():
     echo("Running in Python {}".format(".".join(map(str, version_info))))
 
     # Create required paths
-    for p in [APP_ROOT, GIT_ROOT, ENV_ROOT, UWSGI_ROOT, UWSGI_AVAILABLE, UWSGI_ENABLED, LOG_ROOT, NGINX_ROOT]:
+    for p in [APP_ROOT, CACHE_ROOT, DATA_ROOT, GIT_ROOT, ENV_ROOT, UWSGI_ROOT, UWSGI_AVAILABLE, UWSGI_ENABLED, LOG_ROOT, NGINX_ROOT]:
         if not exists(p):
             echo("Creating '{}'.".format(p), fg='green')
             makedirs(p)
