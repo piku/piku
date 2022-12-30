@@ -54,8 +54,11 @@ The behavior of the cache can be controlled with the following variables:
 
 * `NGINX_CACHE_PREFIXES` (string, comma separated list): set an array of `/url` values that will be cached by `nginx`
 * `NGINX_CACHE_SIZE` (integer, defaults to 1): set the maximum size of the `nginx` cache, in GB
-* `NGINX_CACHE_TIME` (integer, defaults to 8): set the amount of time (in hours) that valid backend replies will be cached.
-* `NGINX_CACHE_EXPIRY` (integer, defaults to 1): set the amount of time (in days) that cache entries will be kept on disk.
+* `NGINX_CACHE_TIME` (integer, defaults to 3600): set the amount of time (in seconds) that valid backend replies (`200 304`) will be cached.
+* `NGINX_CACHE_REDIRECTS` (integer, defaults to 3600): set the amount of time (in seconds) that backend redirects (`301 307`) will be cached.
+* `NGINX_CACHE_ANY` (integer, defaults to 3600): set the amount of time (in seconds) that any other replies (other than errors) will be cached.
+* `NGINX_CACHE_CONTROL` (integer, defaults to 3600): set the amount of time (in seconds) for cache control headers (`Cache-Control "public, max-age=3600"`)
+* `NGINX_CACHE_EXPIRY` (integer, defaults to 86400): set the amount of time (in seconds) that cache entries will be kept on disk.
 * `NGINX_CACHE_PATH` (string, detaults to `~piku/.piku/<appname>/cache`): location for the `nginx` cache data.
 
 > **NOTE:** `NGINX_CACHE_PATH` will be _completely managed by `nginx` and cannot be removed by Piku when the application is destroyed_. This is because `nginx` sets the ownership for the cache to be exclusive to itself, and the `piku` user cannot remove that file tree. So you will either need to clean it up manually after destroying the app or store it in a temporary filesystem (or set the `piku` user to the same UID as `www-data`, which is not recommended).
