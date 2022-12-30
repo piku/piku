@@ -835,10 +835,10 @@ def spawn_app(app, deltas={}):
                 cache_time_redirects = 3600
             cache_time_redirects = str(cache_time_redirects) + "s"
             try:
-                cache_time_any = int(env.get('NGINX_CACHE_ANY', '86400'))
+                cache_time_any = int(env.get('NGINX_CACHE_ANY', '3600'))
             except:
-                echo("=====> Invalid cache expiry fallback, defaulting to 86400s")
-                cache_time_any = 86400
+                echo("=====> Invalid cache expiry fallback, defaulting to 3600s")
+                cache_time_any = 3600
             cache_time_any = str(cache_time_any) + "s"
             try:
                 cache_time_expiry = int(env.get('NGINX_CACHE_EXPIRY', '86400'))
