@@ -123,6 +123,8 @@ If you are on a LAN and are accessing `piku` from macOS/iOS/Linux clients, you c
 
 Besides static sites, `piku` also supports directly mapping specific URL prefixes to filesystem paths (to serve static assets) or caching back-end responses (to remove load from applications).
 
+These features are configured by setting appropriate values in the [`ENV`](./docs/ENV.md) file.
+
 ## Supported Platforms
 
 `piku` is intended to work in any POSIX-like environment where you have Python, `nginx`, [`uWSGI`][uwsgi] and SSH: it has been deployed on Linux, FreeBSD, [Cygwin][cygwin] and the [Windows Subsystem for Linux][wsl].
