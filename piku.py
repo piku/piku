@@ -176,7 +176,7 @@ PIKU_INTERNAL_NGINX_STATIC_MAPPING = """
 """
 
 PIKU_INTERNAL_PROXY_CACHE_PATH = """
-uwsgi_cache_path $cache_path levels=1:2 keys_zone=$app:20m inactive=$cache_expiry max_size=$cache_size use_temp_path=off;
+uwsgi_cache_path $cache_path levels=1:2 keys_zone=$app:20m inactive=$cache_time_expiry max_size=$cache_size use_temp_path=off;
 """
 
 PIKU_INTERNAL_NGINX_CACHE_MAPPING = """
@@ -184,12 +184,12 @@ PIKU_INTERNAL_NGINX_CACHE_MAPPING = """
         uwsgi_cache $APP;
         uwsgi_cache_min_uses 1;
         uwsgi_cache_key $host$uri;
-        uwsgi_cache_valid 200 304 $cache_time;
-        uwsgi_cache_valid 301 307 4h;
+        uwsgi_cache_valid 200 304 $cache_time_content;
+        uwsgi_cache_valid 301 307 $cache_time_redirects;
         uwsgi_cache_valid 500 502 503 504 0s;
-        uwsgi_cache_valid any 72h;
+        uwsgi_cache_valid any $cache_time_any;
         uwsgi_hide_header Cache-Control;
-        add_header Cache-Control "public, max-age=3600";
+        add_header Cache-Control "public, max-age=$cache_time_control";
         add_header X-Cache $upstream_cache_status;
         $PIKU_INTERNAL_NGINX_UWSGI_SETTINGS
     }
@@ -792,7 +792,7 @@ def spawn_app(app, deltas={}):
                         # allow access from controlling machine
                         if 'SSH_CLIENT' in environ:
                             remote_ip = environ['SSH_CLIENT'].split()[0]
-                            echo("-----> Adding your IP ({}) to nginx ACL".format(remote_ip))
+                            echo("-----> nginx ACL will include your IP ({})".format(remote_ip))
                             acl.append("allow {};".format(remote_ip))
                         acl.extend(["allow 127.0.0.1;", "deny all;"])
                 except Exception:
@@ -817,18 +817,35 @@ def spawn_app(app, deltas={}):
                 cache_size = 1
             cache_size = str(cache_size) + "g"
             try:
-                cache_time = int(env.get('NGINX_CACHE_TIME', '8'))
+                cache_time_control = int(env.get('NGINX_CACHE_CONTROL', '3600'))
             except:
-                echo("=====> Invalid cache time, defaulting to 8 (hours)")
-                cache_time = 8
-            cache_time = str(cache_time) + "h"
+                echo("=====> Invalid time for cache control, defaulting to 3600s")
+                cache_time_control = 3600
+            cache_time_control = str(cache_time_control)
             try:
-                cache_expiry = int(env.get('NGINX_CACHE_EXPIRY', '1'))
+                cache_time_content = int(env.get('NGINX_CACHE_TIME', '3600'))
             except:
-                echo("=====> Invalid cache expiry, defaulting to 1 (days)")
-                cache_expiry = 1
-            cache_expiry = str(cache_expiry) + "d"
-
+                echo("=====> Invalid cache time for content, defaulting to 3600s")
+                cache_time_content = 3600
+            cache_time_content = str(cache_time_content) + "s"
+            try:
+                cache_time_redirects = int(env.get('NGINX_CACHE_REDIRECTS', '3600'))
+            except:
+                echo("=====> Invalid cache time for redirects, defaulting to 3600s")
+                cache_time_redirects = 3600
+            cache_time_redirects = str(cache_time_redirects) + "s"
+            try:
+                cache_time_any = int(env.get('NGINX_CACHE_ANY', '86400'))
+            except:
+                echo("=====> Invalid cache expiry fallback, defaulting to 86400s")
+                cache_time_any = 86400
+            cache_time_any = str(cache_time_any) + "s"
+            try:
+                cache_time_expiry = int(env.get('NGINX_CACHE_EXPIRY', '86400'))
+            except:
+                echo("=====> Invalid cache expiry, defaulting to 86400s")
+                cache_time_expiry = 86400
+            cache_time_expiry = str(cache_time_expiry) + "s"
             cache_prefixes = env.get('NGINX_CACHE_PREFIXES', '')
             cache_path = env.get('NGINX_CACHE_PATH', default_cache_path)
             if not exists(cache_path):
@@ -844,7 +861,11 @@ def spawn_app(app, deltas={}):
                         else:
                             prefixes.append(item)
                     cache_prefixes = "|".join(prefixes)
-                    echo("-----> nginx will cache /({}) prefixes up to {} or {} of disk space.".format(cache_prefixes, cache_expiry, cache_size))
+                    echo("-----> nginx will cache /({}) prefixes up to {} or {} of disk space, with the following timings:".format(cache_prefixes, cache_time_expiry, cache_size))
+                    echo("-----> nginx will cache content for {}.".format(cache_time_content))
+                    echo("-----> nginx will cache redirects for {}.".format(cache_time_redirects))
+                    echo("-----> nginx will cache everything else for {}.".format(cache_time_any))
+                    echo("-----> nginx will send caching headers asking for {} seconds of public caching.".format(cache_time_control))
                     env['PIKU_INTERNAL_PROXY_CACHE_PATH'] = expandvars(
                         PIKU_INTERNAL_PROXY_CACHE_PATH, locals())
                     env['PIKU_INTERNAL_NGINX_CACHE_MAPPINGS'] = expandvars(
