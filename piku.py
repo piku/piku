@@ -884,7 +884,7 @@ def spawn_app(app, deltas={}):
             # prepend static worker path if present
             if 'static' in workers:
                 stripped = workers['static'].strip("/").rstrip("/")
-                static_paths = "/:" + (stripped if stripped else ".") + "/" + ("," if static_paths else "") + static_paths
+                static_paths = ("/" if stripped[0:1] == ":" else "/:") + (stripped if stripped else ".") + "/" + ("," if static_paths else "") + static_paths
             if len(static_paths):
                 try:
                     items = static_paths.split(',')
