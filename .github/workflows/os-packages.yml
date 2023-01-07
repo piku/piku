@@ -11,7 +11,7 @@ jobs:
         distro: [ buster, bionic, focal ]
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v3
     - name: Test on ${{ matrix.distro }}
       run: |
         docker build .github/workflows/${{ matrix.distro }} -t local/${{ matrix.distro }}
