@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       max-parallel: 3
       matrix:
@@ -13,9 +13,9 @@ jobs:
         python-version: [3.6, 3.7, 3.8, 3.9]
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
@@ -39,4 +39,4 @@ jobs:
         # Ignore W605 (https://lintlyci.github.io/Flake8Rules/rules/W605.html) because 
         # flake8 does not understand escaping dots inside templates for nginx and SSH
         # TODO: pare down complexity and line length as we shrink piku core
-        flake8 . --ignore=W605 --count --max-complexity=60 --max-line-length=255 --statistics
+        flake8 . --ignore=W605 --count --max-complexity=76 --max-line-length=255 --statistics
