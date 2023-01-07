@@ -216,6 +216,7 @@ CRON_REGEXP = "^((?:(?:\*\/)?\d+)|\*) ((?:(?:\*\/)?\d+)|\*) ((?:(?:\*\/)?\d+)|\*
 
 # === Utility functions ===
 
+
 def sanitize_app_name(app):
     """Sanitize the app name and build matching path"""
 
@@ -702,7 +703,7 @@ def spawn_app(app, deltas={}):
         if 'PORT' not in env:
             env['PORT'] = str(get_free_port())
             echo("-----> picking free port {PORT}".format(**env))
-        
+
         if env.get('DISABLE_IPV6', 'false').lower() == 'true':
             safe_defaults.pop('NGINX_IPV6_ADDRESS', None)
             echo("-----> nginx will NOT use IPv6".format(**locals()))
@@ -812,37 +813,37 @@ def spawn_app(app, deltas={}):
                 makedirs(default_cache_path)
             try:
                 cache_size = int(env.get('NGINX_CACHE_SIZE', '1'))
-            except:
+            except Exception:
                 echo("=====> Invalid cache size, defaulting to 1GB")
                 cache_size = 1
             cache_size = str(cache_size) + "g"
             try:
                 cache_time_control = int(env.get('NGINX_CACHE_CONTROL', '3600'))
-            except:
+            except Exception:
                 echo("=====> Invalid time for cache control, defaulting to 3600s")
                 cache_time_control = 3600
             cache_time_control = str(cache_time_control)
             try:
                 cache_time_content = int(env.get('NGINX_CACHE_TIME', '3600'))
-            except:
+            except Exception:
                 echo("=====> Invalid cache time for content, defaulting to 3600s")
                 cache_time_content = 3600
             cache_time_content = str(cache_time_content) + "s"
             try:
                 cache_time_redirects = int(env.get('NGINX_CACHE_REDIRECTS', '3600'))
-            except:
+            except Exception:
                 echo("=====> Invalid cache time for redirects, defaulting to 3600s")
                 cache_time_redirects = 3600
             cache_time_redirects = str(cache_time_redirects) + "s"
             try:
                 cache_time_any = int(env.get('NGINX_CACHE_ANY', '3600'))
-            except:
+            except Exception:
                 echo("=====> Invalid cache expiry fallback, defaulting to 3600s")
                 cache_time_any = 3600
             cache_time_any = str(cache_time_any) + "s"
             try:
                 cache_time_expiry = int(env.get('NGINX_CACHE_EXPIRY', '86400'))
-            except:
+            except Exception:
                 echo("=====> Invalid cache expiry, defaulting to 86400s")
                 cache_time_expiry = 86400
             cache_time_expiry = str(cache_time_expiry) + "s"
@@ -852,7 +853,7 @@ def spawn_app(app, deltas={}):
                 echo("=====> Cache path {} does not exist, using default {}, be aware of disk usage.".format(cache_path, default_cache_path))
                 cache_path = env.get(default_cache_path)
             if len(cache_prefixes):
-                prefixes = [] # this will turn into part of /(path1|path2|path3)
+                prefixes = []  # this will turn into part of /(path1|path2|path3)
                 try:
                     items = cache_prefixes.split(',')
                     for item in items:
@@ -1215,7 +1216,9 @@ def piku():
     """The smallest PaaS you've ever seen"""
     pass
 
-piku.rc = getattr(piku, "result_callback", None) or getattr(piku, "resultcallback", None) 
+
+piku.rc = getattr(piku, "result_callback", None) or getattr(piku, "resultcallback", None)
+
 
 @piku.rc()
 def cleanup(ctx):
@@ -1223,6 +1226,7 @@ def cleanup(ctx):
     pass
 
 # --- User commands ---
+
 
 @piku.command("apps")
 def cmd_apps():
@@ -1366,7 +1370,7 @@ def cmd_destroy(app):
         echo("--> Removing file '{}'".format(acme_link), fg='yellow')
         unlink(acme_link)
 
-    # These come last to make sure they're visible    
+    # These come last to make sure they're visible
     for p in [join(x, app) for x in [DATA_ROOT, CACHE_ROOT]]:
         if exists(p):
             echo("==> Preserving folder '{}'".format(p), fg='red')
