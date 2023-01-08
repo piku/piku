@@ -4,13 +4,13 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       max-parallel: 3
       matrix:
-        # This is currently overkill since we are targeting 3.5
-        # but affords us visibility onto syntax changes in newer Pythons
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        # This range ensures coding standard does not conflict with 
+        #  changes in newer Pythons
+        python-version: [3.7, 3.8, 3.9, 3.10]
 
     steps:
     - uses: actions/checkout@v3
