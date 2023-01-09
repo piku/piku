@@ -1,8 +1,8 @@
-# Installation on Ubuntu 18.04 LTS (Bionic)
+# Installation on Ubuntu 22.04 LTS (Jammy)
 
 > This is a standalone, distribution-specific version of `INSTALL.md`. You do not need to read or follow the original file, but can refer to it for generic steps like setting up SSH keys (which are assumed to be common knowledge here)
 
-`piku` setup is simplified in Bionic, since it can take advantage of some packaging improvements in [uWSGI][uwsgi] and does not require a custom `systemd` service. Since Bionic also ships with Python 3.6, this is an ideal environment for new deployments on both Intel and ARM devices.
+`piku` setup is simplified in Jammy, since it can take advantage of some packaging improvements in [uWSGI][uwsgi] and does not require a custom `systemd` service. Since Jammy also ships with Python 3.10, this is an ideal environment for new deployments on both Intel and ARM devices.
 
 ## Dependencies
 
@@ -53,7 +53,7 @@ Setting '/home/piku/piku.py' as executable.
 
 ## uWSGI Configuration
 
-[uWSGI][uwsgi] in Bionic requires very little configuration, since it is already properly packaged. All you need to do is place a link to the `piku` configuration file in `/etc/uwsgi/apps-enabled`:
+[uWSGI][uwsgi] in Jammy requires very little configuration, since it is already properly packaged. All you need to do is place a link to the `piku` configuration file in `/etc/uwsgi/apps-enabled`:
 
 ```bash
 sudo ln /home/$PAAS_USERNAME/.piku/uwsgi/uwsgi.ini /etc/uwsgi/apps-enabled/piku.ini
