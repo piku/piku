@@ -12,10 +12,10 @@ Before installing `piku`, you need to install the following packages:
 sudo apt-get update
 sudo apt-get install -y build-essential certbot git \
     libjpeg-dev libxml2-dev libxslt1-dev zlib1g-dev nginx \
-    python-certbot-nginx python-dev python-pip python-virtualenv \
+    python3-certbot-nginx \
     python3-dev python3-pip python3-click python3-virtualenv \
-    uwsgi uwsgi-plugin-asyncio-python3 uwsgi-plugin-gevent-python \
-    uwsgi-plugin-python uwsgi-plugin-python3 uwsgi-plugin-tornado-python
+    uwsgi uwsgi-plugin-asyncio-python3 uwsgi-plugin-gevent-python3 \
+    uwsgi-plugin-python3 uwsgi-plugin-tornado-python3
 ```
 ## Setting up the `piku` user
 
