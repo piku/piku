@@ -8,7 +8,7 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        distro: [ buster, jammy, focal ]
+        distro: [ buster, jammy, focal, bullseye ]
 
     steps:
     - uses: actions/checkout@v3
