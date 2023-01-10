@@ -891,7 +891,7 @@ def spawn_app(app, deltas={}):
                     for item in items:
                         static_url, static_path = item.split(':')
                         if static_path[0] != '/':
-                            static_path = join(app_path, static_path)
+                            static_path = join(app_path, static_path).rstrip("/") + "/"
                         echo("-----> nginx will map {} to {}.".format(static_url, static_path))
                         env['PIKU_INTERNAL_NGINX_STATIC_MAPPINGS'] = env['PIKU_INTERNAL_NGINX_STATIC_MAPPINGS'] + expandvars(
                             PIKU_INTERNAL_NGINX_STATIC_MAPPING, locals())
