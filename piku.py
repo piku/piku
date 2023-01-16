@@ -918,6 +918,10 @@ def spawn_app(app, deltas={}):
             # change any unecessary uWSGI specific directives to standard proxy ones
             if 'wsgi' not in workers and 'jwsgi' not in workers:
                 buffer = buffer.replace("uwsgi_", "proxy_")
+            
+            # map Cloudflare connecting IP to REMOTE_ADDR
+            if env.get('NGINX_CLOUDFLARE_ACL', 'false').lower() == 'true':
+                buffer = buffer.replace("REMOTE_ADDR $remote_addr", "REMOTE_ADDR $http_cf_connecting_ip")
 
             with open(nginx_conf, "w") as h:
                 h.write(buffer)
