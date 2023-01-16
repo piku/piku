@@ -205,6 +205,7 @@ PIKU_INTERNAL_NGINX_UWSGI_SETTINGS = """
     uwsgi_param PATH_INFO $document_uri;
     uwsgi_param DOCUMENT_ROOT $document_root;
     uwsgi_param SERVER_PROTOCOL $server_protocol;
+    uwsgi_param X_FORWARDED_FOR $http_x_forwarded_for;
     uwsgi_param REMOTE_ADDR $remote_addr;
     uwsgi_param REMOTE_PORT $remote_port;
     uwsgi_param SERVER_ADDR $server_addr;
