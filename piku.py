@@ -885,14 +885,14 @@ def spawn_app(app, deltas={}):
             # prepend static worker path if present
             if 'static' in workers:
                 stripped = workers['static'].strip("/").rstrip("/")
-                static_paths = "/:" + (stripped if stripped else ".") + "/" + ("," if static_paths else "") + static_paths
+                static_paths = ("/" if stripped[0:1] == ":" else "/:") + (stripped if stripped else ".") + "/" + ("," if static_paths else "") + static_paths
             if len(static_paths):
                 try:
                     items = static_paths.split(',')
                     for item in items:
                         static_url, static_path = item.split(':')
                         if static_path[0] != '/':
-                            static_path = join(app_path, static_path)
+                            static_path = join(app_path, static_path).rstrip("/") + "/"
                         echo("-----> nginx will map {} to {}.".format(static_url, static_path))
                         env['PIKU_INTERNAL_NGINX_STATIC_MAPPINGS'] = env['PIKU_INTERNAL_NGINX_STATIC_MAPPINGS'] + expandvars(
                             PIKU_INTERNAL_NGINX_STATIC_MAPPING, locals())
