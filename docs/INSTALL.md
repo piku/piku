@@ -164,7 +164,7 @@ And that's it, you're set. Now to configure [uWSGI][uwsgi], which is what `piku`
 
 ### Raspbian Jessie, Debian 8
 
-> **Warning:**
+> **Warning**
 > 
 > These OS releases are no longer supported and these instructions are kept for reference purposes only.
 
@@ -193,7 +193,7 @@ Also, please note that `uwsgi-piku.service`, as provided, creates a `/run/uwsgi-
 
 ### Raspbian Wheezy
 
-> **Warning:**
+> **Warning**
 > 
 > This OS release is no longer supported and these instructions are kept for reference purposes only.
 
@@ -216,7 +216,7 @@ sudo service uwsgi-piku start
 
 ### Ubuntu 14.04 LTS
 
-> **Warning:**
+> **Warning**
 > 
 > This OS release is no longer supported and these instructions are kept for reference purposes only.
 
@@ -238,7 +238,7 @@ sudo service uwsgi-piku start
 
 ## nginx Installation (Raspbian 8, Ubuntu 16.04)
 
-> **Warning:**
+> **Warning**
 > 
 > These OS releases are no longer supported and these instructions are kept for reference purposes only.
 
@@ -260,7 +260,7 @@ sudo systemctl restart nginx
 
 ## Java 8 Installation (All Debian Linux variants, on Raspberry Pi)
 
-> **Warning:**
+> **Warning**
 > 
 > OpenJDK 8 is no longer shipping with most distributions and these instructions are kept for reference purposes only.
 
@@ -275,7 +275,7 @@ sudo apt-key adv --recv-key --keyserver keyserver.ubuntu.com EEA14886
 
 ### Raspbian Jessie
 
-> **Warning:**
+> **Warning**
 > 
 > This OS release is no longer supported and these instructions are kept for reference purposes only.
 
@@ -290,7 +290,7 @@ deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main
 
 ### Ubuntu 16.04 for ARM
 
-> **Warning:**
+> **Warning**
 > 
 > This OS release is no longer supported and these instructions are kept for reference purposes only.
 
@@ -316,7 +316,7 @@ sudo apt-get install oracle-java8-installer oracle-java8-set-default
 
 ### Raspbian Wheezy/Jessie
 
-> **Warning:**
+> **Warning**
 > 
 > Wheezy and Jessie are no longer supported and these instructions are kept for reference purposes only.
 
