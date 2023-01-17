@@ -1004,7 +1004,7 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         ('max-requests', env.get('UWSGI_MAX_REQUESTS', '1024')),
         ('listen', env.get('UWSGI_LISTEN', '16')),
         ('processes', env.get('UWSGI_PROCESSES', '1')),
-        ('procname-prefix', '{app:s}:{kind:s}'.format(**locals())),
+        ('procname-prefix', '{app:s}:{kind:s}:'.format(**locals())),
         ('enable-threads', env.get('UWSGI_ENABLE_THREADS', 'true').lower()),
         ('log-x-forwarded-for', env.get('UWSGI_LOG_X_FORWARDED_FOR', 'false').lower()),
         ('log-maxsize', env.get('UWSGI_LOG_MAXSIZE', UWSGI_LOG_MAXSIZE)),
