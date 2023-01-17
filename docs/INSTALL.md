@@ -164,6 +164,9 @@ And that's it, you're set. Now to configure [uWSGI][uwsgi], which is what `piku`
 
 ### Raspbian Jessie, Debian 8
 
+> **Warning:**
+> These OS releases are no longer supported and these instructions are kept for reference purposes only.
+
 In Raspbian Jessie, Debian 8 and other `systemd` distributions where [uWSGI][uwsgi] is already available pre-compiled (but split into a number of plugins), do the following:
 
 ```bash
@@ -189,6 +192,9 @@ Also, please note that `uwsgi-piku.service`, as provided, creates a `/run/uwsgi-
 
 ### Raspbian Wheezy
 
+> **Warning:**
+> This OS release is no longer supported and these instructions are kept for reference purposes only.
+
 Since Raspbian Wheezy is a fairly old distribution by now, its `uwsgi-*` packages are completely outdated (and depend on Python 2.6), so we have to compile and install our own version, as well as using an old-style `init` script to have it start automatically upon boot.
 
 ```bash
@@ -208,6 +214,9 @@ sudo service uwsgi-piku start
 
 ### Ubuntu 14.04 LTS
 
+> **Warning:>>
+> This OS release is no longer supported and these instructions are kept for reference purposes only.
+
 This is a mix of both the above, and should change soon when we get 16.04. If you have trouble, install [uWSGI][uwsgi] via `pip` instead.
 
 ```bash
@@ -225,6 +234,9 @@ sudo service uwsgi-piku start
 ```
 
 ## nginx Installation (Raspbian 8, Ubuntu 16.04)
+
+> **Warning:**
+> These OS releases are no longer supported and these instructions are kept for reference purposes only.
 
 *PLEASE NOTE:* There is a bug in `nginx` 1.6.2 under Raspbian 8 that causes it to try to allocate around a gigabyte of RAM when using SSL with SPDY. I seriously recommend using Ubuntu instead, if you can, or disabling SSL altogether.
 
@@ -244,6 +256,9 @@ sudo systemctl restart nginx
 
 ## Java 8 Installation (All Debian Linux variants, on Raspberry Pi)
 
+> **Warning:**
+> OpenJDK 8 is no longer shipping with most distributions and these instructions are kept for reference purposes only.
+
 To be able to deploy Java apps, we're going to need to install Java (and, since we're going to be doing so on ARM, it's best to use Oracle's runtime). To do that, we're going to use the `webupd8team` PPA, which has a (cross-platform) Java installer.
 
 First, get rid of OpenJDK and import the PPA key:
@@ -255,6 +270,9 @@ sudo apt-key adv --recv-key --keyserver keyserver.ubuntu.com EEA14886
 
 ### Raspbian Jessie
 
+> **Warning:**
+> This OS release is no longer supported and these instructions are kept for reference purposes only.
+
 For Jessie, we're going to use the `trusty` version of the installer:
 
 ```bash
@@ -265,6 +283,9 @@ deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main
 ```
 
 ### Ubuntu 16.04 for ARM
+
+> **Warning:**
+> This OS release is no longer supported and these instructions are kept for reference purposes only.
 
 For Xenial, we're going to use its own version:
 
@@ -287,6 +308,9 @@ sudo apt-get install oracle-java8-installer oracle-java8-set-default
 > This is **EXPERIMENTAL** and may not work at all.
 
 ### Raspbian Wheezy/Jessie
+
+> **Warning:**
+> Wheezy and Jessie are no longer supported and these instructions are kept for reference purposes only.
 
 Since Raspbian's Go compiler is version 1.0.2, we need something more up-to-date.
 
