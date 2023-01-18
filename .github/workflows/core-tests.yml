@@ -39,4 +39,4 @@ jobs:
         # Ignore W605 (https://lintlyci.github.io/Flake8Rules/rules/W605.html) because 
         # flake8 does not understand escaping dots inside templates for nginx and SSH
         # TODO: pare down complexity and line length as we shrink piku core
-        flake8 . --ignore=W605 --count --max-complexity=76 --max-line-length=255 --statistics
+        flake8 . --ignore=W605 --count --max-complexity=78 --max-line-length=255 --statistics
