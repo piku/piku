@@ -2,7 +2,7 @@
 Description=Monitor .piku/nginx for changes
 
 [Path]
-PathModified=/home/piku/.piku/nginx
+PathChanged=/home/piku/.piku/nginx
 Unit=piku-nginx.service
 
 [Install]
