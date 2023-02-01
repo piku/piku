@@ -3,7 +3,7 @@ Description=Restarts NGINX when .piku/nginx changes.
 
 [Service]
 Type=simple
-ExecStart=/bin/systemctl reload nginx
+ExecStart=/usr/bin/systemctl reload nginx
 
 [Install]
 WantedBy=multi-user.target
