@@ -287,7 +287,7 @@ def parse_procfile(filename):
                     matches = match(CRON_REGEXP, command).groups()
                     if matches:
                         for i in range(len(limits)):
-                            if int(matches[i].replace("*/", "").replace("*", "1")) > limits[i]:
+                            if int(matches[i+1].replace("*/", "").replace("*", "1")) > limits[i]:
                                 raise ValueError
                 workers[kind] = command
             except Exception:
