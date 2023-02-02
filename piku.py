@@ -284,10 +284,11 @@ def parse_procfile(filename):
                 # Check for cron patterns
                 if kind == "cron":
                     limits = [59, 24, 31, 12, 7]
-                    matches = match(CRON_REGEXP, command).groups()
-                    if matches:
+                    res = match(CRON_REGEXP, command)
+                    if res:
+                        matches = res.groups()
                         for i in range(len(limits)):
-                            if int(matches[i + 1].replace("*/", "").replace("*", "1")) > limits[i]:
+                            if int(matches[i].replace("*/", "").replace("*", "1")) > limits[i]:
                                 raise ValueError
                 workers[kind] = command
             except Exception:
