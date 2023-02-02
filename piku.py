@@ -611,8 +611,11 @@ def deploy_python(app, deltas={}):
     virtualenv_path = join(ENV_ROOT, app)
     requirements = join(APP_ROOT, app, 'requirements.txt')
     env_file = join(APP_ROOT, app, 'ENV')
-    # Peek at environment variables shipped with repo (if any) to determine version
-    env = {}
+    # Set unbuffered output and readable UTF-8 mapping
+    env = {
+        'PYTHONUNBUFFERED': '1',
+        'PYTHONIOENCODING': 'UTF_8:replace'
+    }
     if exists(env_file):
         env.update(parse_settings(env_file, env))
 
