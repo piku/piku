@@ -1,11 +1,9 @@
-# Basic Piku application examples
+# Piku application examples
 
- * [Python WSGI app with background worker](https://github.com/piku/sample-python-app)
- * [Python Django app](https://github.com/piku/sample-django-app)
- * [Nodejs app](https://github.com/piku/sample-nodejs-app)
- * [Python with Postgres database](./python-postgres)
- * [Clojure app with Lein](https://github.com/piku/sample-clojure-app)
- * [Node with Wisp](./nodejs-wisp)
- * [Golang](./golang) 
- * [Phoenix App](https://github.com/piku/sample-phoenix-app)
-
+| Stack     | Simple | Using a Framework | Other |
+|--------------|:-----:|:-----------:|:-------:|
+| Python |  [Web and background worker](https://github.com/piku/sample-python-app) | [Django app](https://github.com/piku/sample-django-app) | [With Postgres database](./python-postgres) |
+| NodeJS |  [Simple app](https://github.com/piku/sample-nodejs-app) | [Node-RED](https://github.com/piku/deploy-nodered) | [Node with Wisp](./nodejs-wisp) | Clojure | [Sample using Lein](https://github.com/piku/sample-clojure-app) |
+| Go | [Simple app](./golang) |
+| Ruby | [Simple app](https://github.com/piku/sample-ruby-app) | [Rails app](https://github.com/piku/sample-rails-app) |
+| Elixir | | [Phoenix App](https://github.com/piku/sample-phoenix-app) |
