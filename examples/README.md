@@ -7,5 +7,5 @@
  * [Clojure app with Lein](https://github.com/piku/sample-clojure-app)
  * [Node with Wisp](./nodejs-wisp)
  * [Golang](./golang) 
- * [Phoenix App](https://github.com/axelbdt/piku-sample-phoenix-app)
+ * [Phoenix App](https://github.com/piku/sample-phoenix-app)
 
