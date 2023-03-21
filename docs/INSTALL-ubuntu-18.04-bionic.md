@@ -17,39 +17,10 @@ sudo apt-get install -y build-essential certbot git \
     uwsgi uwsgi-plugin-asyncio-python3 uwsgi-plugin-gevent-python \
     uwsgi-plugin-python uwsgi-plugin-python3 uwsgi-plugin-tornado-python
 ```
-## Setting up the `piku` user
 
-`piku` requires a separate user account to run. To create a new user with the right group membership (we're using the built-in `www-data` group because it's generally thought of as a less-privileged group), enter the following commands:
+## Set up the `piku` user, Set up SSH access
 
-```bash
-# pick a username
-export PAAS_USERNAME=piku
-# create it
-sudo adduser --disabled-password --gecos 'PaaS access' --ingroup www-data $PAAS_USERNAME
-```
-
-This user _is not supposed to login to your system_. Instead, you'll interact with `piku` via SSH, and set things up by using `su`:
-
-```bash
-# copy your public key to /tmp (I'm assuming it's the first entry in authorized_keys)
-head -1 ~/.ssh/authorized_keys > /tmp/pubkey
-# install piku and have it set up SSH keys and default files
-sudo su - $PAAS_USERNAME -c "wget https://raw.githubusercontent.com/piku/piku/master/piku.py && python3 ~/piku.py setup && python3 ~/piku.py setup:ssh /tmp/pubkey"
-rm /tmp/pubkey
-```
-
-The `setup` output should be something like this:
-
-```
-Creating '/home/piku/.piku/apps'.
-Creating '/home/piku/.piku/repos'.
-Creating '/home/piku/.piku/envs'.
-Creating '/home/piku/.piku/uwsgi'.
-Creating '/home/piku/.piku/uwsgi-available'.
-Creating '/home/piku/.piku/uwsgi-enabled'.
-Creating '/home/piku/.piku/logs'.
-Setting '/home/piku/piku.py' as executable.
-```
+See INSTALL.md
 
 ## uWSGI Configuration
 
