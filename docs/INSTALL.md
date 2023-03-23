@@ -23,7 +23,6 @@ export PAAS_USERNAME=piku
 sudo adduser --disabled-password --gecos 'PaaS access' --ingroup www-data $PAAS_USERNAME
 # copy & setup piku.py
 sudo su - $PAAS_USERNAME -c "wget https://raw.githubusercontent.com/piku/piku/master/piku.py && python3 ~/piku.py setup"
-rm /tmp/pubkey
 ```
 
 The `setup` output should be something like this:
