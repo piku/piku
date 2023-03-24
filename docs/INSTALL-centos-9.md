@@ -39,15 +39,7 @@ systemctl restart uwsgi
 [FYI Setting up and configuring NGINX](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/deploying_web_servers_and_reverse_proxies/setting-up-and-configuring-nginx_deploying-web-servers-and-reverse-proxies)
 
 ```bash
-micro /etc/nginx/nginx.conf
-```
-
-inside http block, after line `include /etc/nginx/conf.d/*.conf;`, add
-```
-    include /home/piku/.piku/nginx/*.conf;
-```
-
-```bash
+echo "include /home/piku/.piku/nginx/*.conf;" > /etc/nginx/conf.d/piku.conf
 systemctl restart nginx
 journalctl -xeu nginx.service # see logs
 ```
