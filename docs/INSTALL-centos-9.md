@@ -2,12 +2,14 @@
 
 > This is a standalone, distribution-specific version of `INSTALL.md`. You do not need to read or follow the original file, but can refer to it for generic steps like setting up SSH keys (which are assumed to be common knowledge here)
 
+All steps done as root (or add sudo if you prefer).
+
 ## Dependencies
 
 Before installing `piku`, you need to install the following packages:
 
 ```bash
-dnf in -y ansible nginx nodejs npm postgresql postgresql-server python3 uwsgi
+dnf in -y ansible nginx nodejs npm openssl postgresql postgresql-server python3 uwsgi
 ```
 
 ## Set up the `piku` user
@@ -16,7 +18,7 @@ dnf in -y ansible nginx nodejs npm postgresql postgresql-server python3 uwsgi
 export PAAS_USERNAME=piku
 adduser --groups nginx $PAAS_USERNAME
 # copy & setup piku.py
-sudo su - $PAAS_USERNAME -c "wget https://raw.githubusercontent.com/piku/piku/master/piku.py && python3 ~/piku.py setup"
+su - $PAAS_USERNAME -c "wget https://raw.githubusercontent.com/piku/piku/master/piku.py && python3 ~/piku.py setup"
 ```
 
 ## Set up SSH access
@@ -28,8 +30,8 @@ See INSTALL.md
 [FYI The uWSGI Emperor – multi-app deployment](https://uwsgi-docs.readthedocs.io/en/latest/Emperor.html)
 
 ```bash
-sudo ln -s /home/$PAAS_USERNAME/.piku/uwsgi/uwsgi.ini /etc/uwsgi.d/piku.ini
-sudo systemctl restart uwsgi
+cp /home/$PAAS_USERNAME/.piku/uwsgi/uwsgi.ini /etc/uwsgi.d/piku.ini # linking alone increases the host attack service if one can get inside the piku user or one of its apps, so copying is safer
+systemctl restart uwsgi
 ```
 
 ## `nginx` Configuration
@@ -37,15 +39,24 @@ sudo systemctl restart uwsgi
 [FYI Setting up and configuring NGINX](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/deploying_web_servers_and_reverse_proxies/setting-up-and-configuring-nginx_deploying-web-servers-and-reverse-proxies)
 
 ```bash
-echo "include /home/$PAAS_USERNAME/.piku/nginx/*.conf;" > /usr/share/nginx/modules/piku.conf
-sudo systemctl restart nginx
+micro /etc/nginx/nginx.conf
+```
+
+inside http block, after line `include /etc/nginx/conf.d/*.conf;`, add
+```
+    include /home/piku/.piku/nginx/*.conf;
+```
+
+```bash
+systemctl restart nginx
+journalctl -xeu nginx.service # see logs
 ```
 
 ## Set up systemd.path to reload nginx upon config changes
 
 ```bash
 # Set up systemd.path to reload nginx upon config changes
-sudo su -
+su -
 git clone https://github.com/piku/piku.git # need a copy of some files
 cp -v piku/piku-nginx.{path,service} /etc/systemd/system/
 systemctl enable piku-nginx.{path,service}
