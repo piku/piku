@@ -24,7 +24,7 @@ See INSTALL.md
 
 ## uWSGI Configuration
 
-[uWSGI][uwsgi] in Bionic requires very little configuration, since it is already properly packaged. All you need to do is place a link to the `piku` configuration file in `/etc/uwsgi/apps-enabled`:
+[uWSGI][uwsgi] requires very little configuration, since it is already properly packaged. All you need to do is place a link to the `piku` configuration file in `/etc/uwsgi/apps-enabled`:
 
 ```bash
 sudo ln /home/$PAAS_USERNAME/.piku/uwsgi/uwsgi.ini /etc/uwsgi/apps-enabled/piku.ini
