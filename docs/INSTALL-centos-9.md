@@ -9,7 +9,7 @@ All steps done as root (or add sudo if you prefer).
 Before installing `piku`, you need to install the following packages:
 
 ```bash
-dnf in -y ansible nginx nodejs npm openssl postgresql postgresql-server python3 uwsgi
+dnf in -y ansible nginx nodejs npm openssl postgresql postgresql-server python3 uwsgi uwsgi-logger-file uwsgi-logger-systemd
 ```
 
 ## Set up the `piku` user
@@ -30,8 +30,10 @@ See INSTALL.md
 [FYI The uWSGI Emperor – multi-app deployment](https://uwsgi-docs.readthedocs.io/en/latest/Emperor.html)
 
 ```bash
-cp /home/$PAAS_USERNAME/.piku/uwsgi/uwsgi.ini /etc/uwsgi.d/piku.ini # linking alone increases the host attack service if one can get inside the piku user or one of its apps, so copying is safer
+mv /home/$PAAS_USERNAME/.piku/uwsgi/uwsgi.ini /etc/uwsgi.d/piku.ini # linking alone increases the host attack service if one can get inside the piku user or one of its apps, so moving is safer
+chown piku:piku /etc/uwsgi.d/piku.ini # In Tyrant mode (set by default in /etc/uwsgi.ini) the Emperor will run the vassal using the UID/GID of the vassal configuration file
 systemctl restart uwsgi
+journalctl -eu uwsgi # see logs
 ```
 
 ## `nginx` Configuration
@@ -41,7 +43,7 @@ systemctl restart uwsgi
 ```bash
 echo "include /home/piku/.piku/nginx/*.conf;" > /etc/nginx/conf.d/piku.conf
 systemctl restart nginx
-journalctl -xeu nginx.service # see logs
+journalctl -eu nginx # see logs
 ```
 
 ## Set up systemd.path to reload nginx upon config changes
