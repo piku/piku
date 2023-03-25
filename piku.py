@@ -245,6 +245,12 @@ def get_free_port(address=""):
     return port
 
 
+def get_boolean(value):
+    """Convert a boolean-ish string to a boolean."""
+
+    return value.lower() in ['1', 'on', 'true', 'enabled', 'yes', 'y']
+
+
 def write_config(filename, bag, separator='='):
     """Helper for writing out config files"""
 
@@ -709,7 +715,7 @@ def spawn_app(app, deltas={}):
             env['PORT'] = str(get_free_port())
             echo("-----> picking free port {PORT}".format(**env))
 
-        if env.get('DISABLE_IPV6', 'false').lower() == 'true':
+        if get_boolean(env.get('DISABLE_IPV6', 'false')):
             safe_defaults.pop('NGINX_IPV6_ADDRESS', None)
             echo("-----> nginx will NOT use IPv6".format(**locals()))
 
@@ -786,13 +792,13 @@ def spawn_app(app, deltas={}):
 
             # restrict access to server from CloudFlare IP addresses
             acl = []
-            if env.get('NGINX_CLOUDFLARE_ACL', 'false').lower() == 'true':
+            if get_boolean(env.get('NGINX_CLOUDFLARE_ACL', 'false')):
                 try:
                     cf = loads(urlopen('https://api.cloudflare.com/client/v4/ips').read().decode("utf-8"))
                     if cf['success'] is True:
                         for i in cf['result']['ipv4_cidrs']:
                             acl.append("allow {};".format(i))
-                        if env.get('DISABLE_IPV6', 'false').lower() == 'false':
+                        if get_boolean(env.get('DISABLE_IPV6', 'false')):
                             for i in cf['result']['ipv6_cidrs']:
                                 acl.append("allow {};".format(i))
                         # allow access from controlling machine
@@ -911,21 +917,21 @@ def spawn_app(app, deltas={}):
             env['PIKU_INTERNAL_NGINX_COMMON'] = expandvars(NGINX_COMMON_FRAGMENT, env)
 
             echo("-----> nginx will map app '{}' to hostname(s) '{}'".format(app, env['NGINX_SERVER_NAME']))
-            if env.get('NGINX_HTTPS_ONLY', 'false').lower() == 'true':
+            if get_boolean(env.get('NGINX_HTTPS_ONLY', 'false')):
                 buffer = expandvars(NGINX_HTTPS_ONLY_TEMPLATE, env)
                 echo("-----> nginx will redirect all requests to hostname(s) '{}' to HTTPS".format(env['NGINX_SERVER_NAME']))
             else:
                 buffer = expandvars(NGINX_TEMPLATE, env)
 
             # remove all references to IPv6 listeners (for enviroments where it's disabled)
-            if env.get('DISABLE_IPV6', 'false').lower() == 'true':
+            if get_boolean(env.get('DISABLE_IPV6', 'false')):
                 buffer = '\n'.join([line for line in buffer.split('\n') if 'NGINX_IPV6' not in line])
             # change any unecessary uWSGI specific directives to standard proxy ones
             if 'wsgi' not in workers and 'jwsgi' not in workers:
                 buffer = buffer.replace("uwsgi_", "proxy_")
 
             # map Cloudflare connecting IP to REMOTE_ADDR
-            if env.get('NGINX_CLOUDFLARE_ACL', 'false').lower() == 'true':
+            if get_boolean(env.get('NGINX_CLOUDFLARE_ACL', 'false')):
                 buffer = buffer.replace("REMOTE_ADDR $remote_addr", "REMOTE_ADDR $http_cf_connecting_ip")
 
             with open(nginx_conf, "w") as h:
@@ -963,7 +969,7 @@ def spawn_app(app, deltas={}):
     write_config(live, env)
     write_config(scaling, worker_count, ':')
 
-    if env.get('PIKU_AUTO_RESTART', 'true').lower() not in ['0', 'false']:
+    if get_boolean(env.get('PIKU_AUTO_RESTART', 'true')):
         config = glob(join(UWSGI_ENABLED, '{}*.ini'.format(app)))
         if len(config):
             echo("-----> Removing uwsgi configs to trigger auto-restart.")
