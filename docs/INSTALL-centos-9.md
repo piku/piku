@@ -9,7 +9,8 @@ All steps done as root (or add sudo if you prefer).
 Before installing `piku`, you need to install the following packages:
 
 ```bash
-dnf in -y ansible nginx nodejs npm openssl postgresql postgresql-server python3 uwsgi uwsgi-logger-file uwsgi-logger-systemd
+dnf in -y ansible-core ansible-collection-ansible-posix ansible-collection-ansible-utils nginx nodejs npm openssl postgresql postgresql-server postgresql-contrib python3 python3-pip uwsgi uwsgi-logger-file uwsgi-logger-systemd
+pip install click
 ```
 
 ## Set up the `piku` user
