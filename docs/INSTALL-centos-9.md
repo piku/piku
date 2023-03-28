@@ -16,10 +16,9 @@ pip install click
 ## Set up the `piku` user
 
 ```bash
-export PAAS_USERNAME=piku
-adduser --groups nginx $PAAS_USERNAME
+adduser --groups nginx piku
 # copy & setup piku.py
-su - $PAAS_USERNAME -c "wget https://raw.githubusercontent.com/piku/piku/master/piku.py && python3 ~/piku.py setup"
+su - piku -c "wget https://raw.githubusercontent.com/piku/piku/master/piku.py && python3 ~/piku.py setup"
 ```
 
 ## Set up SSH access
@@ -31,7 +30,7 @@ See INSTALL.md
 [FYI The uWSGI Emperor – multi-app deployment](https://uwsgi-docs.readthedocs.io/en/latest/Emperor.html)
 
 ```bash
-mv /home/$PAAS_USERNAME/.piku/uwsgi/uwsgi.ini /etc/uwsgi.d/piku.ini # linking alone increases the host attack service if one can get inside the piku user or one of its apps, so moving is safer
+mv /home/piku/.piku/uwsgi/uwsgi.ini /etc/uwsgi.d/piku.ini # linking alone increases the host attack service if one can get inside the piku user or one of its apps, so moving is safer
 chown piku:piku /etc/uwsgi.d/piku.ini # In Tyrant mode (set by default in /etc/uwsgi.ini) the Emperor will run the vassal using the UID/GID of the vassal configuration file
 systemctl restart uwsgi
 journalctl -eu uwsgi # see logs
