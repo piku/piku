@@ -33,7 +33,7 @@ See INSTALL.md
 mv /home/piku/.piku/uwsgi/uwsgi.ini /etc/uwsgi.d/piku.ini # linking alone increases the host attack service if one can get inside the piku user or one of its apps, so moving is safer
 chown piku:piku /etc/uwsgi.d/piku.ini # In Tyrant mode (set by default in /etc/uwsgi.ini) the Emperor will run the vassal using the UID/GID of the vassal configuration file
 systemctl restart uwsgi
-journalctl -eu uwsgi # see logs
+journalctl -feu uwsgi # see logs
 ```
 
 ## `nginx` Configuration
@@ -43,7 +43,7 @@ journalctl -eu uwsgi # see logs
 ```bash
 echo "include /home/piku/.piku/nginx/*.conf;" > /etc/nginx/conf.d/piku.conf
 systemctl restart nginx
-journalctl -eu nginx # see logs
+journalctl -feu nginx # see logs
 ```
 
 ## Set up systemd.path to reload nginx upon config changes
