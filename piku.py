@@ -1170,7 +1170,7 @@ def do_stop(app):
 def do_restart(app):
     """Restarts a deployed app"""
     # This must work even if the app is stopped when called. At the end, the app should be running.
-    echo("restarting app '{}'...".format(app), fg='yellow') 
+    echo("restarting app '{}'...".format(app), fg='yellow')
     do_stop(app)
     spawn_app(app)
 
