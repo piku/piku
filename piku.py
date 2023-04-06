@@ -1155,6 +1155,7 @@ def spawn_worker(app, kind, command, env, ordinal=1):
 
         copyfile(available, enabled)
 
+
 def do_stop(app):
     config = glob(join(UWSGI_ENABLED, '{}*.ini'.format(app)))
 
@@ -1163,11 +1164,12 @@ def do_stop(app):
         for c in config:
             remove(c)
     else:
-        echo("Error: app '{}' not deployed!".format(app), fg='red') # TODO app could be already stopped. Need to able to tell the difference.
+        echo("Error: app '{}' not deployed!".format(app), fg='red')  # TODO app could be already stopped. Need to able to tell the difference.
 
-# This must work even if the app is stopped when called. At the end, the app should be running. 
+
 def do_restart(app):
     """Restarts a deployed app"""
+    # This must work even if the app is stopped when called. At the end, the app should be running.
     echo("restarting app '{}'...".format(app), fg='yellow') 
     do_stop(app)
     spawn_app(app)
