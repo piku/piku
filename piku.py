@@ -1156,18 +1156,23 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         copyfile(available, enabled)
 
 
-def do_restart(app):
-    """Restarts a deployed app"""
-
+def do_stop(app):
     config = glob(join(UWSGI_ENABLED, '{}*.ini'.format(app)))
 
     if len(config) > 0:
-        echo("Restarting app '{}'...".format(app), fg='yellow')
+        echo("Stopping app '{}'...".format(app), fg='yellow')
         for c in config:
             remove(c)
-        spawn_app(app)
     else:
-        echo("Error: app '{}' not deployed!".format(app), fg='red')
+        echo("Error: app '{}' not deployed!".format(app), fg='red')  # TODO app could be already stopped. Need to able to tell the difference.
+
+
+def do_restart(app):
+    """Restarts a deployed app"""
+    # This must work even if the app is stopped when called. At the end, the app should be running.
+    echo("restarting app '{}'...".format(app), fg='yellow')
+    do_stop(app)
+    spawn_app(app)
 
 
 def multi_tail(app, filenames, catch_up=20):
@@ -1543,16 +1548,8 @@ def cmd_setup_ssh(public_key_file):
 @argument('app')
 def cmd_stop(app):
     """Stop an app, e.g: piku stop <app>"""
-
     app = exit_if_invalid(app)
-    config = glob(join(UWSGI_ENABLED, '{}*.ini'.format(app)))
-
-    if len(config) > 0:
-        echo("Stopping app '{}'...".format(app), fg='yellow')
-        for c in config:
-            remove(c)
-    else:
-        echo("Error: app '{}' not deployed!".format(app), fg='red')
+    do_stop(app)
 
 
 # --- Internal commands ---
