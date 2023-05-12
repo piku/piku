@@ -21,6 +21,7 @@ An app is simply a `git` repository with some additional files on the top level,
 * `wsgi` workers, in the format `dotted.module:entry_point` (Python-only)
 * `web` workers, which can be anything that honors the `PORT` environment variable
 * `static` workers, which simply mount the first argument as the root static path
+* `release` which is a special worker that is run once when the app is deployed, after installing deps (can be useful for build steps).
 * `cron` workers, which require a simplified `cron` expression preceding the command to be run (e.g. `cron: */5 * * * * python batch.py` to run a batch every 5 minutes)
 * `worker` processes, which are standalone workers and can have arbitrary names
 
