@@ -1,4 +1,4 @@
 Django>=2.2.9
 pytz==2019.1
-sqlparse==0.3.0
+sqlparse==0.4.4
 psycopg2-binary==2.8.3
