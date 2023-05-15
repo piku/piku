@@ -8,7 +8,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-### Documentation: [Using](#using-piku) | [Install](#install) | [Procfile](docs/DESIGN.md#procfile-format) | [ENV](./docs/ENV.md) | [Examples](./examples/README.md) | [Roadmap](https://github.com/piku/piku/projects/2) | [Contributing](./docs/CONTRIBUTING.md) | [LinuxConf Talk](https://www.youtube.com/watch?v=ec-GoDukHWk) | [Fast Web App Tutorial](https://github.com/piku/webapp-tutorial)
+### Documentation: [Using](#using-piku) | [Install](#install) | [Procfile](docs/DESIGN.md#procfile-format) | [ENV](./docs/ENV.md) | [Examples](./examples/README.md) | [Roadmap](https://github.com/piku/piku/projects/2) | [Contributing](./docs/CONTRIBUTING.md) | [LinuxConf Talk](https://www.youtube.com/watch?v=ec-GoDukHWk) | [Fast Web App Tutorial](https://github.com/piku/webapp-tutorial) | [Discussion Forum](https://github.com/piku/piku/discussions)
 
 ## Project Activity
 
