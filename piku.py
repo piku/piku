@@ -398,8 +398,10 @@ def do_deploy(app, deltas={}, newrev=None):
                 settings.update(deploy_java_gradle(app, deltas))
             elif (exists(join(app_path, 'Godeps')) or len(glob(join(app_path, '*.go')))) and found_app("Go") and check_requirements(['go']):
                 settings.update(deploy_go(app, deltas))
+            elif exists(join(app_path, 'deps.edn')) and found_app("Clojure CLI") and check_requirements(['java', 'clojure']):
+                settings.update(deploy_clojure_cli(app, deltas))
             elif exists(join(app_path, 'project.clj')) and found_app("Clojure Lein") and check_requirements(['java', 'lein']):
-                settings.update(deploy_clojure(app, deltas))
+                settings.update(deploy_clojure_leiningen(app, deltas))
             elif 'release' in workers and 'web' in workers:
                 echo("-----> Generic app detected.", fg='green')
                 settings.update(deploy_identity(app, deltas))
@@ -482,7 +484,29 @@ def deploy_java_maven(app, deltas={}):
     return spawn_app(app, deltas)
 
 
-def deploy_clojure(app, deltas={}):
+def deploy_clojure_cli(app, deltas={}):
+    """Deploy a Clojure Application"""
+
+    virtual = join(ENV_ROOT, app)
+    target_path = join(APP_ROOT, app, 'target')
+    env_file = join(APP_ROOT, app, 'ENV')
+
+    if not exists(target_path):
+        makedirs(virtual)
+    env = {
+        'VIRTUAL_ENV': virtual,
+        "PATH": ':'.join([join(virtual, "bin"), join(app, ".bin"), environ['PATH']]),
+        "CLJ_CONFIG": environ.get('CLJ_CONFIG', join(environ['HOME'], '.clojure')),
+    }
+    if exists(env_file):
+        env.update(parse_settings(env_file, env))
+    echo("-----> Building Clojure Application")
+    call('clojure -T:build release', cwd=join(APP_ROOT, app), env=env, shell=True)
+
+    return spawn_app(app, deltas)
+
+
+def deploy_clojure_leiningen(app, deltas={}):
     """Deploy a Clojure Application"""
 
     virtual = join(ENV_ROOT, app)
