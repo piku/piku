@@ -53,6 +53,7 @@ I kept finding myself wanting an Heroku/CloudFoundry-like way to deploy stuff on
    * For Go, it defines a separate `GOPATH` for each app.
    * For Node, it installs whatever is in `package.json` into `node_modules`.
    * For Java, it builds your app depending on either `pom.xml` or `build.gradle` file.
+   * For Clojure, it can use either `leiningen` or the Clojure CLI and a `eps.edn` file.
    * For Ruby, it does `bundle install` of your gems in an isolated folder.
 * It then looks at a [`Procfile`](docs/DESIGN.md#procfile-format) which is [documented here](docs/DESIGN.md#procfile-format) and starts the relevant workers using [uWSGI][uwsgi] as a generic process manager.
 * You can optionally also specify a `release` worker which is run once when the app is deployed.
