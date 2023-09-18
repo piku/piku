@@ -1590,15 +1590,19 @@ def cmd_git_hook(app):
     app = sanitize_app_name(app)
     repo_path = join(GIT_ROOT, app)
     app_path = join(APP_ROOT, app)
+    data_path = join(DATA_ROOT, app)
 
     for line in stdin:
         # pylint: disable=unused-variable
         oldrev, newrev, refname = line.strip().split(" ")
         # Handle pushes
         if not exists(app_path):
-            echo("-----> Creating app '{}'".format(app), fg='green')
+            echo(f"-----> Creating app '{app}'", fg='green')
             makedirs(app_path)
-            call('git clone --quiet {} {}'.format(repo_path, app), cwd=APP_ROOT, shell=True)
+            # The data directory may already exist, since this may be a full redeployment (we never delete data since it may be expensive to recreate)
+            if not exists(data_path):
+                makedirs(data_path)
+            call(f"git clone --quiet {repo_path} {app}", cwd=APP_ROOT, shell=True)
         do_deploy(app, newrev=newrev)
 
 
