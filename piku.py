@@ -1597,12 +1597,12 @@ def cmd_git_hook(app):
         oldrev, newrev, refname = line.strip().split(" ")
         # Handle pushes
         if not exists(app_path):
-            echo(f"-----> Creating app '{app}'", fg='green')
+            echo("-----> Creating app '{}'".format(app), fg='green')
             makedirs(app_path)
             # The data directory may already exist, since this may be a full redeployment (we never delete data since it may be expensive to recreate)
             if not exists(data_path):
                 makedirs(data_path)
-            call(f"git clone --quiet {repo_path} {app}", cwd=APP_ROOT, shell=True)
+            call("git clone --quiet {} {}".format(repo_path, app), cwd=APP_ROOT, shell=True)
         do_deploy(app, newrev=newrev)
 
 
