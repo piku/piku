@@ -385,6 +385,13 @@ def do_deploy(app, deltas={}, newrev=None):
         workers = parse_procfile(procfile)
         if workers and len(workers) > 0:
             settings = {}
+            if "preflight" in workers:
+                echo("-----> Running preflight.", fg='green')
+                retval = call(workers["preflight"], cwd=app_path, env=settings, shell=True)
+                if retval:
+                    echo("-----> Exiting due to preflight command error value: {}".format(retval))
+                    exit(retval)
+                workers.pop("preflight", None)
             if exists(join(app_path, 'requirements.txt')) and found_app("Python"):
                 settings.update(deploy_python(app, deltas))
             elif exists(join(app_path, 'Gemfile')) and found_app("Ruby Application") and check_requirements(['ruby', 'gem', 'bundle']):
@@ -687,6 +694,7 @@ def spawn_app(app, deltas={}):
     app_path = join(APP_ROOT, app)
     procfile = join(app_path, 'Procfile')
     workers = parse_procfile(procfile)
+    workers.pop("preflight", None)
     workers.pop("release", None)
     ordinals = defaultdict(lambda: 1)
     worker_count = {k: 1 for k in workers.keys()}
