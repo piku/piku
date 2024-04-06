@@ -1,0 +1,26 @@
+site_name: Piku
+theme:
+  name: material
+  icon: 
+    logo: material/cog
+  features:
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.indexes
+
+markdown_extensions: 
+  - attr_list
+  - md_in_html
+  - attr_list
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+plugins:
+  - offline
+  - privacy
+  - search
