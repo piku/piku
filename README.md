@@ -1,6 +1,6 @@
 ![piku logo](./img/logo.png)
 
-`piku`, inspired by [dokku][dokku], allows you do `git push` deployments to your own servers, no matter how small they are.
+`piku`, inspired by `dokku`, allows you do `git push` deployments to your own servers, no matter how small they are.
 
 ## Demo
 
@@ -28,7 +28,7 @@ It currently requires Python 3.7 or above, since even though 3.8+ is now the bas
 
 ## Motivation
 
-We wanted an Heroku/CloudFoundry-like way to deploy stuff on a few `ARM` boards, but since [dokku][dokku] didn't work on `ARM` at the time and even `docker` can be overkill sometimes, a simpler solution was needed.
+We wanted an Heroku/CloudFoundry-like way to deploy stuff on a few `ARM` boards, but since `dokku` didn't work on `ARM` at the time and even `docker` can be overkill sometimes, a simpler solution was needed.
 
 `piku` is currently able to deploy, manage and independently scale multiple applications per host on both ARM and Intel architectures, and works on any cloud provider (as well as bare metal) that can run Python, `nginx` and `uwsgi`.
 
@@ -46,11 +46,10 @@ We wanted an Heroku/CloudFoundry-like way to deploy stuff on a few `ARM` boards,
    * For Java, it builds your app depending on either `pom.xml` or `build.gradle` file.
    * For Clojure, it can use either `leiningen` or the Clojure CLI and a `deps.edn` file.
    * For Ruby, it does `bundle install` of your gems in an isolated folder.
-* It then looks at a [`Procfile`](docs/DESIGN.md#procfile-format) which is [documented here](docs/DESIGN.md#procfile-format) and starts the relevant workers using [uWSGI][uwsgi] as a generic process manager.
+* It then looks at a [`Procfile`](https://piku.github.io/configuration/procfile.html) and starts the relevant workers using `uwsgi` as a generic process manager.
 * You can optionally also specify a `release` worker which is run once when the app is deployed.
 * You can then remotely change application settings (`config:set`) or scale up/down worker processes (`ps:scale`).
-* You can also bake application and `nginx` settings into an [`ENV`](./docs/ENV.md) file which is [documented here](./docs/ENV.md).
-
+* You can also bake application and `nginx` settings into an [`ENV`](https://piku.github.io/configuration/env.html) file.
 You can also deploy a `gh-pages` style static site using a `static` worker type, with the root path as the argument, and run a `release` task to do some processing on the server after `git push`.
 
 ### Virtual Hosts and SSL
@@ -65,11 +64,11 @@ If you are on a LAN and are accessing `piku` from macOS/iOS/Linux clients, you c
 
 Besides static sites, `piku` also supports directly mapping specific URL prefixes to filesystem paths (to serve static assets) or caching back-end responses (to remove load from applications).
 
-These features are configured by setting appropriate values in the [`ENV`](./docs/ENV.md) file.
+These features are configured by setting appropriate values in the [`ENV`](https://piku.github.io/configuration/env.html) file.
 
 ### Supported Platforms
 
-`piku` is intended to work in any POSIX-like environment where you have Python, `nginx`, [`uWSGI`][uwsgi] and SSH: it has been deployed on Linux, FreeBSD, [Cygwin][cygwin] and the [Windows Subsystem for Linux][wsl].
+`piku` is intended to work in any POSIX-like environment where you have Python, `nginx`, `uwsgi` and SSH: it has been deployed on Linux, FreeBSD, [Cygwin][cygwin] and the [Windows Subsystem for Linux][wsl].
 
 As a baseline, it began its development on an original 256MB Rasbperry Pi Model B, and still runs reliably on it.
 
@@ -96,8 +95,6 @@ But as a general rule, if it can be invoked from a shell, it can be run inside `
  * Leverage standard tooling (`git`, `ssh`, `uwsgi`, `nginx`).
  * Preserve backwards compatibility where possible
 
-[dokku]: https://github.com/dokku/dokku
 [raspi-cluster]: https://github.com/rcarmo/raspi-cluster
 [cygwin]: http://www.cygwin.com
-[uwsgi]: https://github.com/unbit/uwsgi
 [wsl]: https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux
