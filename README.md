@@ -8,7 +8,17 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-### Documentation: [Using](#using-piku) | [Install](#install) | [Procfile](docs/DESIGN.md#procfile-format) | [ENV](./docs/ENV.md) | [Examples](./examples/README.md) | [Roadmap](https://github.com/piku/piku/projects/2) | [Contributing](./docs/CONTRIBUTING.md) | [LinuxConf Talk](https://www.youtube.com/watch?v=ec-GoDukHWk) | [Fast Web App Tutorial](https://github.com/piku/webapp-tutorial) | [Discussion Forum](https://github.com/piku/piku/discussions)
+### Documentation: [Install](#install) | [Using](#using-piku) | [Procfile](https://piku.github.io/configuration/procfile.html) | [ENV](https://piku.github.io/configuration/env.html) | [Examples](https://piku.github.io/community/examples.html) | [Roadmap](https://github.com/piku/piku/projects/2) | [Contributing](https://piku.github.io/community/contributing.html) | [LinuxConf Talk](https://www.youtube.com/watch?v=ec-GoDukHWk) | [Fast Web App Tutorial](https://github.com/piku/webapp-tutorial) | [Discussion Forum](https://github.com/piku/piku/discussions)
+
+## [Install](https://piku.github.io/install)
+
+TL;DR:
+
+```bash
+curl https://piku.github.io/get | sh
+```
+
+There are also [other installation methods](https://piku.github.io/install) available, including [`cloud-init`](https://github.com/piku/cloud-init) and [manual installation](https://piku.github.io/install).
 
 ## Project Activity
 
@@ -16,30 +26,11 @@
 
 It is currently being refactored to require Python 3.7 or above, since even though 3.8+ is now the baseline Python 3 version in Ubuntu LTS 20.04 and Debian 11 has already moved on to 3.9, there are no substantial differences between those versions.
 
-## Deprecation Notices
+## Motivation
 
-Since most of its users run it on LTS distributions, there is no rush to introduce disruption. The current plan is to throw up a warning for older runtimes and do regression testing for 3.7, 3.8, 3.9 and 3.10 (replacing the current bracket of tests from 3.5 to 3.8), and make sure we also cover Ubuntu 22.04, Debian 11 and Fedora 37+.
-
-## Goals and Motivation
-
-I kept finding myself wanting an Heroku/CloudFoundry-like way to deploy stuff on a few ARM boards and [my Raspberry Pi cluster][raspi-cluster], but since [dokku][dokku] didn't work on ARM at the time and even `docker` can be overkill sometimes, I decided to roll my own.
+We wanted an Heroku/CloudFoundry-like way to deploy stuff on a few `ARM` boards, but since [dokku][dokku] didn't work on `ARM` at the time and even `docker` can be overkill sometimes, a simpler solution was needed.
 
 `piku` is currently able to deploy, manage and independently scale multiple applications per host on both ARM and Intel architectures, and works on any cloud provider (as well as bare metal) that can run Python, `nginx` and `uwsgi`.
-
-### Core values
-
- * Must run on low end devices.
- * Accessible to hobbyists and K-12 schools.
- * ~1500 lines readable code.
- * Functional code style.
- * Few (single?) dependencies
- * [12 factor app](https://12factor.net).
- * Simplify user experience.
- * Cover 80% of common use cases.
- * Sensible defaults for all features.
- * Leverage distro packages in Raspbian/Debian/Ubuntu (Alpine and RHEL support is WIP)
- * Leverage standard tooling (`git`, `ssh`, `uwsgi`, `nginx`).
- * Preserve backwards compatibility where possible
 
 ## Using `piku`
 
@@ -90,61 +81,23 @@ But its main use is as a micro-PaaS to run applications on cloud servers with bo
 
 But as a general rule, if it can be invoked from a shell, it can be run inside `piku`.
 
-## Install
+### Core values
 
-`piku` can manage multiple apps on a single machine, and all you need is a VPS, Raspberry Pi, or other server.
-
-There are two main ways of deploying `piku` onto a new server:
-
-* Use [`piku-bootstrap`](https://github.com/piku/piku-bootstrap) to reconfigure a new or existing Ubuntu virtual machine.
-* Use `cloud-init` when creating a new virtual machine or barebones automated deployment (check [this repository](https://github.com/piku/cloud-init) for examples).
-
-## Manage - via the `piku` helper
-
-To make life easier you can also install the [piku](./piku) helper into your path (e.g. `~/bin`).
-
-```shell
-curl https://raw.githubusercontent.com/piku/piku/master/piku > ~/bin/piku && chmod 755 ~/bin/piku
-```
-
-This shell script simplifies working with multiple `piku` remotes and applications:
-
-* If you `cd` into a project folder that has a `git` remote called `piku` the helper will infer the remote server and app name and use them automatically:
-
-```shell
-$ piku logs
-$ piku config:set MYVAR=12
-$ piku stop
-$ piku deploy
-$ piku destroy
-$ piku # <- show available remote and local commands
-```
-
-* If you are starting a new project, `piku init` will download example `Procfile` and `ENV` files into the current folder:
-
-```shell
-$ piku init
-Wrote ./ENV file.
-Wrote ./Procfile.
-```
-
-* The `piku` helper also lets you pass settings to the underlying SSH command: `-t` to run interactive commands remotely, and `-A` to proxy authentication credentials in order to do remote `git` pulls.
-
-For instance, here's how to use the `-t` flag to obtain a `bash` shell in the app directory of one of your `piku` apps:
-
-```shell
-$ piku -t run bash
-Piku remote operator.
-Server: piku@cloud.mccormickit.com
-App: dashboard
-
-piku@piku:~/.piku/apps/dashboard$ ls
-data  ENV  index.html  package.json  package-lock.json  Procfile  server.wisp
-```
+ * Run on low end devices.
+ * Accessible to hobbyists and K-12 schools.
+ * ~1500 lines readable code.
+ * Functional code style.
+ * Few (single?) dependencies
+ * [12 factor app](https://12factor.net).
+ * Simplify user experience.
+ * Cover 80% of common use cases.
+ * Sensible defaults for all features.
+ * Leverage distro packages in Raspbian/Debian/Ubuntu (Alpine and RHEL support is WIP)
+ * Leverage standard tooling (`git`, `ssh`, `uwsgi`, `nginx`).
+ * Preserve backwards compatibility where possible
 
 [dokku]: https://github.com/dokku/dokku
 [raspi-cluster]: https://github.com/rcarmo/raspi-cluster
 [cygwin]: http://www.cygwin.com
 [uwsgi]: https://github.com/unbit/uwsgi
 [wsl]: https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux
-
