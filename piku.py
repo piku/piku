@@ -1649,6 +1649,13 @@ def cmd_git_upload_pack(app):
     call('git-shell -c "{}" '.format(argv[1] + " '{}'".format(app)), cwd=GIT_ROOT, shell=True)
 
 
+@piku.command("scp", context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
+@pass_context
+def cmd_scp(ctx):
+    """Simple wrapper to allow scp to work."""
+    call(" ".join(["scp"] + ctx.args), cwd=GIT_ROOT, shell=True)
+
+
 def _get_plugin_commands(path):
     sys_path.append(abspath(path))
 
