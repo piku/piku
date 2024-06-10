@@ -107,7 +107,7 @@ $PIKU_INTERNAL_NGINX_COMMON
 """
 # pylint: enable=anomalous-backslash-in-string
 
-NGINX_COMMON_FRAGMENT = """
+NGINX_COMMON_FRAGMENT = r"""
   listen              $NGINX_IPV6_ADDRESS:$NGINX_SSL;
   listen              $NGINX_IPV4_ADDRESS:$NGINX_SSL;
   ssl_certificate     $NGINX_ROOT/$APP.crt;
@@ -213,7 +213,7 @@ PIKU_INTERNAL_NGINX_UWSGI_SETTINGS = """
     uwsgi_param SERVER_NAME $server_name;
 """
 
-CRON_REGEXP = "^((?:(?:\*\/)?\d+)|\*) ((?:(?:\*\/)?\d+)|\*) ((?:(?:\*\/)?\d+)|\*) ((?:(?:\*\/)?\d+)|\*) ((?:(?:\*\/)?\d+)|\*) (.*)$"
+CRON_REGEXP = r"^((?:(?:\*\/)?\d+)|\*) ((?:(?:\*\/)?\d+)|\*) ((?:(?:\*\/)?\d+)|\*) ((?:(?:\*\/)?\d+)|\*) ((?:(?:\*\/)?\d+)|\*) (.*)$"
 
 # === Utility functions ===
 
@@ -849,7 +849,7 @@ def spawn_app(app, deltas={}):
 
             env['NGINX_ACL'] = " ".join(acl)
 
-            env['PIKU_INTERNAL_NGINX_BLOCK_GIT'] = "" if env.get('NGINX_ALLOW_GIT_FOLDERS') else "location ~ /\.git { deny all; }"
+            env['PIKU_INTERNAL_NGINX_BLOCK_GIT'] = "" if env.get('NGINX_ALLOW_GIT_FOLDERS') else r"location ~ /\.git { deny all; }"
 
             env['PIKU_INTERNAL_PROXY_CACHE_PATH'] = ''
             env['PIKU_INTERNAL_NGINX_CACHE_MAPPINGS'] = ''
