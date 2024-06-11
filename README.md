@@ -70,7 +70,7 @@ These features are configured by setting appropriate values in the [`ENV`](https
 
 `piku` is intended to work in any POSIX-like environment where you have Python, `nginx`, `uwsgi` and SSH: it has been deployed on Linux, FreeBSD, [Cygwin][cygwin] and the [Windows Subsystem for Linux][wsl].
 
-As a baseline, it began its development on an original 256MB Rasbperry Pi Model B, and still runs reliably on it.
+As a baseline, it began its development on an original 256MB Raspberry Pi Model B, and still runs reliably on it.
 
 But its main use is as a micro-PaaS to run applications on cloud servers with both Intel and ARM CPUs, with Debian and Ubuntu Linux as target platforms.
 
