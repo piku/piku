@@ -6,7 +6,14 @@
 # git config --get remote.piku.url
 # git config --get remote.paas.url
 
-gitremote=`git config --get remote.piku.url`
+remote_name="piku"
+if [[ "$1" == "--remote" || "$1" == "-r" ]]; then
+  shift
+  remote_name="$1"
+  shift
+fi
+
+gitremote=`git config --get remote.$remote_name.url`
 remote=${gitremote:-"${PIKU_SERVER}:${PIKU_APP}"}
 
 githome="https://raw.githubusercontent.com/piku/piku/master/"
