@@ -34,7 +34,7 @@ fi
 
 out "Piku remote operator."
 
-if [ "$remote" = "" ]
+if [[ "$remote" = "" || "$remote" = ":" ]];
 then
   out
   out "Error: no piku server configured."
