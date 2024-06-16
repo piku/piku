@@ -7,7 +7,8 @@
 # git config --get remote.paas.url
 
 remote_name="piku"
-if [[ "$1" == "--remote" || "$1" == "-r" ]]; then
+if [ "$1" = "--remote" ] || [ "$1" = "-r" ]
+then
   shift
   remote_name="$1"
   shift
@@ -34,7 +35,7 @@ fi
 
 out "Piku remote operator."
 
-if [[ "$remote" = "" || "$remote" = ":" ]];
+if [ "$remote" = "" ] || [ "$remote" = ":" ]
 then
   out
   out "Error: no piku server configured."
