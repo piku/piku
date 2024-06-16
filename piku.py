@@ -714,6 +714,7 @@ def spawn_app(app, deltas={}):
     env = {
         'APP': app,
         'LOG_ROOT': LOG_ROOT,
+        'DATA_PATH': join(DATA_ROOT, app),
         'HOME': environ['HOME'],
         'USER': environ['USER'],
         'PATH': ':'.join([join(virtualenv_path, 'bin'), environ['PATH']]),
