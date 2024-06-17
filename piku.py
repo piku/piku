@@ -409,6 +409,8 @@ def do_deploy(app, deltas={}, newrev=None):
                 settings.update(deploy_clojure_cli(app, deltas))
             elif exists(join(app_path, 'project.clj')) and found_app("Clojure Lein") and check_requirements(['java', 'lein']):
                 settings.update(deploy_clojure_leiningen(app, deltas))
+            elif exists(join(app_path, 'Cargo.toml')) and exists(join(app_path, 'rust-toolchain.toml')) and found_app("Rust") and check_requirements(['rustc', 'cargo']):
+                settings.update(deploy_rust(app, deltas))
             elif 'release' in workers and 'web' in workers:
                 echo("-----> Generic app detected.", fg='green')
                 settings.update(deploy_identity(app, deltas))
@@ -585,6 +587,15 @@ def deploy_go(app, deltas={}):
                 'GO15VENDOREXPERIMENT': '1'
             }
             call('godep update ...', cwd=join(APP_ROOT, app), env=env, shell=True)
+    return spawn_app(app, deltas)
+
+
+def deploy_rust(app, deltas={}):
+    """Deploy a Rust application"""
+
+    app_path = join(APP_ROOT, app)
+    echo("-----> Running cargo build for '{}'".format(app), fg='green')
+    call('cargo build', cwd=app_path, shell=True)
     return spawn_app(app, deltas)
 
 
