@@ -288,7 +288,7 @@ def parse_procfile(filename):
             try:
                 kind, command = map(lambda x: x.strip(), line.split(":", 1))
                 # Check for cron patterns
-                if kind == "cron":
+                if kind.startswith("cron"):
                     limits = [59, 24, 31, 12, 7]
                     res = match(CRON_REGEXP, command)
                     if res:
@@ -1077,7 +1077,7 @@ def spawn_worker(app, kind, command, env, ordinal=1):
             echo("Error: malformed setting 'UWSGI_IDLE', ignoring it.".format(), fg='red')
             pass
 
-    if kind == 'cron':
+    if kind.startswith("cron"):
         settings.extend([
             ['cron', command.replace("*/", "-").replace("*", "-1")],
         ])
@@ -1163,7 +1163,7 @@ def spawn_worker(app, kind, command, env, ordinal=1):
         settings.append(('attach-daemon', command))
     elif kind == 'static':
         echo("-----> nginx serving static files only".format(**env), fg='yellow')
-    elif kind == 'cron':
+    elif kind.startswith("cron"):
         echo("-----> uwsgi scheduled cron for {command}".format(**locals()), fg='yellow')
     else:
         settings.append(('attach-daemon', command))
