@@ -590,7 +590,7 @@ def deploy_go(app, deltas={}):
     if exists(go_mod):
         echo("-----> Running go mod tidy for '{}'".format(app), fg='green')
         call('go mod tidy', cwd=join(APP_ROOT, app), shell=True)
-            
+
     return spawn_app(app, deltas)
 
 
