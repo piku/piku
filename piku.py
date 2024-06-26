@@ -171,7 +171,7 @@ PIKU_INTERNAL_NGINX_STATIC_MAPPING = """
       directio 8m;
       aio threads;
       alias $static_path;
-      try_files $uri $uri.html $uri/ =404;
+      try_files $uri $uri.html $uri/ $catch_all =404;
   }
 """
 
@@ -934,6 +934,8 @@ def spawn_app(app, deltas={}):
                 static_paths = ("/" if stripped[0:1] == ":" else "/:") + (stripped if stripped else ".") + "/" + ("," if static_paths else "") + static_paths
             if len(static_paths):
                 try:
+                    # pylint: disable=unused-variable
+                    catch_all = env.get('NGINX_CATCH_ALL', '')
                     items = static_paths.split(',')
                     for item in items:
                         static_url, static_path = item.split(':')
