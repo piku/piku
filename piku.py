@@ -1172,7 +1172,7 @@ def spawn_worker(app, kind, command, env, ordinal=1):
             ('php-allowed-ext', '.php'),
             ('php-allowed-ext', '.inc'),
             ('php-index', 'index.php'),
-            ('php-set', 'date.timezone=America/Chicago'),  # TODO
+            ('php-ini-append', env["PHP_INI"]) if "PHP_INI" in env else None
         ])
     elif kind == 'web':
         echo("-----> nginx will talk to the 'web' process via {BIND_ADDRESS:s}:{PORT:s}".format(**env), fg='yellow')
