@@ -403,7 +403,7 @@ def do_deploy(app, deltas={}, newrev=None):
                 settings.update(deploy_java_maven(app, deltas))
             elif exists(join(app_path, 'build.gradle')) and found_app("Java Gradle") and check_requirements(['java', 'gradle']):
                 settings.update(deploy_java_gradle(app, deltas))
-            elif (exists(join(app_path, 'Godeps')) or len(glob(join(app_path, '*.go')))) and found_app("Go") and check_requirements(['go']):
+            elif (exists(join(app_path, 'Godeps')) or exists(join(app_path, 'go.mod')) or len(glob(join(app_path, '*.go')))) and found_app("Go") and check_requirements(['go']):
                 settings.update(deploy_go(app, deltas))
             elif exists(join(app_path, 'deps.edn')) and found_app("Clojure CLI") and check_requirements(['java', 'clojure']):
                 settings.update(deploy_clojure_cli(app, deltas))
@@ -568,6 +568,7 @@ def deploy_go(app, deltas={}):
 
     go_path = join(ENV_ROOT, app)
     deps = join(APP_ROOT, app, 'Godeps')
+    go_mod = join(APP_ROOT, app, 'go.mod')
 
     first_time = False
     if not exists(go_path):
@@ -587,6 +588,11 @@ def deploy_go(app, deltas={}):
                 'GO15VENDOREXPERIMENT': '1'
             }
             call('godep update ...', cwd=join(APP_ROOT, app), env=env, shell=True)
+
+    if exists(go_mod):
+        echo("-----> Running go mod tidy for '{}'".format(app), fg='green')
+        call('go mod tidy', cwd=join(APP_ROOT, app), shell=True)
+
     return spawn_app(app, deltas)
 
 
