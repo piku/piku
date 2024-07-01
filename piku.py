@@ -1162,17 +1162,17 @@ def spawn_worker(app, kind, command, env, ordinal=1):
                 ('http-socket', '{BIND_ADDRESS:s}:{PORT:s}'.format(**env)),
             ])
     elif kind == 'php':
+        docroot = join(APP_ROOT, app, command.strip("/").rstrip("/"))
         settings.extend([
             ('plugin', 'http,0:php'),
             ('http', ':{}'.format(env['PORT'])),
+            ('check-static', docroot),
             ('static-skip-ext', '.php'),
             ('static-skip-ext', '.inc'),
             ('static-index', 'index.html'),
-            ('php-docroot', join(APP_ROOT, app, command.strip("/").rstrip("/"))),
+            ('php-docroot', docroot),
             ('php-allowed-ext', '.php'),
-            ('php-allowed-ext', '.inc'),
-            ('php-index', 'index.php'),
-            ('php-ini-append', env["PHP_INI"]) if "PHP_INI" in env else None
+            ('php-index', 'index.php')
         ])
     elif kind == 'web':
         echo("-----> nginx will talk to the 'web' process via {BIND_ADDRESS:s}:{PORT:s}".format(**env), fg='yellow')
