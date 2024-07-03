@@ -71,6 +71,8 @@ Also, keep in mind that using `nginx` caching with a `static` website worker wil
 
 * `NGINX_INCLUDE_FILE`: a file in the app's dir to include in nginx config `server` section - useful for including custom `nginx` directives.
 * `NGINX_ALLOW_GIT_FOLDERS`: (boolean) allow access to `.git` folders (default: false, blocked)
+* `NGINX_CATCH_ALL` (string, defaults to ""): specifies a filename to serve to all requests regardless of path (useful when using client-side routing)
+
 
 ## Acme Settings
 

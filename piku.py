@@ -171,7 +171,7 @@ PIKU_INTERNAL_NGINX_STATIC_MAPPING = """
       directio 8m;
       aio threads;
       alias $static_path;
-      try_files $uri $uri.html $uri/ =404;
+      try_files $uri $uri.html $uri/ $catch_all =404;
   }
 """
 
@@ -403,7 +403,7 @@ def do_deploy(app, deltas={}, newrev=None):
                 settings.update(deploy_java_maven(app, deltas))
             elif exists(join(app_path, 'build.gradle')) and found_app("Java Gradle") and check_requirements(['java', 'gradle']):
                 settings.update(deploy_java_gradle(app, deltas))
-            elif (exists(join(app_path, 'Godeps')) or len(glob(join(app_path, '*.go')))) and found_app("Go") and check_requirements(['go']):
+            elif (exists(join(app_path, 'Godeps')) or exists(join(app_path, 'go.mod')) or len(glob(join(app_path, '*.go')))) and found_app("Go") and check_requirements(['go']):
                 settings.update(deploy_go(app, deltas))
             elif exists(join(app_path, 'deps.edn')) and found_app("Clojure CLI") and check_requirements(['java', 'clojure']):
                 settings.update(deploy_clojure_cli(app, deltas))
@@ -412,6 +412,8 @@ def do_deploy(app, deltas={}, newrev=None):
             elif 'php' in workers:
                 echo("-----> PHP app detected.", fg='green')
                 settings.update(deploy_identity(app, deltas))
+            elif exists(join(app_path, 'Cargo.toml')) and exists(join(app_path, 'rust-toolchain.toml')) and found_app("Rust") and check_requirements(['rustc', 'cargo']):
+                settings.update(deploy_rust(app, deltas))
             elif 'release' in workers and 'web' in workers:
                 echo("-----> Generic app detected.", fg='green')
                 settings.update(deploy_identity(app, deltas))
@@ -569,6 +571,7 @@ def deploy_go(app, deltas={}):
 
     go_path = join(ENV_ROOT, app)
     deps = join(APP_ROOT, app, 'Godeps')
+    go_mod = join(APP_ROOT, app, 'go.mod')
 
     first_time = False
     if not exists(go_path):
@@ -588,6 +591,20 @@ def deploy_go(app, deltas={}):
                 'GO15VENDOREXPERIMENT': '1'
             }
             call('godep update ...', cwd=join(APP_ROOT, app), env=env, shell=True)
+
+    if exists(go_mod):
+        echo("-----> Running go mod tidy for '{}'".format(app), fg='green')
+        call('go mod tidy', cwd=join(APP_ROOT, app), shell=True)
+
+    return spawn_app(app, deltas)
+
+
+def deploy_rust(app, deltas={}):
+    """Deploy a Rust application"""
+
+    app_path = join(APP_ROOT, app)
+    echo("-----> Running cargo build for '{}'".format(app), fg='green')
+    call('cargo build', cwd=app_path, shell=True)
     return spawn_app(app, deltas)
 
 
@@ -717,6 +734,7 @@ def spawn_app(app, deltas={}):
     env = {
         'APP': app,
         'LOG_ROOT': LOG_ROOT,
+        'DATA_ROOT': join(DATA_ROOT, app),
         'HOME': environ['HOME'],
         'USER': environ['USER'],
         'PATH': ':'.join([join(virtualenv_path, 'bin'), environ['PATH']]),
@@ -937,6 +955,8 @@ def spawn_app(app, deltas={}):
                 static_paths = ("/" if stripped[0:1] == ":" else "/:") + (stripped if stripped else ".") + "/" + ("," if static_paths else "") + static_paths
             if len(static_paths):
                 try:
+                    # pylint: disable=unused-variable
+                    catch_all = env.get('NGINX_CATCH_ALL', '')
                     items = static_paths.split(',')
                     for item in items:
                         static_url, static_path = item.split(':')
