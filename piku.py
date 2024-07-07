@@ -410,8 +410,11 @@ def do_deploy(app, deltas={}, newrev=None):
             elif exists(join(app_path, 'project.clj')) and found_app("Clojure Lein") and check_requirements(['java', 'lein']):
                 settings.update(deploy_clojure_leiningen(app, deltas))
             elif 'php' in workers:
-                echo("-----> PHP app detected.", fg='green')
-                settings.update(deploy_identity(app, deltas))
+                if check_requirements(['uwsgi_php']):
+                    echo("-----> PHP app detected.", fg='green')
+                    settings.update(deploy_identity(app, deltas))
+                else:
+                    echo("-----> PHP app detected but uwsgi-plugin-php was not found", fg='red')
             elif exists(join(app_path, 'Cargo.toml')) and exists(join(app_path, 'rust-toolchain.toml')) and found_app("Rust") and check_requirements(['rustc', 'cargo']):
                 settings.update(deploy_rust(app, deltas))
             elif 'release' in workers and 'web' in workers:
@@ -997,7 +1000,7 @@ def spawn_app(app, deltas={}):
                 h.write(buffer)
             # prevent broken config from breaking other deploys
             try:
-                nginx_config_test = str(check_output(r"nginx -t 2>&1 | grep -E '{}\.conf:[0-9]+$'".format(app), env=environ, shell=True))
+                nginx_config_test = str(check_output("nginx -t 2>&1 | grep -E '{}\.conf:[0-9]+$'".format(app), env=environ, shell=True))
             except Exception:
                 nginx_config_test = None
             if nginx_config_test:
