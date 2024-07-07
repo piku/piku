@@ -409,6 +409,9 @@ def do_deploy(app, deltas={}, newrev=None):
                 settings.update(deploy_clojure_cli(app, deltas))
             elif exists(join(app_path, 'project.clj')) and found_app("Clojure Lein") and check_requirements(['java', 'lein']):
                 settings.update(deploy_clojure_leiningen(app, deltas))
+            elif 'php' in workers:
+                echo("-----> PHP app detected.", fg='green')
+                settings.update(deploy_identity(app, deltas))
             elif exists(join(app_path, 'Cargo.toml')) and exists(join(app_path, 'rust-toolchain.toml')) and found_app("Rust") and check_requirements(['rustc', 'cargo']):
                 settings.update(deploy_rust(app, deltas))
             elif 'release' in workers and 'web' in workers:
@@ -759,7 +762,7 @@ def spawn_app(app, deltas={}):
     if exists(settings):
         env.update(parse_settings(settings, env))  # lgtm [py/modification-of-default-value]
 
-    if 'web' in workers or 'wsgi' in workers or 'jwsgi' in workers or 'static' in workers or 'rwsgi' in workers:
+    if 'web' in workers or 'wsgi' in workers or 'jwsgi' in workers or 'static' in workers or 'rwsgi' in workers or 'php' in workers:
         # Pick a port if none defined
         if 'PORT' not in env:
             env['PORT'] = str(get_free_port())
@@ -968,7 +971,7 @@ def spawn_app(app, deltas={}):
 
             env['PIKU_INTERNAL_NGINX_CUSTOM_CLAUSES'] = expandvars(open(join(app_path, env["NGINX_INCLUDE_FILE"])).read(), env) if env.get("NGINX_INCLUDE_FILE") else ""
             env['PIKU_INTERNAL_NGINX_PORTMAP'] = ""
-            if 'web' in workers or 'wsgi' in workers or 'jwsgi' in workers or 'rwsgi' in workers:
+            if 'web' in workers or 'wsgi' in workers or 'jwsgi' in workers or 'rwsgi' in workers or 'php' in workers:
                 env['PIKU_INTERNAL_NGINX_PORTMAP'] = expandvars(NGINX_PORTMAP_FRAGMENT, env)
             env['PIKU_INTERNAL_NGINX_COMMON'] = expandvars(NGINX_COMMON_FRAGMENT, env)
 
@@ -1178,6 +1181,19 @@ def spawn_worker(app, kind, command, env, ordinal=1):
                 ('http-use-socket', '{BIND_ADDRESS:s}:{PORT:s}'.format(**env)),
                 ('http-socket', '{BIND_ADDRESS:s}:{PORT:s}'.format(**env)),
             ])
+    elif kind == 'php':
+        docroot = join(APP_ROOT, app, command.strip("/").rstrip("/"))
+        settings.extend([
+            ('plugin', 'http,0:php'),
+            ('http', ':{}'.format(env['PORT'])),
+            ('check-static', docroot),
+            ('static-skip-ext', '.php'),
+            ('static-skip-ext', '.inc'),
+            ('static-index', 'index.html'),
+            ('php-docroot', docroot),
+            ('php-allowed-ext', '.php'),
+            ('php-index', 'index.php')
+        ])
     elif kind == 'web':
         echo("-----> nginx will talk to the 'web' process via {BIND_ADDRESS:s}:{PORT:s}".format(**env), fg='yellow')
         settings.append(('attach-daemon', command))
