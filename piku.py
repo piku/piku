@@ -994,7 +994,7 @@ def spawn_app(app, deltas={}):
                 h.write(buffer)
             # prevent broken config from breaking other deploys
             try:
-                nginx_config_test = str(check_output("nginx -t 2>&1 | grep -E '{}\.conf:[0-9]+$'".format(app), env=environ, shell=True))
+                nginx_config_test = str(check_output(r"nginx -t 2>&1 | grep -E '{}\.conf:[0-9]+$'".format(app), env=environ, shell=True))
             except Exception:
                 nginx_config_test = None
             if nginx_config_test:
