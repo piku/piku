@@ -13,6 +13,7 @@ You can configure deployment settings by placing special variables in an `ENV` f
 ### Node
 
 * `NODE_VERSION`: installs a particular version of node for your app if `nodeenv` is found on the path. Optional; if not specified, the system-wide node  package is used.
+* `NODE_PACKAGE_MANAGER`: use an alternate package manager (e.g. set to `yarn` or `pnpm`). The package manager will be installed with `npm install -g`.
 
 > **NOTE**: you will need to stop and re-deploy the app to change the `node` version in a running app.
 
