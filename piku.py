@@ -612,7 +612,7 @@ def deploy_rust(app, deltas={}):
 
 
 def deploy_node(app, deltas={}):
-    """Deploy a Node  application"""
+    """Deploy a Node application"""
 
     virtualenv_path = join(ENV_ROOT, app)
     node_path = join(ENV_ROOT, app, "node_modules")
@@ -635,6 +635,9 @@ def deploy_node(app, deltas={}):
     }
     if exists(env_file):
         env.update(parse_settings(env_file, env))
+
+    package_manager = env.get("NODE_PACKAGE_MANAGER", "npm")
+    package_manager_flags = "--package-lock=false" if package_manager == "npm" else ""
 
     # include node binaries on our path
     environ["PATH"] = env["PATH"]
@@ -661,8 +664,11 @@ def deploy_node(app, deltas={}):
             copyfile(join(APP_ROOT, app, 'package.json'), join(ENV_ROOT, app, 'package.json'))
             if not exists(node_modules_symlink):
                 symlink(node_path, node_modules_symlink)
-            echo("-----> Running npm for '{}'".format(app), fg='green')
-            call('npm install --prefix {} --package-lock=false'.format(npm_prefix), cwd=join(APP_ROOT, app), env=env, shell=True)
+            if package_manager != "npm":
+                echo("-----> Installing package manager {} with npm".format(package_manager))
+                call("npm install -g {}".format(package_manager), cwd=join(APP_ROOT, app), env=env, shell=True)
+            echo("-----> Running {} for '{}'".format(package_manager, app), fg='green')
+            call('{} install --prefix {} {}'.format(package_manager, npm_prefix, package_manager_flags), cwd=join(APP_ROOT, app), env=env, shell=True)
     return spawn_app(app, deltas)
 
 
