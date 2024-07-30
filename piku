@@ -6,6 +6,14 @@
 # git config --get remote.piku.url
 # git config --get remote.paas.url
 
+if grep -q WSL /proc/version 2>/dev/null
+then
+  # On WSL, use the Windows ssh.exe to benefit from 1Password integration
+  SSH="ssh.exe"
+else
+  SSH="ssh"
+fi
+
 remote_name="piku"
 if [ "$1" = "--remote" ] || [ "$1" = "-r" ]
 then
@@ -67,7 +75,7 @@ else
   out
   case "$cmd" in
     ""|help)
-      ssh -o LogLevel=QUIET "${sshflags}" "$server" "$@" | grep -v "INTERNAL"
+      $SSH -o LogLevel=QUIET "${sshflags}" "$server" "$@" | grep -v "INTERNAL"
       echo "  shell             Local command to start an SSH session in the remote."
       echo "  init              Local command to download an example ENV and Procfile."
       echo "  download          Local command to scp down a remote file. args: REMOTE-FILE(s) LOCAL-PATH"
@@ -75,10 +83,10 @@ else
       ;;
     apps|setup|setup:ssh|update)
       # shellcheck disable=SC2029 # caused by the final "$@", expanded on the client side
-      ssh "${sshflags}" "$server" "$@"
+      $SSH "${sshflags}" "$server" "$@"
       ;;
     shell)
-      ssh -t "$server" run "$app" bash
+      $SSH -t "$server" run "$app" bash
       ;;
     download)
       scp "$server:~/.piku/apps/${app}/${2}" "${3:-'.'}"
@@ -86,7 +94,7 @@ else
     *)
       shift # remove cmd arg
       # shellcheck disable=SC2029 # caused by the final "$@", expanded on the client side
-      ssh "${sshflags}" "$server" "$cmd" "$app" "$@"
+      $SSH "${sshflags}" "$server" "$cmd" "$app" "$@"
       ;;
   esac
 fi
