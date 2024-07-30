@@ -14,7 +14,7 @@ then
   shift
 fi
 
-gitremote=`git config --get remote.$remote_name.url`
+gitremote=$(git config --get remote."$remote_name".url)
 remote=${gitremote:-"${PIKU_SERVER}:${PIKU_APP}"}
 
 githome="https://raw.githubusercontent.com/piku/piku/master/"
@@ -23,8 +23,18 @@ out() { printf "%s\n" "$*" >&2; }
 
 if [ "$1" = "init" ]
 then
-  [ -f "ENV" ] && echo "ENV file already exists." || ( curl -s "${githome}examples/ENV" > ENV && echo "Wrote ./ENV file." )
-  [ -f "Procfile" ] && echo "Procfile already exists." || ( curl -s "${githome}examples/Procfile" > Procfile && echo "Wrote ./Procfile." )
+  if [ -f "ENV" ]
+  then
+    echo "ENV file already exists."
+  else
+    curl -s "${githome}examples/ENV" > ENV && echo "Wrote ./ENV file."
+  fi
+  if [ -f "Procfile" ]
+  then
+    echo "Procfile already exists."
+  else
+    curl -s "${githome}examples/Procfile" > Procfile && echo "Wrote ./Procfile."
+  fi
   if [ "$gitremote" = "" ]
   then
     echo "Now set up your piku remote for this app:"
@@ -42,8 +52,8 @@ then
   out "Use PIKU_SERVER=piku@MYSERVER.NET or configure a git remote called 'piku'."
   out
 else
-  server=`echo "$remote" | cut -f1 -d":" 2>/dev/null`
-  app=`echo "$remote" | cut -f2 -d":" 2>/dev/null`
+  server=$(echo "$remote" | cut -f1 -d":" 2>/dev/null)
+  app=$(echo "$remote" | cut -f2 -d":" 2>/dev/null)
   # gather SSH flags
   while [ "${1#\-}"x != "${1}x" ];
   do
@@ -57,24 +67,26 @@ else
   out
   case "$cmd" in
     ""|help)
-      ssh -o LogLevel=QUIET ${sshflags} "$server" "$@" | grep -v "INTERNAL"
+      ssh -o LogLevel=QUIET "${sshflags}" "$server" "$@" | grep -v "INTERNAL"
       echo "  shell             Local command to start an SSH session in the remote."
       echo "  init              Local command to download an example ENV and Procfile."
       echo "  download          Local command to scp down a remote file. args: REMOTE-FILE(s) LOCAL-PATH"
       echo "                    Remote file path is relative to the app folder."
       ;;
     apps|setup|setup:ssh|update)
-      ssh ${sshflags} "$server" "$@"
+      # shellcheck disable=SC2029 # caused by the final "$@", expanded on the client side
+      ssh "${sshflags}" "$server" "$@"
       ;;
     shell)
       ssh -t "$server" run "$app" bash
       ;;
     download)
-      scp "$server:~/.piku/apps/${app}/${2}" ${3:-'.'}
+      scp "$server:~/.piku/apps/${app}/${2}" "${3:-'.'}"
       ;;
     *)
       shift # remove cmd arg
-      ssh ${sshflags} "$server" "$cmd" "$app" "$@"
+      # shellcheck disable=SC2029 # caused by the final "$@", expanded on the client side
+      ssh "${sshflags}" "$server" "$cmd" "$app" "$@"
       ;;
   esac
 fi
