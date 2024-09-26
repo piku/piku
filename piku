@@ -24,7 +24,6 @@ fi
 
 gitremote=$(git config --get remote."$remote_name".url)
 remote=${gitremote:-"${PIKU_SERVER}:${PIKU_APP}"}
-echo "REMOTE ${remote}"
 
 githome="https://raw.githubusercontent.com/piku/piku/master/"
 
