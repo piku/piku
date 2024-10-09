@@ -636,8 +636,8 @@ def deploy_node(app, deltas={}):
     if exists(env_file):
         env.update(parse_settings(env_file, env))
 
-    package_manager = env.get("NODE_PACKAGE_MANAGER", "npm")
-    package_manager_flags = "--package-lock=false" if package_manager == "npm" else ""
+    package_manager_command = env.get("NODE_PACKAGE_MANAGER", "npm --package-lock=false")
+    package_manager = package_manager_command.split(" ")[0]
 
     # include node binaries on our path
     environ["PATH"] = env["PATH"]
@@ -667,8 +667,8 @@ def deploy_node(app, deltas={}):
             if package_manager != "npm":
                 echo("-----> Installing package manager {} with npm".format(package_manager))
                 call("npm install -g {}".format(package_manager), cwd=join(APP_ROOT, app), env=env, shell=True)
-            echo("-----> Running {} for '{}'".format(package_manager, app), fg='green')
-            call('{} install --prefix {} {}'.format(package_manager, npm_prefix, package_manager_flags), cwd=join(APP_ROOT, app), env=env, shell=True)
+            echo("-----> Running {} for '{}'".format(package_manager_command, app), fg='green')
+            call('{} install --prefix {}'.format(package_manager_command, npm_prefix), cwd=join(APP_ROOT, app), env=env, shell=True)
     return spawn_app(app, deltas)
 
 
