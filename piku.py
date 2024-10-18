@@ -183,7 +183,7 @@ PIKU_INTERNAL_NGINX_CACHE_MAPPING = """
     location ~* ^/($cache_prefixes) {
         uwsgi_cache $APP;
         uwsgi_cache_min_uses 1;
-        uwsgi_cache_key $host$uri;
+        uwsgi_cache_key $host$request_uri;
         uwsgi_cache_valid 200 304 $cache_time_content;
         uwsgi_cache_valid 301 307 $cache_time_redirects;
         uwsgi_cache_valid 500 502 503 504 0s;
