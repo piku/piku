@@ -733,8 +733,7 @@ def deploy_python_with_poetry(app, deltas={}):
     }
     if exists(env_file):
         env.update(parse_settings(env_file, env))
-    version = int(env.get("PYTHON_VERSION", "3"))
-
+        
     first_time = False
     if not exists(join(virtualenv_path, "bin", "activate")):
         echo("-----> Creating virtualenv for '{}'".format(app), fg='green')
@@ -746,7 +745,7 @@ def deploy_python_with_poetry(app, deltas={}):
 
     if first_time or getmtime(requirements) > getmtime(virtualenv_path):
         echo("-----> Running poetry for '{}'".format(app), fg='green')
-        call('poetry install', cwd=join(APP_ROOT,app), env=env, shell=True)
+        call('poetry install', cwd=join(APP_ROOT, app), env=env, shell=True)
 
     return spawn_app(app, deltas)
 
