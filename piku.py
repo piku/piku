@@ -31,10 +31,12 @@ from urllib.request import urlopen
 
 from click import argument, group, secho as echo, pass_context, CommandCollection
 
-# === Make sure we can access all system binaries ===
+# === Make sure we can access all system and user binaries ===
 
 if 'sbin' not in environ['PATH']:
     environ['PATH'] = "/usr/local/sbin:/usr/sbin:/sbin:" + environ['PATH']
+if '.local' not in environ['PATH']:
+    environ['PATH'] = environ['HOME'] + "/.local/bin:" + environ['PATH']
 
 # === Globals - all tweakable settings are here ===
 
@@ -394,6 +396,8 @@ def do_deploy(app, deltas={}, newrev=None):
                 workers.pop("preflight", None)
             if exists(join(app_path, 'requirements.txt')) and found_app("Python"):
                 settings.update(deploy_python(app, deltas))
+            elif exists(join(app_path, 'pyproject.toml')) and which('poetry') and found_app("Python"):
+                settings.update(deploy_python_with_poetry(app, deltas))
             elif exists(join(app_path, 'Gemfile')) and found_app("Ruby Application") and check_requirements(['ruby', 'gem', 'bundle']):
                 settings.update(deploy_ruby(app, deltas))
             elif exists(join(app_path, 'package.json')) and found_app("Node") and (
@@ -706,6 +710,44 @@ def deploy_python(app, deltas={}):
     if first_time or getmtime(requirements) > getmtime(virtualenv_path):
         echo("-----> Running pip for '{}'".format(app), fg='green')
         call('pip install -r {}'.format(requirements), cwd=virtualenv_path, shell=True)
+    return spawn_app(app, deltas)
+
+
+def deploy_python_with_poetry(app, deltas={}):
+    """Deploy a Python application using Poetry"""
+
+    echo("=====> Starting EXPERIMENTAL poetry deployment for '{}'".format(app), fg='red')
+    virtualenv_path = join(ENV_ROOT, app)
+    requirements = join(APP_ROOT, app, 'pyproject.toml')
+    env_file = join(APP_ROOT, app, 'ENV')
+    symlink_path = join(APP_ROOT, app, '.venv') # to keep poetry happy
+    if not exists(symlink_path):
+        echo("-----> Creating .venv symlink '{}'".format(app), fg='green')
+        symlink(virtualenv_path, symlink_path, target_is_directory=True)
+    # Set unbuffered output and readable UTF-8 mapping
+    env = {
+        **environ,
+        'POETRY_VIRTUALENVS_IN_PROJECT': '1',
+        'PYTHONUNBUFFERED': '1',
+        'PYTHONIOENCODING': 'UTF_8:replace'
+    }
+    if exists(env_file):
+        env.update(parse_settings(env_file, env))
+    version = int(env.get("PYTHON_VERSION", "3"))
+
+    first_time = False
+    if not exists(join(virtualenv_path, "bin", "activate")):
+        echo("-----> Creating virtualenv for '{}'".format(app), fg='green')
+        try:
+            makedirs(virtualenv_path)
+        except FileExistsError:
+            echo("-----> Env dir already exists: '{}'".format(app), fg='yellow')
+        first_time = True
+
+    if first_time or getmtime(requirements) > getmtime(virtualenv_path):
+        echo("-----> Running poetry for '{}'".format(app), fg='green')
+        call('poetry install', cwd=join(APP_ROOT,app), env=env, shell=True)
+
     return spawn_app(app, deltas)
 
 
