@@ -720,7 +720,7 @@ def deploy_python_with_poetry(app, deltas={}):
     virtualenv_path = join(ENV_ROOT, app)
     requirements = join(APP_ROOT, app, 'pyproject.toml')
     env_file = join(APP_ROOT, app, 'ENV')
-    symlink_path = join(APP_ROOT, app, '.venv') # to keep poetry happy
+    symlink_path = join(APP_ROOT, app, '.venv')
     if not exists(symlink_path):
         echo("-----> Creating .venv symlink '{}'".format(app), fg='green')
         symlink(virtualenv_path, symlink_path, target_is_directory=True)
@@ -733,7 +733,7 @@ def deploy_python_with_poetry(app, deltas={}):
     }
     if exists(env_file):
         env.update(parse_settings(env_file, env))
-        
+
     first_time = False
     if not exists(join(virtualenv_path, "bin", "activate")):
         echo("-----> Creating virtualenv for '{}'".format(app), fg='green')
