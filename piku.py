@@ -398,6 +398,8 @@ def do_deploy(app, deltas={}, newrev=None):
                 settings.update(deploy_python(app, deltas))
             elif exists(join(app_path, 'pyproject.toml')) and which('poetry') and found_app("Python"):
                 settings.update(deploy_python_with_poetry(app, deltas))
+            elif exists(join(app_path, 'pyproject.toml')) and which('uv') and found_app("Python (uv)"):
+                settings.update(deploy_python_with_uv(app, deltas))
             elif exists(join(app_path, 'Gemfile')) and found_app("Ruby Application") and check_requirements(['ruby', 'gem', 'bundle']):
                 settings.update(deploy_ruby(app, deltas))
             elif exists(join(app_path, 'package.json')) and found_app("Node") and (
@@ -746,6 +748,28 @@ def deploy_python_with_poetry(app, deltas={}):
     if first_time or getmtime(requirements) > getmtime(virtualenv_path):
         echo("-----> Running poetry for '{}'".format(app), fg='green')
         call('poetry install', cwd=join(APP_ROOT, app), env=env, shell=True)
+
+    return spawn_app(app, deltas)
+
+
+def deploy_python_with_uv(app, deltas={}):
+    """Deploy a Python application using Astral uv"""
+
+    echo("=====> Starting EXPERIMENTAL uv deployment for '{}'".format(app), fg='red')
+    env_file = join(APP_ROOT, app, 'ENV')
+    virtualenv_path = join(ENV_ROOT, app)
+    # Set unbuffered output and readable UTF-8 mapping
+    env = {
+        **environ,
+        'PYTHONUNBUFFERED': '1',
+        'PYTHONIOENCODING': 'UTF_8:replace',
+        'UV_PROJECT_ENVIRONMENT': virtualenv_path
+    }
+    if exists(env_file):
+        env.update(parse_settings(env_file, env))
+
+    echo("-----> Calling uv sync", fg='green')
+    call('uv sync --python-preference only-system', cwd=join(APP_ROOT, app), env=env, shell=True)
 
     return spawn_app(app, deltas)
 
