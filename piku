@@ -90,7 +90,8 @@ else
       $SSH -t "$server" run "$app" bash
       ;;
     tmux)
-      $SSH -t "$server" run "$app" tmux new-session -A -s "$app"
+      # Pass -- before arguments with dashes to prevent Click from parsing them
+      $SSH -t "$server" run "$app" tmux -- new-session -A -s "$app"
       ;;
     download)
       scp "$server:~/.piku/apps/${app}/${2}" "${3:-'.'}"
