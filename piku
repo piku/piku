@@ -77,6 +77,7 @@ else
     ""|help)
       command $SSH -o LogLevel=QUIET ${sshflags:+${sshflags}} "$server" "$@" | grep -v "INTERNAL"
       echo "  shell             Local command to start an SSH session in the remote."
+      echo "  tmux              Local command to start or attach to a tmux session for the app."
       echo "  init              Local command to download an example ENV and Procfile."
       echo "  download          Local command to scp down a remote file. args: REMOTE-FILE(s) LOCAL-PATH"
       echo "                    Remote file path is relative to the app folder."
@@ -87,6 +88,9 @@ else
       ;;
     shell)
       $SSH -t "$server" run "$app" bash
+      ;;
+    tmux)
+      $SSH -t "$server" run "$app" tmux new-session -A -s "$app"
       ;;
     download)
       scp "$server:~/.piku/apps/${app}/${2}" "${3:-'.'}"
