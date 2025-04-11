@@ -19,6 +19,7 @@ from os.path import abspath, basename, dirname, exists, getmtime, join, realpath
 from pwd import getpwuid
 from grp import getgrgid
 from re import sub, match
+from shlex import split as shsplit
 from shutil import copyfile, rmtree, which
 from socket import socket, AF_INET, SOCK_STREAM
 from stat import S_IRUSR, S_IWUSR, S_IXUSR
@@ -1448,7 +1449,7 @@ def cmd_config_set(app, settings):
 
     config_file = join(ENV_ROOT, app, 'ENV')
     env = parse_settings(config_file)
-    for s in settings:
+    for s in shsplit(" ".join(settings)):
         try:
             k, v = map(lambda x: x.strip(), s.split("=", 1))
             env[k] = v
