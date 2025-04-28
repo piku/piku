@@ -23,7 +23,7 @@ from shlex import split as shsplit
 from shutil import copyfile, rmtree, which
 from socket import socket, AF_INET, SOCK_STREAM
 from stat import S_IRUSR, S_IWUSR, S_IXUSR
-from subprocess import call, check_output, Popen, STDOUT
+from subprocess import call, check_output, Popen, STDOUT, CalledProcessError
 from sys import argv, stdin, stdout, stderr, version_info, exit, path as sys_path
 from tempfile import NamedTemporaryFile
 from time import sleep
@@ -651,8 +651,11 @@ def deploy_node(app, deltas={}):
 
     version = env.get("NODE_VERSION")
     node_binary = join(virtualenv_path, "bin", "node")
-    installed = check_output("{} -v".format(node_binary), cwd=join(APP_ROOT, app), env=env, shell=True).decode("utf8").rstrip(
-        "\n") if exists(node_binary) else ""
+    try:
+        installed = check_output("{} -v".format(node_binary), cwd=join(APP_ROOT, app), env=env, shell=True).decode("utf8").rstrip(
+            "\n") if exists(node_binary) else ""
+    except CalledProcessError:
+        installed = ""
 
     if version and check_requirements(['nodeenv']):
         if not installed.endswith(version):
