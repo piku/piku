@@ -24,7 +24,7 @@ jobs:
         pip install -r requirements.txt
     - name: Check execution
       run: |
-        python piku.py
+        python piku.py --help
     - name: Check if setup works in-place
       run: |
         python piku.py setup
