@@ -299,6 +299,8 @@ def parse_procfile(filename):
                         for i in range(len(limits)):
                             if int(matches[i].replace("*/", "").replace("*", "1")) > limits[i]:
                                 raise ValueError
+                if kind in workers:
+                    echo("Warning: found multiple {} workers, only the last one will be used.".format(kind), fg='yellow')
                 workers[kind] = command
             except Exception:
                 echo("Warning: misformatted Procfile entry '{}' at line {}".format(line, line_number), fg='yellow')
