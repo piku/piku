@@ -90,17 +90,11 @@ else
       $SSH -t "$server" run "$app" bash
       ;;
     tmux)
-      # Check if tmux is available on the remote server
-      if ! $SSH "$server" run "$app" command -v tmux >/dev/null 2>&1; then
-        out "Error: tmux is not installed on the remote server."
-        out "Please install tmux on the server to use this command:"
-        out "  sudo apt-get install tmux  # On Debian/Ubuntu"
-        out "  sudo yum install tmux      # On CentOS/RHEL"
-        out "  sudo pacman -S tmux        # On Arch Linux"
+      # Check if tmux is available and start session in a single SSH round trip
+      # Use logical short circuit with proper shell escaping
+      if ! $SSH -t "$server" run "$app" -- sh -c 'command -v tmux >/dev/null 2>&1 && tmux new-session -A -s "'"$app"'" || { echo "Error: tmux is not installed on the remote server."; echo "Please install tmux on the server to use this command:"; echo "  sudo apt-get install tmux  # On Debian/Ubuntu"; echo "  sudo yum install tmux      # On CentOS/RHEL"; echo "  sudo pacman -S tmux        # On Arch Linux"; exit 1; }'; then
         exit 1
       fi
-      # Pass -- before arguments with dashes to prevent Click from parsing them
-      $SSH -t "$server" run "$app" tmux -- new-session -A -s "$app"
       ;;
     download)
       scp "$server:~/.piku/apps/${app}/${2}" "${3:-'.'}"
