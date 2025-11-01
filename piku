@@ -97,7 +97,7 @@ else
       fi
       ;;
     download)
-      scp "$server:~/.piku/apps/${app}/${2}" "${3:-'.'}"
+      scp "$server:~/.piku/apps/${app}/${2}" "${3:-.}"
       ;;
     *)
       shift # remove cmd arg
