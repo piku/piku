@@ -622,23 +622,19 @@ def deploy_node(app, deltas={}):
     """Deploy a Node application"""
 
     virtualenv_path = join(ENV_ROOT, app)
-    node_path = join(ENV_ROOT, app, "node_modules")
-    node_modules_symlink = join(APP_ROOT, app, "node_modules")
-    npm_prefix = abspath(join(node_path, ".."))
+    node_modules_path = join(APP_ROOT, app, "node_modules")  # install to app dir
     env_file = join(APP_ROOT, app, 'ENV')
     deps = join(APP_ROOT, app, 'package.json')
 
     first_time = False
-    if not exists(node_path):
-        echo("-----> Creating node_modules for '{}'".format(app), fg='green')
-        makedirs(node_path)
+    if not exists(node_modules_path):  # check app's node_modules
+        echo("-----> node_modules doesn't exist, will install for '{}'".format(app), fg='green')
         first_time = True
 
     env = {
         'VIRTUAL_ENV': virtualenv_path,
-        'NODE_PATH': node_path,
-        'NPM_CONFIG_PREFIX': npm_prefix,
-        "PATH": ':'.join([join(virtualenv_path, "bin"), join(node_path, ".bin"), environ['PATH']])
+        'NODE_PATH': node_modules_path,  # point to app's node_modules
+        "PATH": ':'.join([join(virtualenv_path, "bin"), join(node_modules_path, ".bin"), environ['PATH']])
     }
     if exists(env_file):
         env.update(parse_settings(env_file, env))
@@ -670,15 +666,14 @@ def deploy_node(app, deltas={}):
             echo("-----> Node is installed at {}.".format(version))
 
     if exists(deps) and check_requirements(['npm']):
-        if first_time or getmtime(deps) > getmtime(node_path):
+        if first_time or getmtime(deps) > getmtime(node_modules_path):  # check app's node_modules
             copyfile(join(APP_ROOT, app, 'package.json'), join(ENV_ROOT, app, 'package.json'))
-            if not exists(node_modules_symlink):
-                symlink(node_path, node_modules_symlink)
+            # REMOVED: symlink(node_path, node_modules_symlink)
             if package_manager != "npm":
                 echo("-----> Installing package manager {} with npm".format(package_manager))
                 call("npm install -g {}".format(package_manager), cwd=join(APP_ROOT, app), env=env, shell=True)
             echo("-----> Running {} for '{}'".format(package_manager_command, app), fg='green')
-            call('{} install --prefix {}'.format(package_manager_command, npm_prefix), cwd=join(APP_ROOT, app), env=env, shell=True)
+            call('{} install --omit=dev'.format(package_manager_command), cwd=join(APP_ROOT, app), env=env, shell=True)
     return spawn_app(app, deltas)
 
 
