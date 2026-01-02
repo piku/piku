@@ -1,0 +1,313 @@
+# Testing UV Support in Docker
+
+This document explains how to test the piku `uv` deployment functionality locally using Docker.
+
+## Prerequisites
+
+- Docker installed and running
+- Git (to clone test applications)
+
+## Quick Start
+
+### 1. Build the Test Container
+
+Create a Dockerfile that includes `uv`:
+
+```bash
+cat > Dockerfile.uv-test << 'EOF'
+FROM debian:bookworm
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update \
+ && apt-get dist-upgrade -y \
+ && apt-get install -y --no-install-recommends \
+    apt-utils \
+    ca-certificates \
+    locales \
+    curl \
+    tzdata \
+    git \
+    build-essential \
+    nginx \
+    python3 \
+    python3-pip \
+    python3-click \
+    python3-virtualenv \
+    uwsgi \
+    uwsgi-plugin-asyncio-python3 \
+    uwsgi-plugin-python3 \
+ && locale-gen en_US.UTF-8 \
+ && curl -LsSf https://astral.sh/uv/install.sh | sh
+
+ENV LC_ALL=en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV PATH="/root/.local/bin:$PATH"
+
+# Create piku user and directories
+RUN useradd -m -s /bin/bash piku \
+ && mkdir -p /home/piku/.piku/apps \
+ && mkdir -p /home/piku/.piku/envs \
+ && mkdir -p /home/piku/.piku/logs \
+ && mkdir -p /home/piku/.piku/uwsgi \
+ && chown -R piku:piku /home/piku
+
+WORKDIR /home/piku
+COPY piku.py /home/piku/piku.py
+RUN chown piku:piku /home/piku/piku.py
+
+USER piku
+ENV PATH="/home/piku/.local/bin:$PATH"
+
+# Install uv for piku user
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+
+CMD ["/bin/bash"]
+EOF
+```
+
+Build the container:
+
+```bash
+docker build -f Dockerfile.uv-test -t piku-uv-test .
+```
+
+### 2. Run the Test Container
+
+```bash
+docker run -it --rm \
+  -v $(pwd)/piku.py:/home/piku/piku.py:ro \
+  piku-uv-test
+```
+
+## Test Cases
+
+### Test Case 1: Basic UV Deployment
+
+Create a minimal Python app with `pyproject.toml`:
+
+```bash
+# Inside the container
+mkdir -p ~/.piku/apps/testapp
+cd ~/.piku/apps/testapp
+
+cat > pyproject.toml << 'EOF'
+[project]
+name = "testapp"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "flask>=2.0",
+]
+
+[project.scripts]
+testapp = "testapp:main"
+EOF
+
+cat > testapp.py << 'EOF'
+from flask import Flask
+app = Flask(__name__)
+
+@app.route('/')
+def hello():
+    return 'Hello from uv!'
+
+def main():
+    app.run()
+EOF
+
+# Create Procfile
+echo "web: python testapp.py" > Procfile
+```
+
+Run the deployment test:
+
+```bash
+cd /home/piku
+python3 piku.py deploy testapp
+```
+
+**Expected Output:**
+```
+=====> Starting uv deployment for 'testapp'
+-----> Creating virtualenv directory for 'testapp'
+-----> Running uv sync for 'testapp'
+```
+
+**Verify:**
+```bash
+# Check virtualenv was created with pyvenv.cfg
+ls -la ~/.piku/envs/testapp/
+cat ~/.piku/envs/testapp/pyvenv.cfg
+
+# Check Flask was installed
+~/.piku/envs/testapp/bin/python -c "import flask; print(flask.__version__)"
+```
+
+### Test Case 2: Python Version Selection
+
+Test that `PYTHON_VERSION` environment variable works:
+
+```bash
+# Create ENV file with specific Python version
+mkdir -p ~/.piku/apps/testapp
+echo "PYTHON_VERSION=3.11" > ~/.piku/apps/testapp/ENV
+
+# Re-run deployment
+rm -rf ~/.piku/envs/testapp
+python3 piku.py deploy testapp
+```
+
+**Expected Output:**
+```
+=====> Starting uv deployment for 'testapp'
+-----> Creating virtualenv directory for 'testapp'
+-----> Using Python version: 3.11
+-----> Running uv sync for 'testapp'
+```
+
+**Verify:**
+```bash
+~/.piku/envs/testapp/bin/python --version
+# Should show Python 3.11.x
+```
+
+### Test Case 3: Dependency Change Detection
+
+Test that piku only re-syncs when `pyproject.toml` changes:
+
+```bash
+# First deployment
+python3 piku.py deploy testapp
+
+# Second deployment without changes
+python3 piku.py deploy testapp
+```
+
+**Expected Output (second run):**
+```
+=====> Starting uv deployment for 'testapp'
+-----> Dependencies are up to date for 'testapp'
+```
+
+Now modify `pyproject.toml`:
+
+```bash
+# Add a new dependency
+cd ~/.piku/apps/testapp
+cat >> pyproject.toml << 'EOF'
+    "requests>=2.0",
+EOF
+
+# Re-deploy
+cd /home/piku
+python3 piku.py deploy testapp
+```
+
+**Expected Output:**
+```
+=====> Starting uv deployment for 'testapp'
+-----> Running uv sync for 'testapp'
+```
+
+### Test Case 4: uWSGI Virtualenv Detection
+
+Test that uWSGI correctly detects the uv-created virtualenv:
+
+```bash
+# Check that pyvenv.cfg exists (used for uWSGI detection)
+ls ~/.piku/envs/testapp/pyvenv.cfg
+
+# The spawn_worker function should now detect this as a valid virtualenv
+# and add the 'virtualenv' setting to uWSGI config
+```
+
+## Testing with Multiple Python Versions
+
+To test Python version switching, you can install multiple Python versions in the container:
+
+```bash
+# In the Dockerfile, add:
+RUN uv python install 3.10 3.11 3.12
+
+# Then test each version:
+echo "PYTHON_VERSION=3.10" > ~/.piku/apps/testapp/ENV
+rm -rf ~/.piku/envs/testapp
+python3 piku.py deploy testapp
+~/.piku/envs/testapp/bin/python --version  # Should be 3.10
+
+echo "PYTHON_VERSION=3.12" > ~/.piku/apps/testapp/ENV
+rm -rf ~/.piku/envs/testapp
+python3 piku.py deploy testapp
+~/.piku/envs/testapp/bin/python --version  # Should be 3.12
+```
+
+## Troubleshooting
+
+### UV Not Found
+
+If you see "uv: command not found":
+
+```bash
+# Check if uv is installed
+which uv
+
+# If not, install it
+curl -LsSf https://astral.sh/uv/install.sh | sh
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+### Python Version Not Available
+
+If uv can't find the requested Python version:
+
+```bash
+# List available Python versions
+uv python list
+
+# Install a specific version
+uv python install 3.12
+```
+
+### Virtualenv Not Detected by uWSGI
+
+Check that `pyvenv.cfg` exists in the virtualenv:
+
+```bash
+ls ~/.piku/envs/YOUR_APP/pyvenv.cfg
+```
+
+If missing, the virtualenv may not have been created properly. Check the uv sync output for errors.
+
+## Comparing with Poetry Deployment
+
+To verify uv works similarly to poetry:
+
+```bash
+# Install poetry
+pip install poetry
+
+# Deploy same app with poetry (requires poetry.lock)
+cd ~/.piku/apps/testapp
+poetry init  # or copy an existing pyproject.toml
+python3 /home/piku/piku.py deploy testapp
+```
+
+## CI Integration
+
+To add this to GitHub Actions, update `.github/workflows/core-tests.yml`:
+
+```yaml
+  uv-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install uv
+      run: curl -LsSf https://astral.sh/uv/install.sh | sh
+    - name: Test uv deployment
+      run: |
+        export PATH="$HOME/.local/bin:$PATH"
+        # Create test app and run deployment tests
+        mkdir -p ~/.piku/apps/testapp
+        # ... (add test commands)
+```

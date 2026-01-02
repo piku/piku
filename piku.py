@@ -759,9 +759,11 @@ def deploy_python_with_poetry(app, deltas={}):
 def deploy_python_with_uv(app, deltas={}):
     """Deploy a Python application using Astral uv"""
 
-    echo("=====> Starting EXPERIMENTAL uv deployment for '{}'".format(app), fg='red')
+    echo("=====> Starting uv deployment for '{}'".format(app), fg='green')
     env_file = join(APP_ROOT, app, 'ENV')
     virtualenv_path = join(ENV_ROOT, app)
+    pyproject_path = join(APP_ROOT, app, 'pyproject.toml')
+
     # Set unbuffered output and readable UTF-8 mapping
     env = {
         **environ,
@@ -772,8 +774,31 @@ def deploy_python_with_uv(app, deltas={}):
     if exists(env_file):
         env.update(parse_settings(env_file, env))
 
-    echo("-----> Calling uv sync", fg='green')
-    call('uv sync --python-preference only-system', cwd=join(APP_ROOT, app), env=env, shell=True)
+    # Check if this is a first-time deploy or if pyproject.toml has changed
+    first_time = not exists(join(virtualenv_path, "pyvenv.cfg"))
+
+    # Create virtualenv directory if it doesn't exist
+    if not exists(virtualenv_path):
+        echo("-----> Creating virtualenv directory for '{}'".format(app), fg='green')
+        try:
+            makedirs(virtualenv_path)
+        except FileExistsError:
+            echo("-----> Env dir already exists: '{}'".format(app), fg='yellow')
+
+    # Build uv sync command with Python version support
+    # PYTHON_VERSION can be "3", "3.12", "3.12.1", etc.
+    python_version = env.get("PYTHON_VERSION", "")
+    uv_cmd = 'uv sync'
+    if python_version:
+        uv_cmd += ' --python {}'.format(python_version)
+        echo("-----> Using Python version: {}".format(python_version), fg='green')
+
+    # Only run uv sync if first time or pyproject.toml has changed
+    if first_time or getmtime(pyproject_path) > getmtime(virtualenv_path):
+        echo("-----> Running uv sync for '{}'".format(app), fg='green')
+        call(uv_cmd, cwd=join(APP_ROOT, app), env=env, shell=True)
+    else:
+        echo("-----> Dependencies are up to date for '{}'".format(app), fg='green')
 
     return spawn_app(app, deltas)
 
@@ -1162,7 +1187,8 @@ def spawn_worker(app, kind, command, env, ordinal=1):
     ]
 
     # only add virtualenv to uwsgi if it's a real virtualenv
-    if exists(join(env_path, "bin", "activate_this.py")):
+    # Check for activate_this.py (virtualenv) or pyvenv.cfg (venv/uv)
+    if exists(join(env_path, "bin", "activate_this.py")) or exists(join(env_path, "pyvenv.cfg")):
         settings.append(('virtualenv', env_path))
 
     if 'UWSGI_IDLE' in env:
