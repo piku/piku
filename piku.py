@@ -759,7 +759,7 @@ def deploy_python_with_poetry(app, deltas={}):
 def deploy_python_with_uv(app, deltas={}):
     """Deploy a Python application using Astral uv"""
 
-    echo("=====> Starting uv deployment for '{}'".format(app), fg='green')
+    echo("=====> Starting EXPERIMENTAL uv deployment for '{}'".format(app), fg='yellow')
     env_file = join(APP_ROOT, app, 'ENV')
     virtualenv_path = join(ENV_ROOT, app)
     pyproject_path = join(APP_ROOT, app, 'pyproject.toml')
@@ -786,8 +786,14 @@ def deploy_python_with_uv(app, deltas={}):
             echo("-----> Env dir already exists: '{}'".format(app), fg='yellow')
 
     # Build uv sync command with Python version support
-    # PYTHON_VERSION can be "3", "3.12", "3.12.1", etc.
+    # Priority: PYTHON_VERSION env var > .python-version file
     python_version = env.get("PYTHON_VERSION", "")
+    python_version_file = join(APP_ROOT, app, '.python-version')
+
+    if not python_version and exists(python_version_file):
+        with open(python_version_file, 'r') as f:
+            python_version = f.read().strip()
+
     uv_cmd = 'uv sync'
     if python_version:
         uv_cmd += ' --python {}'.format(python_version)

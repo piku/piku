@@ -172,7 +172,47 @@ python3 piku.py deploy testapp
 # Should show Python 3.11.x
 ```
 
-### Test Case 3: Dependency Change Detection
+### Test Case 3: .python-version File Support
+
+Test that `.python-version` file works (standard uv/pyenv convention):
+
+```bash
+# Remove any ENV override first
+rm -f ~/.piku/apps/testapp/ENV
+
+# Create .python-version file
+echo "3.11" > ~/.piku/apps/testapp/.python-version
+
+# Re-run deployment
+rm -rf ~/.piku/envs/testapp
+python3 piku.py deploy testapp
+```
+
+**Expected Output:**
+```
+=====> Starting uv deployment for 'testapp'
+-----> Creating virtualenv directory for 'testapp'
+-----> Using Python version: 3.11
+-----> Running uv sync for 'testapp'
+```
+
+**Test Priority (ENV overrides .python-version):**
+```bash
+# Set both ENV and .python-version
+echo "PYTHON_VERSION=3.12" > ~/.piku/apps/testapp/ENV
+echo "3.10" > ~/.piku/apps/testapp/.python-version
+
+rm -rf ~/.piku/envs/testapp
+python3 piku.py deploy testapp
+```
+
+**Expected Output:**
+```
+-----> Using Python version: 3.12
+```
+(ENV variable takes precedence over .python-version file)
+
+### Test Case 4: Dependency Change Detection
 
 Test that piku only re-syncs when `pyproject.toml` changes:
 
@@ -210,7 +250,7 @@ python3 piku.py deploy testapp
 -----> Running uv sync for 'testapp'
 ```
 
-### Test Case 4: uWSGI Virtualenv Detection
+### Test Case 5: uWSGI Virtualenv Detection
 
 Test that uWSGI correctly detects the uv-created virtualenv:
 
