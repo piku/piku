@@ -1,0 +1,63 @@
+#!/bin/sh
+#
+# piku client plugin: open
+#
+# Opens your app's URL in the local browser.
+#
+# Usage:
+#   piku open              - open app URL
+#   piku open /admin       - open app URL with path
+#
+# Installation:
+#   mkdir -p ~/.piku/client-plugins
+#   cp open ~/.piku/client-plugins/
+#   chmod +x ~/.piku/client-plugins/open
+
+server="$1"
+app="$2"
+cmd="$3"
+shift 3
+
+path="$1"
+
+# Get URL from piku config (NGINX_SERVER_NAME is set by piku)
+url=$(ssh "$server" config:get "$app" NGINX_SERVER_NAME 2>/dev/null | head -1)
+
+# Fallback: construct URL from app name and server hostname
+if [ -z "$url" ]; then
+    host=$(echo "$server" | cut -d@ -f2)
+    url="$app.$host"
+fi
+
+# Ensure URL has a scheme
+case "$url" in
+    http://*|https://*) ;;
+    *) url="https://$url" ;;
+esac
+
+# Append path if provided
+url="${url}${path}"
+
+echo "Opening $url..."
+
+# Cross-platform browser open
+case "$(uname -s)" in
+    Darwin)
+        open "$url"
+        ;;
+    Linux)
+        if command -v xdg-open >/dev/null 2>&1; then
+            xdg-open "$url"
+        elif command -v sensible-browser >/dev/null 2>&1; then
+            sensible-browser "$url"
+        else
+            echo "Could not detect browser. Visit: $url"
+        fi
+        ;;
+    MINGW*|CYGWIN*|MSYS*)
+        start "$url"
+        ;;
+    *)
+        echo "Visit: $url"
+        ;;
+esac
