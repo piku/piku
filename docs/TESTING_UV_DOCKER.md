@@ -15,7 +15,7 @@ Options:
 tests/uv/
 ├── Dockerfile      # Debian + uv + Python 3.11/3.12
 ├── run_tests.sh    # Build and run container
-└── test_uv.sh      # Test cases (14 tests)
+└── test_uv.sh      # Test cases (15 tests)
 ```
 
 ## Interactive Debugging
@@ -44,3 +44,4 @@ docker run -it --rm -v "$PWD":/piku piku-uv-test /bin/bash
 12. Redeploy with different Python version
 13. Virtualenv isolation
 14. Default Python (no version specified)
+15. Lockfile (uv.lock) change detection

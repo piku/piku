@@ -380,6 +380,12 @@ def do_deploy(app, deltas={}, newrev=None):
         echo("-----> Deploying app '{}'".format(app), fg='green')
         call('git fetch --quiet', cwd=app_path, env=env, shell=True)
         if newrev:
+            # Remove generated lockfiles that might conflict with incoming commits
+            # (e.g., uv.lock created on first deploy, later committed by user)
+            for lockfile in ['uv.lock', 'poetry.lock']:
+                lockfile_path = join(app_path, lockfile)
+                if exists(lockfile_path):
+                    remove(lockfile_path)
             call('git reset --hard {}'.format(newrev), cwd=app_path, env=env, shell=True)
         call('git submodule init', cwd=app_path, env=env, shell=True)
         call('git submodule update', cwd=app_path, env=env, shell=True)
@@ -763,6 +769,7 @@ def deploy_python_with_uv(app, deltas={}):
     env_file = join(APP_ROOT, app, 'ENV')
     virtualenv_path = join(ENV_ROOT, app)
     pyproject_path = join(APP_ROOT, app, 'pyproject.toml')
+    lockfile_path = join(APP_ROOT, app, 'uv.lock')
 
     # Set unbuffered output and readable UTF-8 mapping
     env = {
@@ -799,8 +806,9 @@ def deploy_python_with_uv(app, deltas={}):
         uv_cmd += ' --python {}'.format(python_version)
         echo("-----> Using Python version: {}".format(python_version), fg='green')
 
-    # Only run uv sync if first time or pyproject.toml has changed
-    if first_time or getmtime(pyproject_path) > getmtime(virtualenv_path):
+    # Only run uv sync if first time or pyproject.toml/uv.lock has changed
+    lockfile_changed = exists(lockfile_path) and getmtime(lockfile_path) > getmtime(virtualenv_path)
+    if first_time or getmtime(pyproject_path) > getmtime(virtualenv_path) or lockfile_changed:
         echo("-----> Running uv sync for '{}'".format(app), fg='green')
         call(uv_cmd, cwd=join(APP_ROOT, app), env=env, shell=True)
     else:

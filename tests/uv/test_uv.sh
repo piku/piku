@@ -435,6 +435,44 @@ else
 fi
 
 # ============================================
+section "Test 15: Lockfile Change Detection"
+# ============================================
+cleanup
+create_test_app
+
+# First deploy - creates uv.lock
+python3 $PIKU_SCRIPT deploy testapp >/dev/null 2>&1 || true
+
+# Verify uv.lock was created
+if [ -f "$APP_DIR/uv.lock" ]; then
+    pass "uv.lock created after first deploy"
+else
+    fail "uv.lock not created"
+fi
+
+# Second deploy without changes - should skip
+sleep 1
+output=$(python3 $PIKU_SCRIPT deploy testapp 2>&1) || true
+if echo "$output" | grep -q "Dependencies are up to date"; then
+    pass "Skipped sync when lockfile unchanged"
+else
+    fail "Did not skip sync"
+    echo "$output"
+fi
+
+# Touch lockfile to simulate update (e.g., uv lock --upgrade)
+sleep 1
+touch "$APP_DIR/uv.lock"
+
+output=$(python3 $PIKU_SCRIPT deploy testapp 2>&1) || true
+if echo "$output" | grep -q "Running uv sync"; then
+    pass "Ran sync after lockfile changed"
+else
+    fail "Did not run sync after lockfile change"
+    echo "$output"
+fi
+
+# ============================================
 # Summary
 # ============================================
 echo ""
