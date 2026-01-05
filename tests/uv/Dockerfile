@@ -35,6 +35,8 @@ RUN useradd -m -s /bin/bash piku \
 USER piku
 WORKDIR /home/piku
 ENV PATH="/home/piku/.local/bin:$PATH"
+ENV USER=piku
+ENV HOME=/home/piku
 
 # Install uv and Python versions for testing
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
