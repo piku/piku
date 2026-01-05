@@ -1,6 +1,5 @@
 #!/bin/bash
-# Run UV deployment tests locally using Docker
-# This matches the CI workflow in .github/workflows/uv-tests.yml
+# Run UV deployment tests locally in Docker
 
 set -e
 
@@ -8,8 +7,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PIKU_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 echo "Building test container..."
-docker build "$PIKU_ROOT/.github/workflows/uv-test" -t local/uv-test
+docker build -t piku-uv-test "$SCRIPT_DIR"
 
 echo ""
 echo "Running tests..."
-docker run -v "$PIKU_ROOT":/run local/uv-test
+docker run --rm -v "$PIKU_ROOT":/piku piku-uv-test

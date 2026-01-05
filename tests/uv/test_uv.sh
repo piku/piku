@@ -26,8 +26,8 @@ section() {
 }
 
 # Setup
-# Repo is mounted at /run, piku home is /home/piku
-PIKU_SCRIPT=/run/piku.py
+# Repo is mounted at /piku, piku home is /home/piku
+PIKU_SCRIPT=/piku/piku.py
 PIKU_HOME=/home/piku
 APP_DIR=$PIKU_HOME/.piku/apps/testapp
 ENV_DIR=$PIKU_HOME/.piku/envs/testapp

@@ -2,29 +2,21 @@
 
 This document explains how to test the piku `uv` deployment functionality locally using Docker.
 
-## Quick Start (Automated)
-
-Run the automated test suite:
+## Quick Start
 
 ```bash
 ./tests/uv/run_tests.sh
 ```
 
-This builds a Docker container and runs all uv deployment tests automatically.
-
-The same tests run in CI via `.github/workflows/uv-tests.yml`.
+This builds a Docker container and runs all uv deployment tests.
 
 ## Test Structure
 
 ```
-.github/workflows/
-├── uv-test/
-│   └── Dockerfile      # Test container with uv + Python 3.11/3.12
-└── uv-tests.yml        # CI workflow
-
 tests/uv/
-├── run_tests.sh        # Local test runner
-└── test_uv.sh          # Test cases
+├── Dockerfile      # Test container with uv + Python 3.11/3.12
+├── run_tests.sh    # Test runner (builds and runs container)
+└── test_uv.sh      # Test cases
 ```
 
 ## Prerequisites
@@ -33,26 +25,19 @@ tests/uv/
 
 ## Manual Testing
 
-### 1. Build the Test Container
+### Build and Run
 
 ```bash
-docker build .github/workflows/uv-test -t local/uv-test
+docker build -t piku-uv-test tests/uv/
+docker run --rm -v "$PWD":/piku piku-uv-test
 ```
 
-### 2. Run the Tests
+### Interactive Mode
 
 ```bash
-docker run -v "$PWD":/run local/uv-test
-```
-
-### 3. Interactive Mode
-
-To debug or run tests manually:
-
-```bash
-docker run -it -v "$PWD":/run local/uv-test /bin/bash
-# Then inside the container:
-/run/tests/uv/test_uv.sh
+docker run -it --rm -v "$PWD":/piku piku-uv-test /bin/bash
+# Inside the container:
+/piku/tests/uv/test_uv.sh
 ```
 
 ## Test Cases
