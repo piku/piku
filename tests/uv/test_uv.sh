@@ -98,10 +98,11 @@ else
     fail "Python executable missing or not executable"
 fi
 
+# Note: uv doesn't install pip by default (it manages packages directly)
 if [ -x "$ENV_DIR/bin/pip" ]; then
-    pass "pip executable exists"
+    pass "pip executable exists (optional for uv)"
 else
-    fail "pip executable missing"
+    pass "No pip (expected for uv - it manages packages directly)"
 fi
 
 if [ -d "$ENV_DIR/lib" ]; then
@@ -140,8 +141,8 @@ else
     fail "Flask app creation failed: $test_output"
 fi
 
-# Test Flask version is recent
-flask_version=$("$ENV_DIR/bin/python" -c "import flask; print(flask.__version__)" 2>&1)
+# Test Flask version is recent (use importlib.metadata to avoid deprecation warning)
+flask_version=$("$ENV_DIR/bin/python" -c "from importlib.metadata import version; print(version('flask'))" 2>&1)
 if [[ "$flask_version" =~ ^[23]\. ]]; then
     pass "Flask version is 2.x or 3.x: $flask_version"
 else
