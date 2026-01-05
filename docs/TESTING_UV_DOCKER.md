@@ -2,12 +2,21 @@
 
 This document explains how to test the piku `uv` deployment functionality locally using Docker.
 
+## Quick Start (Automated)
+
+Run the automated test suite:
+
+```bash
+./tests/uv/run_tests.sh
+```
+
+This builds a Docker container and runs all uv deployment tests automatically.
+
 ## Prerequisites
 
 - Docker installed and running
-- Git (to clone test applications)
 
-## Quick Start
+## Manual Testing
 
 ### 1. Build the Test Container
 
