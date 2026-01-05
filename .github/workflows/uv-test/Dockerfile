@@ -2,6 +2,11 @@ FROM debian:bookworm
 
 ENV DEBIAN_FRONTEND=noninteractive
 
+# Install the minimum amount of packages required for testing, which currently means:
+# - minimal set of packages required to run Python 3
+# - shipping versions of uWSGI and nginx (so that config files are put in the right places)
+# Also, make sure we have a sane default locale inside the container
+
 RUN apt-get update \
  && apt-get dist-upgrade -y \
  && apt-get install -y --no-install-recommends \
@@ -12,8 +17,8 @@ RUN apt-get update \
     tzdata \
     git \
     build-essential \
+    git \
     nginx \
-    python3 \
     python3-pip \
     python3-click \
     python3-virtualenv \
@@ -37,14 +42,10 @@ USER piku
 WORKDIR /home/piku
 ENV PATH="/home/piku/.local/bin:$PATH"
 
-# Install uv for piku user
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+# Install uv for piku user and pre-install Python versions
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
+ && /home/piku/.local/bin/uv python install 3.11 3.12
 
-# Pre-install Python versions for testing
-RUN /home/piku/.local/bin/uv python install 3.11 3.12
+VOLUME ["/run"]
 
-COPY --chown=piku:piku piku.py /home/piku/piku.py
-COPY --chown=piku:piku tests/uv/test_uv.sh /home/piku/test_uv.sh
-RUN chmod +x /home/piku/test_uv.sh
-
-CMD ["/home/piku/test_uv.sh"]
+CMD ["/bin/bash", "/run/tests/uv/test_uv.sh"]

@@ -12,6 +12,21 @@ Run the automated test suite:
 
 This builds a Docker container and runs all uv deployment tests automatically.
 
+The same tests run in CI via `.github/workflows/uv-tests.yml`.
+
+## Test Structure
+
+```
+.github/workflows/
+├── uv-test/
+│   └── Dockerfile      # Test container with uv + Python 3.11/3.12
+└── uv-tests.yml        # CI workflow
+
+tests/uv/
+├── run_tests.sh        # Local test runner
+└── test_uv.sh          # Test cases
+```
+
 ## Prerequisites
 
 - Docker installed and running
@@ -20,73 +35,24 @@ This builds a Docker container and runs all uv deployment tests automatically.
 
 ### 1. Build the Test Container
 
-Create a Dockerfile that includes `uv`:
-
 ```bash
-cat > Dockerfile.uv-test << 'EOF'
-FROM debian:bookworm
-
-ENV DEBIAN_FRONTEND=noninteractive
-
-RUN apt-get update \
- && apt-get dist-upgrade -y \
- && apt-get install -y --no-install-recommends \
-    apt-utils \
-    ca-certificates \
-    locales \
-    curl \
-    tzdata \
-    git \
-    build-essential \
-    nginx \
-    python3 \
-    python3-pip \
-    python3-click \
-    python3-virtualenv \
-    uwsgi \
-    uwsgi-plugin-asyncio-python3 \
-    uwsgi-plugin-python3 \
- && locale-gen en_US.UTF-8 \
- && curl -LsSf https://astral.sh/uv/install.sh | sh
-
-ENV LC_ALL=en_US.UTF-8
-ENV LANG=en_US.UTF-8
-ENV PATH="/root/.local/bin:$PATH"
-
-# Create piku user and directories
-RUN useradd -m -s /bin/bash piku \
- && mkdir -p /home/piku/.piku/apps \
- && mkdir -p /home/piku/.piku/envs \
- && mkdir -p /home/piku/.piku/logs \
- && mkdir -p /home/piku/.piku/uwsgi \
- && chown -R piku:piku /home/piku
-
-WORKDIR /home/piku
-COPY piku.py /home/piku/piku.py
-RUN chown piku:piku /home/piku/piku.py
-
-USER piku
-ENV PATH="/home/piku/.local/bin:$PATH"
-
-# Install uv for piku user
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-
-CMD ["/bin/bash"]
-EOF
+docker build .github/workflows/uv-test -t local/uv-test
 ```
 
-Build the container:
+### 2. Run the Tests
 
 ```bash
-docker build -f Dockerfile.uv-test -t piku-uv-test .
+docker run -v "$PWD":/run local/uv-test
 ```
 
-### 2. Run the Test Container
+### 3. Interactive Mode
+
+To debug or run tests manually:
 
 ```bash
-docker run -it --rm \
-  -v $(pwd)/piku.py:/home/piku/piku.py:ro \
-  piku-uv-test
+docker run -it -v "$PWD":/run local/uv-test /bin/bash
+# Then inside the container:
+/run/tests/uv/test_uv.sh
 ```
 
 ## Test Cases

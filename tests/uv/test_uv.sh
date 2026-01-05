@@ -26,6 +26,8 @@ section() {
 }
 
 # Setup
+# Repo is mounted at /run, piku home is /home/piku
+PIKU_SCRIPT=/run/piku.py
 PIKU_HOME=/home/piku
 APP_DIR=$PIKU_HOME/.piku/apps/testapp
 ENV_DIR=$PIKU_HOME/.piku/envs/testapp
@@ -64,7 +66,7 @@ section "Test 1: Basic UV Deployment"
 cleanup
 create_test_app
 
-output=$(python3 $PIKU_HOME/piku.py deploy testapp 2>&1) || true
+output=$(python3 $PIKU_SCRIPT deploy testapp 2>&1) || true
 
 if echo "$output" | grep -q "Starting EXPERIMENTAL uv deployment"; then
     pass "UV deployment detected and started"
@@ -92,7 +94,7 @@ cleanup
 create_test_app
 echo "PYTHON_VERSION=3.11" > "$APP_DIR/ENV"
 
-output=$(python3 $PIKU_HOME/piku.py deploy testapp 2>&1) || true
+output=$(python3 $PIKU_SCRIPT deploy testapp 2>&1) || true
 
 if echo "$output" | grep -q "Using Python version: 3.11"; then
     pass "PYTHON_VERSION env variable respected"
@@ -115,7 +117,7 @@ cleanup
 create_test_app
 echo "3.12" > "$APP_DIR/.python-version"
 
-output=$(python3 $PIKU_HOME/piku.py deploy testapp 2>&1) || true
+output=$(python3 $PIKU_SCRIPT deploy testapp 2>&1) || true
 
 if echo "$output" | grep -q "Using Python version: 3.12"; then
     pass ".python-version file respected"
@@ -139,7 +141,7 @@ create_test_app
 echo "PYTHON_VERSION=3.11" > "$APP_DIR/ENV"
 echo "3.12" > "$APP_DIR/.python-version"
 
-output=$(python3 $PIKU_HOME/piku.py deploy testapp 2>&1) || true
+output=$(python3 $PIKU_SCRIPT deploy testapp 2>&1) || true
 
 if echo "$output" | grep -q "Using Python version: 3.11"; then
     pass "ENV takes priority over .python-version"
@@ -162,11 +164,11 @@ cleanup
 create_test_app
 
 # First deploy
-python3 $PIKU_HOME/piku.py deploy testapp >/dev/null 2>&1 || true
+python3 $PIKU_SCRIPT deploy testapp >/dev/null 2>&1 || true
 
 # Second deploy without changes - should skip sync
 sleep 1  # Ensure mtime difference
-output=$(python3 $PIKU_HOME/piku.py deploy testapp 2>&1) || true
+output=$(python3 $PIKU_SCRIPT deploy testapp 2>&1) || true
 
 if echo "$output" | grep -q "Dependencies are up to date"; then
     pass "Skipped uv sync when no changes"
@@ -179,7 +181,7 @@ fi
 sleep 1
 echo '    "requests>=2.0",' >> "$APP_DIR/pyproject.toml"
 
-output=$(python3 $PIKU_HOME/piku.py deploy testapp 2>&1) || true
+output=$(python3 $PIKU_SCRIPT deploy testapp 2>&1) || true
 
 if echo "$output" | grep -q "Running uv sync"; then
     pass "Ran uv sync after pyproject.toml changed"
@@ -197,7 +199,7 @@ section "Test 6: uWSGI Virtualenv Detection"
 
 cleanup
 create_test_app
-python3 $PIKU_HOME/piku.py deploy testapp >/dev/null 2>&1 || true
+python3 $PIKU_SCRIPT deploy testapp >/dev/null 2>&1 || true
 
 if [ -f "$ENV_DIR/pyvenv.cfg" ]; then
     pass "pyvenv.cfg exists for uWSGI detection"
@@ -221,7 +223,7 @@ create_test_app
 # Ensure env dir doesn't exist
 rm -rf "$ENV_DIR"
 
-output=$(python3 $PIKU_HOME/piku.py deploy testapp 2>&1) || true
+output=$(python3 $PIKU_SCRIPT deploy testapp 2>&1) || true
 
 if [ -d "$ENV_DIR" ]; then
     pass "Virtualenv directory created"
