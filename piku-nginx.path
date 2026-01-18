@@ -1,9 +1,0 @@
-[Unit]
-Description=Monitor .piku/nginx for changes
-
-[Path]
-PathChanged=/home/piku/.piku/nginx
-Unit=piku-nginx.service
-
-[Install]
-WantedBy=multi-user.target
