@@ -51,12 +51,12 @@ sudo ln -s `which uwsgi` /usr/local/bin/uwsgi-piku
 sudo systemctl disable uwsgi
 
 # add our own startup script
-sudo cp /tmp/uwsgi-piku.service /etc/systemd/system/
-sudo systemctl enable uwsgi-piku
-sudo systemctl start uwsgi-piku
+sudo cp /tmp/uwsgi-piku@.service /etc/systemd/system/
+sudo systemctl enable uwsgi-piku@piku
+sudo systemctl start uwsgi-piku@piku
 
 # check it's running
-sudo systemctl status uwsgi-piku.service
+sudo systemctl status uwsgi-piku@piku.service
 ```
 **Important Note:** Make sure you run `piku.py setup` as outlined above before starting the service.
 
@@ -120,11 +120,11 @@ sudo apt-get install nginx
 # Set up nginx to pick up our config files
 sudo cp /tmp/nginx.default.dist /etc/nginx/sites-available/default
 # Set up systemd.path to reload nginx upon config changes
-sudo cp ./piku-nginx.{path, service} /etc/systemd/system/
-sudo systemctl enable piku-nginx.{path,service}
-sudo systemctl start piku-nginx.path
-# Check the status of piku-nginx.service
-systemctl status piku-nginx.path # should return `Active: active (waiting)`
+sudo cp ./piku-nginx@.path ./piku-nginx.service /etc/systemd/system/
+sudo systemctl enable piku-nginx@piku.path
+sudo systemctl start piku-nginx@piku.path
+# Check the status
+systemctl status piku-nginx@piku.path # should return `Active: active (waiting)`
 # Restart NGINX
 sudo systemctl restart nginx
 ```

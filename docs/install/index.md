@@ -28,6 +28,47 @@ There is also an [Ansible playbook](https://github.com/piku/ansible-setup).
 !!! Contributing
     If you are running `piku` on specific Linux versions, feel free to contribute your own instructions.
 
+## Multi-Environment Setup
+
+You can run multiple piku environments on the same server (e.g., `piku`, `piku-staging`, `piku-dev`). This is useful for separating production and staging deployments.
+
+### Using piku-bootstrap
+
+To install additional environments, use the `PIKU_USER` environment variable:
+
+```bash
+# Install default piku environment
+./piku-bootstrap install
+
+# Install staging environment
+PIKU_USER=piku-staging ./piku-bootstrap install
+
+# Install dev environment
+PIKU_USER=piku-dev ./piku-bootstrap install
+```
+
+Each environment runs its own uWSGI emperor and nginx path watcher. Apps in different environments can have the same name without conflict.
+
+### Deploying to Different Environments
+
+From your development machine:
+
+```bash
+# Add remotes for each environment
+git remote add production piku@yourserver:myapp
+git remote add staging piku-staging@yourserver:myapp
+
+# Deploy to staging
+git push staging feature-branch
+
+# Deploy to production
+git push production main
+```
+
+### Upgrading Existing Installations
+
+If you have an existing piku installation and want to enable multi-environment support, see the [upgrade guide](UPGRADE-multienv.md).
+
 ## Generic Installation Steps
 
 ### Set up the `piku` user

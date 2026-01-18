@@ -68,19 +68,19 @@ server {
         try_files $uri $uri/ =404;
     }
 }
-# replace `PAAS_USERNAME` with the username you created.
-include /home/PAAS_USERNAME/.piku/nginx/*.conf;
+# This wildcard supports multiple piku users (e.g., piku, piku-staging)
+include /home/piku*/.piku/nginx/*.conf;
 ```
 
 ## Set up systemd.path to reload nginx upon config changes
 
 ```bash
 # Set up systemd.path to reload nginx upon config changes
-sudo cp ./piku-nginx.{path, service} /etc/systemd/system/
-sudo systemctl enable piku-nginx.{path,service}
-sudo systemctl start piku-nginx.path
-# Check the status of piku-nginx.service
-systemctl status piku-nginx.path # should return `Active: active (waiting)`
+sudo cp ./piku-nginx@.path ./piku-nginx.service /etc/systemd/system/
+sudo systemctl enable piku-nginx@piku.path
+sudo systemctl start piku-nginx@piku.path
+# Check the status
+systemctl status piku-nginx@piku.path # should return `Active: active (waiting)`
 # Restart NGINX
 sudo systemctl restart nginx
 ```

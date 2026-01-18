@@ -59,7 +59,7 @@ Clone the [piku repo](https://github.com/piku/piku) somewhere and copy files to 
 
 ```bash
 # as yourself in your desktop/laptop computer
-scp piku.py uwsgi-piku.service nginx.default.dist pi@your_machine:/tmp
+scp piku.py uwsgi-piku@.service piku-nginx@.path piku-nginx.service nginx.default.dist pi@your_machine:/tmp
 scp your_public_ssh_key.pub pi@your_machine:/tmp
 ```
 
@@ -70,9 +70,9 @@ Prepare uWSGI (part one):
 # as 'pi' user
 sudo ln -s `which uwsgi` /usr/local/bin/uwsgi-piku
 sudo systemctl disable uwsgi
-sudo cp /tmp/uwsgi-piku.service /etc/systemd/system/
+sudo cp /tmp/uwsgi-piku@.service /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable uwsgi-piku
+sudo systemctl enable uwsgi-piku@piku
 ```
 
 Prepare nginx:
@@ -82,11 +82,11 @@ sudo apt-get install nginx
 # Set up nginx to pick up our config files
 sudo cp /tmp/nginx.default.dist /etc/nginx/sites-available/default
 # Set up systemd.path to reload nginx upon config changes
-sudo cp ./piku-nginx.{path, service} /etc/systemd/system/
-sudo systemctl enable piku-nginx.{path,service}
-sudo systemctl start piku-nginx.path
-# Check the status of piku-nginx.service
-systemctl status piku-nginx.path # should return `Active: active (waiting)`
+sudo cp /tmp/piku-nginx@.path /tmp/piku-nginx.service /etc/systemd/system/
+sudo systemctl enable piku-nginx@piku.path
+sudo systemctl start piku-nginx@piku.path
+# Check the status
+systemctl status piku-nginx@piku.path # should return `Active: active (waiting)`
 # Restart NGINX
 sudo systemctl restart nginx
 ```
@@ -111,8 +111,8 @@ Prepare uWSGI (part two):
 
 ```bash
 # as 'pi' user
-sudo systemctl start uwsgi-piku
-sudo systemctl status uwsgi-piku.service
+sudo systemctl start uwsgi-piku@piku
+sudo systemctl status uwsgi-piku@piku.service
 ```
 If you're still here, odds are your Pi is ready for work
 

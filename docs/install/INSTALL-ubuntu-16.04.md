@@ -14,24 +14,24 @@ sudo adduser --disabled-password --gecos 'PaaS access' --ingroup www-data piku
 # move to /tmp and grab our distribution files
 cd /tmp
 wget https://raw.githubusercontent.com/piku/piku/master/piku.py
-wget https://raw.githubusercontent.com/piku/piku/master/piku-nginx.path
+wget https://raw.githubusercontent.com/piku/piku/master/piku-nginx@.path
 wget https://raw.githubusercontent.com/piku/piku/master/piku-nginx.service
 wget https://raw.githubusercontent.com/piku/piku/master/nginx.default.dist
-wget https://raw.githubusercontent.com/piku/piku/master/uwsgi-piku.service
+wget https://raw.githubusercontent.com/piku/piku/master/uwsgi-piku@.service
 # Set up nginx to pick up our config files
 sudo cp /tmp/nginx.default.dist /etc/nginx/sites-available/default
 # Set up systemd.path to reload nginx upon config changes
-sudo cp ./piku-nginx.{path, service} /etc/systemd/system/
-sudo systemctl enable piku-nginx.{path,service}
-sudo systemctl start piku-nginx.path
+sudo cp /tmp/piku-nginx@.path /tmp/piku-nginx.service /etc/systemd/system/
+sudo systemctl enable piku-nginx@piku.path
+sudo systemctl start piku-nginx@piku.path
 # Restart NGINX
 sudo systemctl restart nginx
-sudo cp /tmp/uwsgi-piku.service /etc/systemd/system/
+sudo cp /tmp/uwsgi-piku@.service /etc/systemd/system/
 # refer to our executable using a link, in case there are more versions installed
 sudo ln -s `which uwsgi` /usr/local/bin/uwsgi-piku
 # disable the standard uwsgi startup script
 sudo systemctl disable uwsgi
-sudo systemctl enable uwsgi-piku
+sudo systemctl enable uwsgi-piku@piku
 sudo su - piku
 mkdir ~/.ssh
 chmod 700 ~/.ssh
@@ -40,5 +40,5 @@ cp /tmp/piku.py ~/piku.py
 python3 piku.py setup
 # Now import your SSH key using setup:ssh
 
-sudo systemctl start uwsgi-piku
+sudo systemctl start uwsgi-piku@piku
 ```

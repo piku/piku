@@ -42,7 +42,8 @@ journalctl -feu uwsgi # see logs
 [FYI Setting up and configuring NGINX](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/deploying_web_servers_and_reverse_proxies/setting-up-and-configuring-nginx_deploying-web-servers-and-reverse-proxies)
 
 ```bash
-echo "include /home/piku/.piku/nginx/*.conf;" > /etc/nginx/conf.d/piku.conf
+# This wildcard supports multiple piku users (e.g., piku, piku-staging)
+echo "include /home/piku*/.piku/nginx/*.conf;" > /etc/nginx/conf.d/piku.conf
 systemctl restart nginx
 journalctl -feu nginx # see logs
 ```
@@ -53,11 +54,11 @@ journalctl -feu nginx # see logs
 # Set up systemd.path to reload nginx upon config changes
 su -
 git clone https://github.com/piku/piku.git # need a copy of some files
-cp -v piku/piku-nginx.{path,service} /etc/systemd/system/
-systemctl enable piku-nginx.{path,service}
-systemctl start piku-nginx.path
-# Check the status of piku-nginx.service
-systemctl status piku-nginx.path # should return `active: active (waiting)`
+cp -v piku/piku-nginx@.path piku/piku-nginx.service /etc/systemd/system/
+systemctl enable piku-nginx@piku.path
+systemctl start piku-nginx@piku.path
+# Check the status
+systemctl status piku-nginx@piku.path # should return `active: active (waiting)`
 ```
 
 ## Notes
