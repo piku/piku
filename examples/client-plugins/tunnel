@@ -1,0 +1,58 @@
+#!/bin/sh
+#
+# piku client plugin: tunnel
+#
+# Creates SSH tunnels to access services running on the piku server.
+# Useful for connecting to databases, admin interfaces, or other local services.
+#
+# Usage:
+#   piku tunnel 8000              - forward localhost:8000 to server:8000
+#   piku tunnel 8000 3000         - forward localhost:3000 to server:8000
+#   piku tunnel:db postgres       - forward postgres port (5432)
+#   piku tunnel:db mysql          - forward mysql port (3306)
+#   piku tunnel:db redis          - forward redis port (6379)
+#   piku tunnel:db 27017          - forward custom port
+#
+# Installation:
+#   mkdir -p ~/.piku/client-plugins
+#   cp tunnel ~/.piku/client-plugins/
+#   chmod +x ~/.piku/client-plugins/tunnel
+
+server="$1"
+app="$2"
+cmd="$3"
+shift 3
+
+case "$cmd" in
+    tunnel)
+        remote_port="${1:-8000}"
+        local_port="${2:-$remote_port}"
+        echo "Forwarding localhost:$local_port -> server:$remote_port"
+        echo "Press Ctrl+C to stop"
+        echo ""
+        # -N: no remote command (just forward ports)
+        # -L: local port forwarding
+        ssh -N -L "$local_port:localhost:$remote_port" "$server"
+        ;;
+    tunnel:db)
+        db_type="${1:-postgres}"
+        case "$db_type" in
+            postgres|pg)  port=5432 ;;
+            mysql|maria)  port=3306 ;;
+            redis)        port=6379 ;;
+            mongo)        port=27017 ;;
+            *)            port="$db_type" ;;  # treat as port number
+        esac
+        echo "Forwarding localhost:$port ($db_type)"
+        echo "Press Ctrl+C to stop"
+        echo ""
+        ssh -N -L "$port:localhost:$port" "$server"
+        ;;
+    *)
+        echo "Unknown tunnel command: $cmd"
+        echo "Usage:"
+        echo "  piku tunnel <remote-port> [local-port]"
+        echo "  piku tunnel:db <postgres|mysql|redis|mongo|port>"
+        exit 1
+        ;;
+esac
