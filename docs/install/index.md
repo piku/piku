@@ -2,13 +2,16 @@
 
 ## TL;DR:
 
-To install it on your server, `ssh` in as `root` and run this:
+If you are in a hurry to install it on your server and are OK with downloading random scripts off the Internet, `ssh` in as `root` and run this:
 
 ```bash
 curl https://piku.github.io/get | sh
 ```
 
-## Installation Methods
+!!! Warning
+    This installation method is not recommended for production servers, and was added after an incredible amount of requests for a one-liner. It is safe to use on a fresh server, but you MUST always read scripts before running them.
+
+## Recommended, Guaranteed Safe Installation Methods
 
 `piku` requires `Python 3`, [uWSGI][uwsgi], `ssh`, and a Linux distribution that runs `systemd`, such as Raspbian Jessie/Debian 8+/Ubuntu/Fedora/CentOS.
 

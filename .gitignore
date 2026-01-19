@@ -56,4 +56,4 @@ docs/_build/
 target/
 
 # IntelliJ
-.idea/
+.idea/site/
