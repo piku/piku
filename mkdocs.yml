@@ -1,0 +1,40 @@
+site_name: Piku
+repo_url: https://github.com/piku/piku
+theme:
+  name: material
+  palette:
+    - primary: red
+    - scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon:  material/weather-sunny
+        name: Switch to light mode
+  logo: img/piku.svg
+  favicon: img/icon.png
+  features:
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.indexes
+
+markdown_extensions: 
+  - attr_list
+  - md_in_html
+  - attr_list
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+plugins:
+  - offline
+  - privacy
+  - search

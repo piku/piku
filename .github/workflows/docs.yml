@@ -1,0 +1,17 @@
+name: docs
+on:
+  push:
+    branches: [master, main]
+    paths: ['docs/**', 'mkdocs.yml']
+permissions:
+  contents: write
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.x
+      - run: pip install mkdocs-material
+      - run: mkdocs gh-deploy --force --remote-name https://x-access-token:${{ secrets.DOCS_DEPLOY_TOKEN }}@github.com/piku/piku.github.io.git

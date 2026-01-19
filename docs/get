@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -e
+
+echo "Downloading piku-bootstrap here."
+curl -s https://raw.githubusercontent.com/piku/piku-bootstrap/master/piku-bootstrap > piku-bootstrap
+chmod 755 piku-bootstrap
+echo "Now you can install Piku on `hostname` like this:"
+echo "./piku-bootstrap install"
