@@ -25,4 +25,4 @@ server {
 		try_files $uri $uri/ =404;
 	}
 }
-include /home/piku/.piku/nginx/*.conf;
+include /home/piku*/.piku/nginx/*.conf;

@@ -1,12 +1,12 @@
 [Unit]
-Description=Piku uWSGI Emperor
+Description=Piku uWSGI Emperor (%i)
 After=syslog.target
 
 [Service]
-ExecStart=/usr/local/bin/uwsgi-piku --ini /home/piku/.piku/uwsgi/uwsgi.ini
-User=piku
+ExecStart=/usr/local/bin/uwsgi-piku --ini /home/%i/.piku/uwsgi/uwsgi.ini
+User=%i
 Group=www-data
-RuntimeDirectory=uwsgi-piku
+RuntimeDirectory=uwsgi-%i
 Restart=always
 KillSignal=SIGQUIT
 Type=notify

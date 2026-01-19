@@ -69,7 +69,7 @@ if PIKU_BIN not in environ['PATH']:
 # pylint: disable=anomalous-backslash-in-string
 NGINX_TEMPLATE = """
 $PIKU_INTERNAL_PROXY_CACHE_PATH
-upstream $APP {
+upstream $NGINX_UPSTREAM {
   server $NGINX_SOCKET;
 }
 server {
@@ -86,7 +86,7 @@ $PIKU_INTERNAL_NGINX_COMMON
 
 NGINX_HTTPS_ONLY_TEMPLATE = """
 $PIKU_INTERNAL_PROXY_CACHE_PATH
-upstream $APP {
+upstream $NGINX_UPSTREAM {
   server $NGINX_SOCKET;
 }
 server {
@@ -184,7 +184,7 @@ uwsgi_cache_path $cache_path levels=1:2 keys_zone=$app:20m inactive=$cache_time_
 
 PIKU_INTERNAL_NGINX_CACHE_MAPPING = """
     location ~* ^/($cache_prefixes) {
-        uwsgi_cache $APP;
+        uwsgi_cache $NGINX_UPSTREAM;
         uwsgi_cache_min_uses 1;
         uwsgi_cache_key $host$request_uri;
         uwsgi_cache_valid 200 304 $cache_time_content;
@@ -199,7 +199,7 @@ PIKU_INTERNAL_NGINX_CACHE_MAPPING = """
 """
 
 PIKU_INTERNAL_NGINX_UWSGI_SETTINGS = """
-    uwsgi_pass $APP;
+    uwsgi_pass $NGINX_UPSTREAM;
     uwsgi_param QUERY_STRING $query_string;
     uwsgi_param REQUEST_METHOD $request_method;
     uwsgi_param CONTENT_TYPE $content_type;
@@ -813,6 +813,7 @@ def spawn_app(app, deltas={}):
     # Bootstrap environment
     env = {
         'APP': app,
+        'NGINX_UPSTREAM': '{}_{}'.format(app, environ['USER']),
         'LOG_ROOT': LOG_ROOT,
         'DATA_ROOT': join(DATA_ROOT, app),
         'HOME': environ['HOME'],
