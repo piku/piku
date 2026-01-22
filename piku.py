@@ -772,11 +772,14 @@ def deploy_python_with_uv(app, deltas={}):
     lockfile_path = join(APP_ROOT, app, 'uv.lock')
 
     # Set unbuffered output and readable UTF-8 mapping
+    # UV_PYTHON_PREFERENCE defaults to 'managed' to allow UV to download Python versions
+    # Users can override this via ENV file if they want 'only-system' behavior
     env = {
         **environ,
         'PYTHONUNBUFFERED': '1',
         'PYTHONIOENCODING': 'UTF_8:replace',
-        'UV_PROJECT_ENVIRONMENT': virtualenv_path
+        'UV_PROJECT_ENVIRONMENT': virtualenv_path,
+        'UV_PYTHON_PREFERENCE': 'managed'
     }
     if exists(env_file):
         env.update(parse_settings(env_file, env))
@@ -1241,7 +1244,9 @@ def spawn_worker(app, kind, command, env, ordinal=1):
             ('plugin', 'post-buffering')
         ])
 
-    python_version = int(env.get('PYTHON_VERSION', '3'))
+    # Extract major version from PYTHON_VERSION (handles "3", "3.11", "3.11.5", etc.)
+    python_version_str = env.get('PYTHON_VERSION', '3')
+    python_version = int(python_version_str.split('.')[0])
 
     if kind == 'wsgi':
         settings.extend([
