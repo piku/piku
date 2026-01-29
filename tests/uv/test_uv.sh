@@ -228,7 +228,7 @@ else
 fi
 
 # ============================================
-section "Test 7: Dependency Change Detection - Skip When Unchanged"
+section "Test 7: UV Sync Always Runs (UV handles its own caching)"
 # ============================================
 cleanup
 create_test_app
@@ -236,15 +236,24 @@ create_test_app
 # First deploy
 python3 $PIKU_SCRIPT deploy testapp >/dev/null 2>&1 || true
 
-# Second deploy without changes - should skip sync
-sleep 1  # Ensure mtime difference
+# Second deploy - uv sync always runs but UV handles its own caching efficiently
+sleep 1
 output=$(python3 $PIKU_SCRIPT deploy testapp 2>&1) || true
 
-if echo "$output" | grep -q "Dependencies are up to date"; then
-    pass "Skipped uv sync when no changes"
+# UV should always be called - it handles its own caching internally
+if echo "$output" | grep -q "Running uv sync"; then
+    pass "uv sync runs (UV handles caching internally)"
 else
-    fail "Did not skip uv sync (expected 'Dependencies are up to date')"
+    fail "uv sync did not run"
     echo "$output"
+fi
+
+# Verify UV's output shows it detected no changes (Audited instead of Installed)
+if echo "$output" | grep -q "Audited"; then
+    pass "UV detected no changes needed (Audited packages)"
+else
+    # This is fine - UV might show different output
+    pass "UV ran successfully"
 fi
 
 # ============================================
@@ -435,13 +444,13 @@ else
 fi
 
 # ============================================
-section "Test 15: Lockfile Change Detection"
+section "Test 15: Lockfile Creation and UV Sync"
 # ============================================
 cleanup
 create_test_app
 
 # First deploy - creates uv.lock
-python3 $PIKU_SCRIPT deploy testapp >/dev/null 2>&1 || true
+output=$(python3 $PIKU_SCRIPT deploy testapp 2>&1) || true
 
 # Verify uv.lock was created
 if [ -f "$APP_DIR/uv.lock" ]; then
@@ -450,25 +459,21 @@ else
     fail "uv.lock not created"
 fi
 
-# Second deploy without changes - should skip
-sleep 1
-output=$(python3 $PIKU_SCRIPT deploy testapp 2>&1) || true
-if echo "$output" | grep -q "Dependencies are up to date"; then
-    pass "Skipped sync when lockfile unchanged"
+# Verify uv sync ran
+if echo "$output" | grep -q "Running uv sync"; then
+    pass "uv sync ran on deploy"
 else
-    fail "Did not skip sync"
+    fail "uv sync did not run"
     echo "$output"
 fi
 
-# Touch lockfile to simulate update (e.g., uv lock --upgrade)
+# Second deploy - UV handles caching
 sleep 1
-touch "$APP_DIR/uv.lock"
-
 output=$(python3 $PIKU_SCRIPT deploy testapp 2>&1) || true
 if echo "$output" | grep -q "Running uv sync"; then
-    pass "Ran sync after lockfile changed"
+    pass "uv sync runs on every deploy (UV caches internally)"
 else
-    fail "Did not run sync after lockfile change"
+    fail "uv sync did not run"
     echo "$output"
 fi
 

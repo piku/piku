@@ -380,12 +380,11 @@ def do_deploy(app, deltas={}, newrev=None):
         echo("-----> Deploying app '{}'".format(app), fg='green')
         call('git fetch --quiet', cwd=app_path, env=env, shell=True)
         if newrev:
-            # Remove generated lockfiles that might conflict with incoming commits
+            # Remove uv.lock if it exists - it may conflict with incoming commits
             # (e.g., uv.lock created on first deploy, later committed by user)
-            for lockfile in ['uv.lock', 'poetry.lock']:
-                lockfile_path = join(app_path, lockfile)
-                if exists(lockfile_path):
-                    remove(lockfile_path)
+            uv_lockfile = join(app_path, 'uv.lock')
+            if exists(uv_lockfile):
+                remove(uv_lockfile)
             call('git reset --hard {}'.format(newrev), cwd=app_path, env=env, shell=True)
         call('git submodule init', cwd=app_path, env=env, shell=True)
         call('git submodule update', cwd=app_path, env=env, shell=True)
@@ -768,8 +767,6 @@ def deploy_python_with_uv(app, deltas={}):
     echo("=====> Starting EXPERIMENTAL uv deployment for '{}'".format(app), fg='yellow')
     env_file = join(APP_ROOT, app, 'ENV')
     virtualenv_path = join(ENV_ROOT, app)
-    pyproject_path = join(APP_ROOT, app, 'pyproject.toml')
-    lockfile_path = join(APP_ROOT, app, 'uv.lock')
 
     # Set unbuffered output and readable UTF-8 mapping
     # UV_PYTHON_PREFERENCE defaults to 'managed' to allow UV to download Python versions
@@ -783,9 +780,6 @@ def deploy_python_with_uv(app, deltas={}):
     }
     if exists(env_file):
         env.update(parse_settings(env_file, env))
-
-    # Check if this is a first-time deploy or if pyproject.toml has changed
-    first_time = not exists(join(virtualenv_path, "pyvenv.cfg"))
 
     # Create virtualenv directory if it doesn't exist
     if not exists(virtualenv_path):
@@ -808,14 +802,12 @@ def deploy_python_with_uv(app, deltas={}):
     if python_version:
         uv_cmd += ' --python {}'.format(python_version)
         echo("-----> Using Python version: {}".format(python_version), fg='green')
+        # Store resolved version in env so it's available to spawn_worker
+        env['PYTHON_VERSION'] = python_version
 
-    # Only run uv sync if first time or pyproject.toml/uv.lock has changed
-    lockfile_changed = exists(lockfile_path) and getmtime(lockfile_path) > getmtime(virtualenv_path)
-    if first_time or getmtime(pyproject_path) > getmtime(virtualenv_path) or lockfile_changed:
-        echo("-----> Running uv sync for '{}'".format(app), fg='green')
-        call(uv_cmd, cwd=join(APP_ROOT, app), env=env, shell=True)
-    else:
-        echo("-----> Dependencies are up to date for '{}'".format(app), fg='green')
+    # Always run uv sync - it's fast and handles its own caching
+    echo("-----> Running uv sync for '{}'".format(app), fg='green')
+    call(uv_cmd, cwd=join(APP_ROOT, app), env=env, shell=True)
 
     return spawn_app(app, deltas)
 
