@@ -8,7 +8,9 @@ You can configure deployment settings by placing special variables in an `ENV` f
 
 ### Python
 
-* `PYTHON_VERSION` (int): Forces Python 3
+* `PYTHON_VERSION` (string): Specifies the Python version for your app (e.g., `3.10`, `3.11`). 
+
+> **NOTE:** When using UV for dependency management (apps with `pyproject.toml`), `PYTHON_VERSION` should match your system Python version to ensure compatibility with system-installed uWSGI. See [UV.md](UV.md) for details.
 
 ### Node
 
