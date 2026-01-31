@@ -73,6 +73,15 @@ else
   out "Server: $server"
   out "App: $app"
   out
+
+  # Client-side plugin support
+  plugin_cmd=$(echo "$cmd" | cut -d: -f1)  # Extract base command (e.g., "code" from "code:stop")
+  plugin_path="$HOME/.piku/client-plugins/$plugin_cmd"
+  if [ -x "$plugin_path" ]; then
+    shift  # remove cmd from remaining args
+    exec "$plugin_path" "$server" "$app" "$cmd" "$@"
+  fi
+
   case "$cmd" in
     ""|help)
       command $SSH -o LogLevel=QUIET ${sshflags:+${sshflags}} "$server" "$@" | grep -v "INTERNAL"
@@ -81,6 +90,8 @@ else
       echo "  init              Local command to download an example ENV and Procfile."
       echo "  download          Local command to scp down a remote file. args: REMOTE-FILE(s) LOCAL-PATH"
       echo "                    Remote file path is relative to the app folder."
+      echo ""
+      echo "Client-side plugins in ~/.piku/client-plugins/ are checked before server commands."
       ;;
     apps|setup|setup:ssh|update)
       # shellcheck disable=SC2029 # caused by the final "$@", expanded on the client side
