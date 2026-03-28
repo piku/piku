@@ -670,7 +670,7 @@ def deploy_node(app, deltas={}):
                      cwd=virtualenv_path, env=env, shell=True)
         else:
             echo("-----> Node is installed at {}.".format(version))
-            
+
     if not exists(virtualenv_path):
         try:
             makedirs(virtualenv_path)
