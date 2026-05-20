@@ -1,6 +1,26 @@
 name: Test Against OS Packages
 
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - 'piku.py'
+      - 'piku'
+      - 'requirements.txt'
+      - '.github/workflows/os-packages.yml'
+      - '.github/workflows/bookworm/**'
+      - '.github/workflows/trixie/**'
+      - '.github/workflows/noble/**'
+      - '.github/workflows/plucky/**'
+  pull_request:
+    paths:
+      - 'piku.py'
+      - 'piku'
+      - 'requirements.txt'
+      - '.github/workflows/os-packages.yml'
+      - '.github/workflows/bookworm/**'
+      - '.github/workflows/trixie/**'
+      - '.github/workflows/noble/**'
+      - '.github/workflows/plucky/**'
 
 jobs:
   build:

@@ -1,0 +1,23 @@
+name: UV Integration Tests
+
+on:
+  push:
+    paths:
+      - 'piku.py'
+      - 'tests/uv/**'
+      - '.github/workflows/uv-tests.yml'
+  pull_request:
+    paths:
+      - 'piku.py'
+      - 'tests/uv/**'
+      - '.github/workflows/uv-tests.yml'
+
+jobs:
+  test-uv:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Run UV integration tests
+      run: |
+        cd tests/uv
+        bash run_tests.sh
