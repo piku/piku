@@ -96,7 +96,7 @@ To add a new runtime: write a `deploy_newlang()` function, add detection logic t
 ## Environment
 
 - **Target OS**: Debian/Ubuntu (including ARM)
-- **Python**: 3.8+ (system Python)
+- **Python**: 3.8+ (system Python) syntax preferred, 3.10+ supported as new baseline
 - **Process manager**: uwsgi
 - **Web server**: nginx
 - **SSL**: Let's Encrypt via ACME
