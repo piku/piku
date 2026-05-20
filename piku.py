@@ -800,6 +800,7 @@ def deploy_python_with_uv(app, deltas={}):
 
     # Create virtualenv directory if needed
     if not exists(virtualenv_path):
+        echo("-----> Creating virtualenv directory for '{}'".format(app), fg='green')
         makedirs(virtualenv_path)
 
     # Set unbuffered output and readable UTF-8 mapping
