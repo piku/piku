@@ -113,6 +113,7 @@ $PIKU_INTERNAL_NGINX_COMMON
 NGINX_COMMON_FRAGMENT = r"""
   listen              $NGINX_IPV6_ADDRESS:$NGINX_SSL;
   listen              $NGINX_IPV4_ADDRESS:$NGINX_SSL;
+  $NGINX_HTTP2
   ssl_certificate     $NGINX_ROOT/$APP.crt;
   ssl_certificate_key $NGINX_ROOT/$APP.key;
   server_name         $NGINX_SERVER_NAME;
@@ -866,14 +867,29 @@ def spawn_app(app, deltas={}):
 
             nginx = command_output("nginx -V")
             nginx_ssl = "443 ssl"
+            nginx_http2 = ""
             if "--with-http_v2_module" in nginx:
-                nginx_ssl += " http2"
+                # nginx >=1.25.1 deprecated 'listen ... http2' in favor of 'http2 on;'
+                nginx_version = ""
+                for part in nginx.split():
+                    if part.startswith("nginx/"):
+                        nginx_version = part.split("/")[1]
+                        break
+                try:
+                    ver_tuple = tuple(int(x) for x in nginx_version.split("."))
+                except (ValueError, AttributeError):
+                    ver_tuple = (0, 0, 0)
+                if ver_tuple >= (1, 25, 1):
+                    nginx_http2 = "http2 on;"
+                else:
+                    nginx_ssl += " http2"
             elif "--with-http_spdy_module" in nginx and "nginx/1.6.2" not in nginx:  # avoid Raspbian bug
                 nginx_ssl += " spdy"
             nginx_conf = join(NGINX_ROOT, "{}.conf".format(app))
 
             env.update({  # lgtm [py/modification-of-default-value]
                 'NGINX_SSL': nginx_ssl,
+                'NGINX_HTTP2': nginx_http2,
                 'NGINX_ROOT': NGINX_ROOT,
                 'ACME_WWW': ACME_WWW,
             })
