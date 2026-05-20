@@ -789,21 +789,45 @@ def deploy_python_with_poetry(app, deltas={}):
 def deploy_python_with_uv(app, deltas={}):
     """Deploy a Python application using Astral uv"""
 
-    echo("=====> Starting EXPERIMENTAL uv deployment for '{}'".format(app), fg='red')
+    echo("=====> Starting EXPERIMENTAL uv deployment for '{}'".format(app), fg='yellow')
     env_file = join(APP_ROOT, app, 'ENV')
     virtualenv_path = join(ENV_ROOT, app)
+
+    # Create virtualenv directory if needed
+    if not exists(virtualenv_path):
+        makedirs(virtualenv_path)
+
     # Set unbuffered output and readable UTF-8 mapping
     env = {
         **environ,
         'PYTHONUNBUFFERED': '1',
         'PYTHONIOENCODING': 'UTF_8:replace',
-        'UV_PROJECT_ENVIRONMENT': virtualenv_path
+        'UV_PROJECT_ENVIRONMENT': virtualenv_path,
+        'UV_PYTHON_PREFERENCE': 'managed'
     }
     if exists(env_file):
         env.update(parse_settings(env_file, env))
 
-    echo("-----> Calling uv sync", fg='green')
-    call('uv sync --python-preference only-system', cwd=join(APP_ROOT, app), env=env, shell=True)
+    # Remove uv.lock if it exists — it may conflict with incoming commits
+    uv_lockfile = join(APP_ROOT, app, 'uv.lock')
+    if exists(uv_lockfile):
+        remove(uv_lockfile)
+
+    # Build uv sync command with Python version support
+    # Priority: PYTHON_VERSION env var > .python-version file
+    python_version = env.get("PYTHON_VERSION", "")
+    python_version_file = join(APP_ROOT, app, '.python-version')
+    if not python_version and exists(python_version_file):
+        with open(python_version_file, 'r') as f:
+            python_version = f.read().strip()
+
+    uv_cmd = 'uv sync'
+    if python_version:
+        uv_cmd += ' --python {}'.format(python_version)
+        echo("-----> Using Python version: {}".format(python_version), fg='green')
+
+    echo("-----> Running {}".format(uv_cmd), fg='green')
+    call(uv_cmd, cwd=join(APP_ROOT, app), env=env, shell=True)
 
     return spawn_app(app, deltas)
 
