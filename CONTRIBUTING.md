@@ -2,7 +2,7 @@
 
 `piku` is a stable project, but we welcome contributions that:
 
-* Help us move beyond Python 3.8+ (which is the current target due to Linux LTS distribution alignment)
+* Help us improve Python 3.10+ support (which is the current target due to Linux LTS distribution alignment)
 * Help us do better automated testing
 * Improve documentation (some docs are a bit old by now)
 * Help us deploy `piku` in various Linux distributions and environments (check the sister repositories in the project)

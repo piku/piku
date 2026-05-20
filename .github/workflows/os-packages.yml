@@ -8,10 +8,10 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        distro: [ bookworm, bullseye, noble, jammy, focal ]
+        distro: [bookworm, trixie, noble, plucky]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Test on ${{ matrix.distro }}
       run: |
         docker build .github/workflows/${{ matrix.distro }} -t local/${{ matrix.distro }}

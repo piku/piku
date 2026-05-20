@@ -1,4 +1,4 @@
-FROM debian:bookworm
+FROM ubuntu:plucky
 RUN apt-get update && apt-get install -y \
     nginx \
     python3-pip \

@@ -34,7 +34,7 @@ Everything lives under `~/.piku/`:
 
 ## Code Style
 
-- **Python 3.8+** (must work on Debian LTS)
+- **Python 3.10+** (must work on Debian LTS)
 - **PEP 8** formatting
 - **Direct imports**: `from os.path import abspath, join` (not `import os.path`)
 - **No type hints yet** (but welcome as a contribution)

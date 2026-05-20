@@ -24,7 +24,7 @@ There are also [other installation methods](https://piku.github.io/install) avai
 
 **`piku` is considered STABLE**. It is actively maintained, but "actively" here means the feature set is pretty much done, so it is only updated when new language runtimes are added or reproducible bugs crop up.
 
-It currently requires Python 3.8 or above (which is what we test against), although it can be cajoled to run on older versions. We currently aim to support the latest two Debian and Ubuntu LTS major versions.
+It currently requires Python 3.10 or above (which is what we test against). We currently aim to support the latest two Debian and Ubuntu LTS major versions.
 
 ## Motivation
 
