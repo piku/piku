@@ -1,4 +1,4 @@
-Django>=2.2.9
-pytz==2019.1
-sqlparse==0.4.4
-psycopg2-binary==2.8.3
+Django>=4.2
+pytz>=2024.1
+sqlparse>=0.5.5
+psycopg2-binary>=2.9
