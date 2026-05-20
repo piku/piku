@@ -699,6 +699,12 @@ def deploy_node(app, deltas={}):
         else:
             echo("-----> Node is installed at {}.".format(version))
 
+    if not exists(virtualenv_path):
+        try:
+            makedirs(virtualenv_path)
+        except FileExistsError:
+            pass
+
     if exists(deps) and check_requirements(['npm']):
         if first_time or getmtime(deps) > getmtime(node_path):
             copyfile(join(APP_ROOT, app, 'package.json'), join(ENV_ROOT, app, 'package.json'))
