@@ -8,7 +8,7 @@ You can configure deployment settings by placing special variables in an `ENV` f
 
 ### Python
 
-* `PYTHON_VERSION` (int): Forces Python 3
+* `PYTHON_VERSION` (string): Python version for virtualenv creation (e.g., `3`, `3.12`, `3.13`). Defaults to `3`. For uv deployments, also supports `.python-version` file.
 
 ### Node
 

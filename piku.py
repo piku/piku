@@ -732,9 +732,8 @@ def deploy_python(app, deltas={}):
     if exists(env_file):
         env.update(parse_settings(env_file, env))
 
-    # TODO: improve version parsing
-    # pylint: disable=unused-variable
-    version = int(env.get("PYTHON_VERSION", "3"))
+    # Support PYTHON_VERSION as "3", "3.12", etc.
+    version = env.get("PYTHON_VERSION", "3")
 
     first_time = False
     if not exists(join(virtualenv_path, "bin", "activate")):
@@ -743,7 +742,7 @@ def deploy_python(app, deltas={}):
             makedirs(virtualenv_path)
         except FileExistsError:
             echo("-----> Env dir already exists: '{}'".format(app), fg='yellow')
-        call('virtualenv --python=python{version:d} {app:s}'.format(**locals()), cwd=ENV_ROOT, shell=True)
+        call('virtualenv --python=python{version:s} {app:s}'.format(**locals()), cwd=ENV_ROOT, shell=True)
         first_time = True
 
     activation_script = join(virtualenv_path, 'bin', 'activate_this.py')

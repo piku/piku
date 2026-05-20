@@ -10,9 +10,9 @@
 
 Go also (at the time) did not have a way to vendor dependencies that we were comfortable with, and that is also why Go support fell behind. Hopefully that will change soon.
 
-**Q:** Does it run under Python 3?
+**Q:** What Python version does piku require?
 
-**A:** Right now, it _only_ runs on Python 3, even though it can deploy apps written in both major versions. It began its development using 2.7 and using`click` for abstracting the simpler stuff, and we eventually switched over to 3.5 once it was supported in Debian Stretch and Raspbian since we wanted to make installing it on the Raspberry Pi as simple as possible.
+**A:** Piku requires Python 3.10 or above to run (it can deploy apps using any Python version). We target the system Python available in the latest two Debian and Ubuntu LTS releases.
 
 **Q:** Why not just use `dokku`?
 
