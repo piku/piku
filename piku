@@ -110,6 +110,10 @@ else
     download)
       scp -O "$server:~/.piku/apps/${app}/${2}" "${3:-.}"
       ;;
+    download-logs)
+      # Automatically downloads web and worker logs for the current app context
+      scp -O "$server:~/.piku/logs/${app}/{web,worker}*" "${2:-.}"
+      ;;
     *)
       shift # remove cmd arg
       # shellcheck disable=SC2029 # caused by the final "$@", expanded on the client side
