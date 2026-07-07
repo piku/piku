@@ -59,7 +59,8 @@ jobs:
               status: 'completed',
             });
             runs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-            const keepRunIds = new Set(runs.slice(0, 10).map(run => run.id));
+            const retentionRuns = runs.filter(run => run.name !== 'Actions cleanup');
+            const keepRunIds = new Set(retentionRuns.slice(0, 10).map(run => run.id));
 
             const artifacts = await github.paginate(github.rest.actions.listArtifactsForRepo, {
               owner,
