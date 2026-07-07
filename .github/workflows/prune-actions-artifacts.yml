@@ -1,8 +1,6 @@
 name: Prune Actions artifacts
 
 on:
-  schedule:
-    - cron: '17 4 * * *'
   workflow_dispatch:
 
 permissions:
