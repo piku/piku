@@ -60,7 +60,7 @@ jobs:
             });
             runs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
             const retentionRuns = runs.filter(run => run.name !== 'Actions cleanup');
-            const keepRunIds = new Set(retentionRuns.slice(0, 10).map(run => run.id));
+            const keepRunIds = new Set(retentionRuns.slice(0, 10).map(run => String(run.id))); 
 
             const artifacts = await github.paginate(github.rest.actions.listArtifactsForRepo, {
               owner,
@@ -74,7 +74,7 @@ jobs:
             for (const artifact of artifacts) {
               const created = new Date(artifact.created_at).getTime();
               const runId = artifact.workflow_run && artifact.workflow_run.id;
-              const beyondRunWindow = runId ? !keepRunIds.has(runId) : !keepArtifactIds.has(artifact.id);
+              const beyondRunWindow = runId ? !keepRunIds.has(String(runId)) : !keepArtifactIds.has(artifact.id);
               if (artifact.expired || created < cutoff || beyondRunWindow) {
                 await retry(`delete artifact ${artifact.id}`, () =>
                   github.rest.actions.deleteArtifact({ owner, repo, artifact_id: artifact.id })
