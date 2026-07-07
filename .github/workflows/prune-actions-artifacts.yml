@@ -1,74 +1,64 @@
-name: Prune Actions artifacts
+name: Actions cleanup
 
 on:
+  workflow_run:
+    types: [completed]
   workflow_dispatch:
 
 permissions:
   actions: write
   contents: read
 
-concurrency:
-  group: prune-actions-artifacts
-  cancel-in-progress: false
-
 jobs:
-  prune:
-    name: Keep artifacts for last 10 runs
+  cleanup:
+    name: Prune old Actions artifacts and runs
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.name != 'Actions cleanup')
     runs-on: ubuntu-latest
-    env:
-      KEEP_RUNS: '10'
     steps:
-      - name: Delete stale artifacts
+      - name: Delete artifacts and completed runs older than 7 days
         uses: actions/github-script@v7
         with:
           script: |
-            const keepRuns = Math.max(1, Number(process.env.KEEP_RUNS || '10') || 10);
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const keepRunIds = new Set([Number(context.runId)]);
-
-            const workflows = await github.paginate(github.rest.actions.listRepoWorkflows, {
-              owner,
-              repo,
-              per_page: 100,
-            });
-
-            for (const workflow of workflows) {
-              const runs = await github.rest.actions.listWorkflowRuns({
-                owner,
-                repo,
-                workflow_id: workflow.id,
-                per_page: Math.min(100, keepRuns),
-              });
-              for (const run of runs.data.workflow_runs.slice(0, keepRuns)) {
-                keepRunIds.add(Number(run.id));
-              }
-            }
+            const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
 
             const artifacts = await github.paginate(github.rest.actions.listArtifactsForRepo, {
               owner,
               repo,
               per_page: 100,
             });
-            let deleted = 0;
-            let reclaimed = 0;
 
+            let artifactCount = 0;
             for (const artifact of artifacts) {
-              const runId = Number(artifact.workflow_run?.id);
-              if (Number.isFinite(runId) && keepRunIds.has(runId)) continue;
-              try {
-                await github.rest.actions.deleteArtifact({
-                  owner,
-                  repo,
-                  artifact_id: artifact.id,
-                });
-                deleted += 1;
-                reclaimed += Number(artifact.size_in_bytes || 0);
-              } catch (error) {
-                if (error?.status === 404) continue;
-                core.warning(`Failed to delete artifact ${artifact.id} (${artifact.name}): ${error.message}`);
+              const created = new Date(artifact.created_at).getTime();
+              if (artifact.expired || created < cutoff) {
+                await github.rest.actions.deleteArtifact({ owner, repo, artifact_id: artifact.id });
+                artifactCount++;
               }
             }
 
-            const mib = (reclaimed / 1024 / 1024).toFixed(1);
-            core.notice(`Kept artifacts for the last ${keepRuns} runs per workflow; deleted ${deleted} stale artifact(s), reclaiming approximately ${mib} MiB.`);
+            const runs = await github.paginate(github.rest.actions.listWorkflowRunsForRepo, {
+              owner,
+              repo,
+              per_page: 100,
+              status: 'completed',
+            });
+
+            let runCount = 0;
+            for (const run of runs) {
+              if (run.id === context.runId) continue;
+              const created = new Date(run.created_at).getTime();
+              if (created < cutoff) {
+                try {
+                  await github.rest.actions.deleteWorkflowRun({ owner, repo, run_id: run.id });
+                  runCount++;
+                } catch (error) {
+                  core.warning(`Could not delete workflow run ${run.id}: ${error.message}`);
+                }
+              }
+            }
+
+            core.notice(`Deleted ${artifactCount} artifacts and ${runCount} completed workflow runs older than 7 days.`);
