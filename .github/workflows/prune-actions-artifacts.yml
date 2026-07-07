@@ -28,6 +28,22 @@ jobs:
             const repo = context.repo.repo;
             const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
 
+            async function retry(label, fn) {
+              let lastError;
+              for (let attempt = 1; attempt <= 3; attempt++) {
+                try {
+                  return await fn();
+                } catch (error) {
+                  lastError = error;
+                  core.warning(`${label} failed on attempt ${attempt}: ${error.message}`);
+                  if (attempt < 3) {
+                    await new Promise(resolve => setTimeout(resolve, attempt * 2000));
+                  }
+                }
+              }
+              throw lastError;
+            }
+
             const artifacts = await github.paginate(github.rest.actions.listArtifactsForRepo, {
               owner,
               repo,
@@ -38,7 +54,9 @@ jobs:
             for (const artifact of artifacts) {
               const created = new Date(artifact.created_at).getTime();
               if (artifact.expired || created < cutoff) {
-                await github.rest.actions.deleteArtifact({ owner, repo, artifact_id: artifact.id });
+                await retry(`delete artifact ${artifact.id}`, () =>
+                  github.rest.actions.deleteArtifact({ owner, repo, artifact_id: artifact.id })
+                );
                 artifactCount++;
               }
             }
@@ -56,10 +74,12 @@ jobs:
               const created = new Date(run.created_at).getTime();
               if (created < cutoff) {
                 try {
-                  await github.rest.actions.deleteWorkflowRun({ owner, repo, run_id: run.id });
+                  await retry(`delete workflow run ${run.id}`, () =>
+                    github.rest.actions.deleteWorkflowRun({ owner, repo, run_id: run.id })
+                  );
                   runCount++;
                 } catch (error) {
-                  core.warning(`Could not delete workflow run ${run.id}: ${error.message}`);
+                  core.warning(`Could not delete workflow run ${run.id} after retries: ${error.message}`);
                 }
               }
             }
