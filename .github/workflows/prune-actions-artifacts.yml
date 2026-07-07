@@ -20,7 +20,7 @@ jobs:
       github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
-      - name: Delete artifacts, caches, and completed runs older than 7 days
+      - name: Delete stale artifacts, branch-scoped caches, and old completed runs
         uses: actions/github-script@v7
         with:
           script: |
@@ -44,6 +44,23 @@ jobs:
               throw lastError;
             }
 
+            const repoInfo = await github.rest.repos.get({ owner, repo });
+            const defaultBranch = repoInfo.data.default_branch || 'main';
+            const reusableCacheRefs = new Set([
+              `refs/heads/${defaultBranch}`,
+              'refs/heads/main',
+              'refs/heads/master',
+            ]);
+
+            const runs = await github.paginate(github.rest.actions.listWorkflowRunsForRepo, {
+              owner,
+              repo,
+              per_page: 100,
+              status: 'completed',
+            });
+            runs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            const keepRunIds = new Set(runs.slice(0, 10).map(run => run.id));
+
             const artifacts = await github.paginate(github.rest.actions.listArtifactsForRepo, {
               owner,
               repo,
@@ -53,7 +70,8 @@ jobs:
             let artifactCount = 0;
             for (const artifact of artifacts) {
               const created = new Date(artifact.created_at).getTime();
-              if (artifact.expired || created < cutoff) {
+              const runId = artifact.workflow_run && artifact.workflow_run.id;
+              if (artifact.expired || created < cutoff || (runId && !keepRunIds.has(runId))) {
                 await retry(`delete artifact ${artifact.id}`, () =>
                   github.rest.actions.deleteArtifact({ owner, repo, artifact_id: artifact.id })
                 );
@@ -70,20 +88,14 @@ jobs:
             let cacheCount = 0;
             for (const cache of caches) {
               const lastUsed = new Date(cache.last_accessed_at || cache.created_at).getTime();
-              if (lastUsed < cutoff) {
+              const branchScoped = cache.ref && cache.ref.startsWith('refs/heads/') && !reusableCacheRefs.has(cache.ref);
+              if (lastUsed < cutoff || branchScoped) {
                 await retry(`delete cache ${cache.id}`, () =>
                   github.rest.actions.deleteActionsCacheById({ owner, repo, cache_id: cache.id })
                 );
                 cacheCount++;
               }
             }
-
-            const runs = await github.paginate(github.rest.actions.listWorkflowRunsForRepo, {
-              owner,
-              repo,
-              per_page: 100,
-              status: 'completed',
-            });
 
             let runCount = 0;
             for (const run of runs) {
@@ -101,4 +113,4 @@ jobs:
               }
             }
 
-            core.notice(`Deleted ${artifactCount} artifacts, ${cacheCount} caches, and ${runCount} completed workflow runs older than 7 days.`);
+            core.notice(`Deleted ${artifactCount} artifacts, ${cacheCount} caches, and ${runCount} completed workflow runs.`);
