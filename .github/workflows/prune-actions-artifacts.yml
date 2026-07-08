@@ -1,12 +1,6 @@
 name: Actions cleanup
 
 on:
-  workflow_run:
-    workflows:
-      - "Close inactive issues"
-      - "CodeQL"
-      - "Dependabot Updates"
-    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -16,8 +10,6 @@ permissions:
 jobs:
   cleanup:
     name: Prune old Actions artifacts, caches, and runs
-    if: >-
-      github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Delete stale artifacts, branch-scoped caches, and old completed runs
@@ -46,27 +38,14 @@ jobs:
 
             const repoInfo = await github.rest.repos.get({ owner, repo });
             const defaultBranch = repoInfo.data.default_branch || 'main';
-            const reusableCacheRefs = new Set([
-              `refs/heads/${defaultBranch}`,
-              'refs/heads/main',
-              'refs/heads/master',
-            ]);
+            const reusableCacheRefs = new Set([`refs/heads/${defaultBranch}`, 'refs/heads/main', 'refs/heads/master']);
 
-            const runs = await github.paginate(github.rest.actions.listWorkflowRunsForRepo, {
-              owner,
-              repo,
-              per_page: 100,
-              status: 'completed',
-            });
+            const runs = await github.paginate(github.rest.actions.listWorkflowRunsForRepo, { owner, repo, per_page: 100, status: 'completed' });
             runs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
             const retentionRuns = runs.filter(run => run.name !== 'Actions cleanup');
-            const keepRunIds = new Set(retentionRuns.slice(0, 10).map(run => String(run.id))); 
+            const keepRunIds = new Set(retentionRuns.slice(0, 10).map(run => String(run.id)));
 
-            const artifacts = await github.paginate(github.rest.actions.listArtifactsForRepo, {
-              owner,
-              repo,
-              per_page: 100,
-            });
+            const artifacts = await github.paginate(github.rest.actions.listArtifactsForRepo, { owner, repo, per_page: 100 });
             artifacts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
             const keepArtifactIds = new Set(artifacts.slice(0, 10).map(artifact => artifact.id));
 
@@ -76,27 +55,18 @@ jobs:
               const runId = artifact.workflow_run && artifact.workflow_run.id;
               const beyondRunWindow = runId ? !keepRunIds.has(String(runId)) : !keepArtifactIds.has(artifact.id);
               if (artifact.expired || created < cutoff || beyondRunWindow) {
-                await retry(`delete artifact ${artifact.id}`, () =>
-                  github.rest.actions.deleteArtifact({ owner, repo, artifact_id: artifact.id })
-                );
+                await retry(`delete artifact ${artifact.id}`, () => github.rest.actions.deleteArtifact({ owner, repo, artifact_id: artifact.id }));
                 artifactCount++;
               }
             }
 
-            const caches = await github.paginate(github.rest.actions.getActionsCacheList, {
-              owner,
-              repo,
-              per_page: 100,
-            });
-
+            const caches = await github.paginate(github.rest.actions.getActionsCacheList, { owner, repo, per_page: 100 });
             let cacheCount = 0;
             for (const cache of caches) {
               const lastUsed = new Date(cache.last_accessed_at || cache.created_at).getTime();
               const branchScoped = cache.ref && cache.ref.startsWith('refs/heads/') && !reusableCacheRefs.has(cache.ref);
               if (lastUsed < cutoff || branchScoped) {
-                await retry(`delete cache ${cache.id}`, () =>
-                  github.rest.actions.deleteActionsCacheById({ owner, repo, cache_id: cache.id })
-                );
+                await retry(`delete cache ${cache.id}`, () => github.rest.actions.deleteActionsCacheById({ owner, repo, cache_id: cache.id }));
                 cacheCount++;
               }
             }
@@ -107,12 +77,10 @@ jobs:
               const created = new Date(run.created_at).getTime();
               if (created < cutoff) {
                 try {
-                  await retry(`delete workflow run ${run.id}`, () =>
-                    github.rest.actions.deleteWorkflowRun({ owner, repo, run_id: run.id })
-                  );
+                  await retry(`delete workflow run ${run.id}`, () => github.rest.actions.deleteWorkflowRun({ owner, repo, run_id: run.id }));
                   runCount++;
                 } catch (error) {
-                  core.warning(`Could not delete workflow run ${run.id} after retries: ${error.message}`);
+                  core.warning(`Could not delete workflow run ${run.id}: ${error.message}`);
                 }
               }
             }
