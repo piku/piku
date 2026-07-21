@@ -1119,7 +1119,7 @@ def spawn_app(app, deltas={}):
             # remove all references to IPv6 listeners (for enviroments where it's disabled)
             if get_boolean(env.get('DISABLE_IPV6', 'false')):
                 buffer = '\n'.join([line for line in buffer.split('\n') if 'NGINX_IPV6' not in line])
-            # change any unecessary uWSGI specific directives to standard proxy ones
+            # change any unnecessary uWSGI specific directives to standard proxy ones
             if 'wsgi' not in workers and 'jwsgi' not in workers:
                 buffer = buffer.replace("uwsgi_", "proxy_")
 
