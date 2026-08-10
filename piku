@@ -108,7 +108,11 @@ else
       fi
       ;;
     download)
-      scp "$server:~/.piku/apps/${app}/${2}" "${3:-.}"
+      scp -O "$server:~/.piku/apps/${app}/${2}" "${3:-.}"
+      ;;
+    download-logs)
+      # Automatically downloads web and worker logs for the current app context
+      scp -O "$server:~/.piku/logs/${app}/{web,worker}*" "${2:-.}"
       ;;
     *)
       shift # remove cmd arg
