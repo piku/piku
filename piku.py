@@ -329,7 +329,7 @@ def command_output(cmd):
     """executes a command and grabs its output, if any"""
     try:
         env = environ
-        return str(check_output(cmd, stderr=STDOUT, env=env, shell=True))
+        return str(check_output(cmd, stderr=STDOUT, env=env, shell=True).decode())
     except Exception:
         return ""
 
