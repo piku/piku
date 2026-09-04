@@ -10,7 +10,7 @@
 
 ### Documentation: [Install](#install) | [Using](#workflow) | [Procfile](https://piku.github.io/configuration/procfile.html) | [ENV](https://piku.github.io/configuration/env.html) | [Examples](https://piku.github.io/community/examples.html) | [Roadmap](https://github.com/orgs/piku/projects/2) | [Contributing](https://piku.github.io/community/contributing.html) | [LinuxConf Talk](https://www.youtube.com/watch?v=ec-GoDukHWk) | [Fast Web App Tutorial](https://github.com/piku/webapp-tutorial) | [Discussion Forum](https://github.com/piku/piku/discussions)
 
-> *Note to security “researchers”* - please stop submitting fake, AI generated SSH ”vulnerabilities” to boost your credibility. We know `piku` allows you to run arbitrary commands, it is actually a CLI feature.
+> *Note to security “researchers”* - please stop submitting fake, AI generated SSH ”vulnerabilities” and begging for CVEs to boost your credibility. We know `piku` allows you to run arbitrary commands (it is actually a CLI feature), and you are just wasting our time. Use AI to improve this instead.
 
 ## [Install](https://piku.github.io/install)
 
