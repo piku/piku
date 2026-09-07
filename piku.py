@@ -827,7 +827,7 @@ def deploy_python_with_uv(app, deltas={}):
         with open(python_version_file, 'r') as f:
             python_version = f.read().strip()
 
-    uv_cmd = 'uv sync'
+    uv_cmd = 'uv sync --no-dev'
     if python_version:
         uv_cmd += ' --python {}'.format(python_version)
         echo("-----> Using Python version: {}".format(python_version), fg='green')

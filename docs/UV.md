@@ -24,7 +24,7 @@ When you push an app with `pyproject.toml`:
 
 1. Piku detects `pyproject.toml` and activates UV mode
 2. Creates a virtualenv in `~/.piku/envs/<app>`
-3. Runs `uv sync` to install dependencies
+3. Runs `uv sync --no-dev` to install dependencies, skipping the `dev` group
 4. Dependencies are only reinstalled when `pyproject.toml` or `uv.lock` changes
 
 ## Python Version Selection
