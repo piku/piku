@@ -694,6 +694,10 @@ def deploy_node(app, deltas={}):
                 echo("Warning: Can't update node with app running. Stop the app & retry.", fg='yellow')
             else:
                 echo("-----> Installing node version '{NODE_VERSION:s}' using nodeenv".format(**env), fg='green')
+                if installed:
+                    # nodeenv --force unpacks over the old install, leaving a stale npm that crashes the new node
+                    for module in ("npm", "corepack"):
+                        rmtree(join(virtualenv_path, "lib", "node_modules", module), ignore_errors=True)
                 call("nodeenv --prebuilt --node={NODE_VERSION:s} --clean-src --force {VIRTUAL_ENV:s}".format(**env),
                      cwd=virtualenv_path, env=env, shell=True)
         else:
